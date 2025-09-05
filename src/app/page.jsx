@@ -11,6 +11,8 @@ export default function Page() {
   const [isLoginActive, setIsLoginActive] = useState(false);
   const [isSignupActive, setIsSignupActive] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [loginDone, setLoginDone] = useState(false);
+  const [signupDone, setSignupDone] = useState(false);
 
   return (
     <div
@@ -23,15 +25,26 @@ export default function Page() {
         setIsSignupActive={setIsSignupActive}
         setIsDarkMode={setIsDarkMode}
         isDarkMode={isDarkMode}
+        loginDone={loginDone}
+        signupDone={signupDone}
       />
-      <Home isDarkMode={isDarkMode} />
-      <HomePost isDarkMode={isDarkMode} />
+      <Home
+        isDarkMode={isDarkMode}
+        loginDone={loginDone}
+        signupDone={signupDone}
+      />
+      <HomePost
+        isDarkMode={isDarkMode}
+        loginDone={loginDone}
+        signupDone={signupDone}
+      />
       {isLoginActive && (
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
           <Login
             isLoginActive={isLoginActive}
             setIsLoginActive={setIsLoginActive}
             isDarkMode={isDarkMode}
+            setLoginDone={setLoginDone}
           />
         </div>
       )}
@@ -41,6 +54,7 @@ export default function Page() {
             isSignupActive={isSignupActive}
             setIsSignupActive={setIsSignupActive}
             isDarkMode={isDarkMode}
+            setSignupDone={setSignupDone}
           />
         </div>
       )}

@@ -12,7 +12,11 @@ export default function Navbar({
   setIsSignupActive,
   isDarkMode,
   setIsDarkMode,
+  loginDone,
+  signupDone,
 }) {
+  console.log("Navbar loginDone:", loginDone, "signupDone:", signupDone);
+
   return (
     <div
       className={`w-[1280px] flex justify-between items-center fixed py-3 transition-colors duration-500 ${

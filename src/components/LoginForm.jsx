@@ -3,9 +3,40 @@ import { ImCross } from "react-icons/im";
 import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 
-export default function Login({ setIsLoginActive, isDarkMode }) {
+export default function Login({ setIsLoginActive, isDarkMode, setLoginDone }) {
   const [emailFocused, setEmailFocused] = useState(false);
   const [email, setEmail] = useState("");
+  const [passwordFocused, setPasswordFocused] = useState(false);
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
+
+  // Handle form submit for login
+  async function handleLogin(e) {
+    e.preventDefault();
+
+    try {
+      const res = await fetch("/api/login", {
+        method: "POST", // Note: GET with body is unusual, consider POST for login
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setLoginDone(true);
+        setMessage(`Welcome back, ${data.data.name}!`);
+        // Optionally: redirect user, store tokens, etc.
+      } else {
+        setLoginDone(false);
+        setMessage(data.message || "Login failed");
+      }
+    } catch (error) {
+      setMessage("An unexpected error occurred");
+    }
+  }
 
   return (
     <div
@@ -28,32 +59,29 @@ export default function Login({ setIsLoginActive, isDarkMode }) {
       </h1>
       <hr className="border-t-[1px] border-red-500 mb-8" />
 
-      <div className="relative mb-7">
-        <input
-          type="email"
-          value={email}
-          onFocus={() => setEmailFocused(true)}
-          onBlur={() => setEmailFocused(false)}
-          onChange={(e) => setEmail(e.target.value)}
-          autoComplete="email"
-          required
-          className={`
-            ${
+      <form onSubmit={handleLogin}>
+        <div className="relative mb-7">
+          <input
+            type="email"
+            value={email}
+            onFocus={() => setEmailFocused(true)}
+            onBlur={() => setEmailFocused(false)}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+            required
+            className={`${
               isDarkMode
                 ? "text-white border-[#494948]"
                 : "text-black border-gray-300"
-            }
-            w-full h-12 rounded px-4 bg-transparent text-white border-[1px]
+            } w-full h-12 rounded px-4 bg-transparent text-white border-[1px]
             focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 peer
-            placeholder-transparent
-          `}
-          placeholder="Email"
-          id="login-email"
-        />
-        <label
-          htmlFor="login-email"
-          className={`
-            absolute left-4 transition-all duration-200 px-1 
+            placeholder-transparent`}
+            placeholder="Email"
+            id="login-email"
+          />
+          <label
+            htmlFor="login-email"
+            className={`absolute left-4 transition-all duration-200 px-1 
             pointer-events-none
             ${
               emailFocused || email
@@ -61,49 +89,62 @@ export default function Login({ setIsLoginActive, isDarkMode }) {
                     isDarkMode ? "bg-[#191b1e]" : "bg-white"
                   } font-medium`
                 : "text-base top-3 text-gray-400"
-            }
-          `}
-        >
-          Email
-        </label>
-      </div>
+            }`}
+          >
+            Email
+          </label>
+        </div>
 
-      <div className="relative mb-7">
-        <input
-          type="password"
-          className={`
-            ${
+        <div className="relative mb-7">
+          <input
+            type="password"
+            value={password}
+            onFocus={() => setPasswordFocused(true)}
+            onBlur={() => setPasswordFocused(false)}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className={`${
               isDarkMode
                 ? "text-white border-[#494948]"
                 : "text-black  border-gray-300"
-            }
-            w-full h-12 rounded px-4 bg-transparent text-white border-[1px]
-            focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 peer placeholder-transparent
-          `}
-          placeholder="Password"
-          id="login-password"
-        />
-        <label
-          htmlFor="login-password"
-          className={`
-            absolute left-4 transition-all duration-200 px-1
+            } w-full h-12 rounded px-4 bg-transparent text-white border-[1px]
+            focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 peer placeholder-transparent`}
+            placeholder="Password"
+            id="login-password"
+          />
+          <label
+            htmlFor="login-password"
+            className={`absolute left-4 transition-all duration-200 px-1
             text-base top-3 text-gray-400 pointer-events-none
-            peer-focus:text-xs peer-focus:-top-3 peer-focus:text-[#f75555] ${isDarkMode ? "peer-focus:bg-[#191b1e]" : "peer-focus:bg-white"} peer-focus:font-medium
-          `}
-        >
-          Password
-        </label>
-      </div>
+            peer-focus:text-xs peer-focus:-top-3 peer-focus:text-[#f75555] ${
+              isDarkMode ? "peer-focus:bg-[#191b1e]" : "peer-focus:bg-white"
+            } peer-focus:font-medium`}
+          >
+            Password
+          </label>
+        </div>
 
-      <button
-        className={`w-full h-12 rounded-full bg-[#f75555] ${
-          isDarkMode
-            ? "text-white  hover:bg-white hover:text-black"
-            : "text-black  hover:bg-black hover:text-white"
-        } font-bold mt-2 mb-8 transition`}
-      >
-        Login
-      </button>
+        <button
+          type="submit"
+          className={`w-full h-12 rounded-full bg-[#f75555] ${
+            isDarkMode
+              ? "text-white  hover:bg-white hover:text-black"
+              : "text-black  hover:bg-black hover:text-white"
+          } font-bold mt-2 mb-8 transition`}
+        >
+          Login
+        </button>
+      </form>
+
+      {message && (
+        <p
+          className={`text-center mb-4 ${
+            isDarkMode ? "text-red-400" : "text-red-600"
+          }`}
+        >
+          {message}
+        </p>
+      )}
 
       <div className="flex items-center mb-4">
         <span
