@@ -171,180 +171,184 @@ export default function HomePosts({ isDarkMode, loginDone, signupDone }) {
         </div>
       </div>
 
-      <div>
-        <div className="flex items-center gap-5 justify-between mt-28">
-          <h1
-            className={`${isDarkMode ? "text-white" : "text-black"} text-3xl`}
-          >
-            Suggested Users
-          </h1>
-          <hr className="w-[1030px] border-t-[1px] border-[#f75555]" />
+      {loginDone || signupDone ? (
+        <div>
+          <div className="flex items-center gap-5 justify-between mt-28">
+            <h1
+              className={`${isDarkMode ? "text-white" : "text-black"} text-3xl`}
+            >
+              Suggested Users
+            </h1>
+            <hr className="w-[1030px] border-t-[1px] border-[#f75555]" />
+          </div>
+          <div className="flex mt-16 gap-4 w-[1280px] overflow-x-auto [&::-webkit-scrollbar]:hidden bg-gradient-to-r from-black/10 via-transparent to-black/10">
+            <div>
+              <div className="flex flex-col items-center justify-around gap-2 px-2 py-3 w-[220px] h-[280px] rounded-xl bg-[#2c2a2a] text-center">
+                <img
+                  className="rounded-full object-cover w-[90px] h-[90px] border-4 border-[#f75555]"
+                  src="/imageProfile1.png"
+                  alt=""
+                />
+                <div>
+                  <h1 className="text-white font-bold">mellobytes</h1>
+                  <p className="text-[#7a7a7a] text-sm">
+                    Hello! I am a tech enthusiast based in New Delhi
+                  </p>
+                </div>
+                <button className="bg-[#f75555] rounded-full w-[195px] text-center text-white px-5 py-2">
+                  Follow
+                </button>
+              </div>
+            </div>
+            <div>
+              <div className="flex flex-col items-center justify-around gap-2 px-2 py-3 w-[220px] h-[280px] rounded-xl bg-[#2c2a2a] text-center">
+                <img
+                  className="rounded-full object-cover w-[90px] h-[90px] border-4 border-[#f75555]"
+                  src="/imageProfile1.png"
+                  alt=""
+                />
+                <div>
+                  <h1 className="text-white font-bold">mellobytes</h1>
+                  <p className="text-[#7a7a7a] text-sm">
+                    Hello! I am a tech enthusiast based in New Delhi
+                  </p>
+                </div>
+                <button className="bg-[#f75555] rounded-full w-[195px] text-center text-white px-5 py-2">
+                  Follow
+                </button>
+              </div>
+            </div>
+            <div>
+              <div className="flex flex-col items-center justify-around gap-2 px-2 py-3 w-[220px] h-[280px] rounded-xl bg-[#2c2a2a] text-center">
+                <img
+                  className="rounded-full object-cover w-[90px] h-[90px] border-4 border-[#f75555]"
+                  src="/imageProfile1.png"
+                  alt=""
+                />
+                <div>
+                  <h1 className="text-white font-bold">mellobytes</h1>
+                  <p className="text-[#7a7a7a] text-sm">
+                    Hello! I am a tech enthusiast based in New Delhi
+                  </p>
+                </div>
+                <button className="bg-[#f75555] rounded-full w-[195px] text-center text-white px-5 py-2">
+                  Follow
+                </button>
+              </div>
+            </div>
+            <div>
+              <div className="flex flex-col items-center justify-around gap-2 px-2 py-3 w-[220px] h-[280px] rounded-xl bg-[#2c2a2a] text-center">
+                <img
+                  className="rounded-full object-cover w-[90px] h-[90px] border-4 border-[#f75555]"
+                  src="/imageProfile1.png"
+                  alt=""
+                />
+                <div>
+                  <h1 className="text-white font-bold">mellobytes</h1>
+                  <p className="text-[#7a7a7a] text-sm">
+                    Hello! I am a tech enthusiast based in New Delhi
+                  </p>
+                </div>
+                <button className="bg-[#f75555] rounded-full w-[195px] text-center text-white px-5 py-2">
+                  Follow
+                </button>
+              </div>
+            </div>
+            <div>
+              <div className="flex flex-col items-center justify-around gap-2 px-2 py-3 w-[220px] h-[280px] rounded-xl bg-[#2c2a2a] text-center">
+                <img
+                  className="rounded-full object-cover w-[90px] h-[90px] border-4 border-[#f75555]"
+                  src="/imageProfile1.png"
+                  alt=""
+                />
+                <div>
+                  <h1 className="text-white font-bold">mellobytes</h1>
+                  <p className="text-[#7a7a7a] text-sm">
+                    Hello! I am a tech enthusiast based in New Delhi
+                  </p>
+                </div>
+                <button className="bg-[#f75555] rounded-full w-[195px] text-center text-white px-5 py-2">
+                  Follow
+                </button>
+              </div>
+            </div>
+            <div>
+              <div className="flex flex-col items-center justify-around gap-2 px-2 py-3 w-[220px] h-[280px] rounded-xl bg-[#2c2a2a] text-center">
+                <img
+                  className="rounded-full object-cover w-[90px] h-[90px] border-4 border-[#f75555]"
+                  src="/imageProfile1.png"
+                  alt=""
+                />
+                <div>
+                  <h1 className="text-white font-bold">mellobytes</h1>
+                  <p className="text-[#7a7a7a] text-sm">
+                    Hello! I am a tech enthusiast based in New Delhi
+                  </p>
+                </div>
+                <button className="bg-[#f75555] rounded-full w-[195px] text-center text-white px-5 py-2">
+                  Follow
+                </button>
+              </div>
+            </div>
+            <div>
+              <div className="flex flex-col items-center justify-around gap-2 px-2 py-3 w-[220px] h-[280px] rounded-xl bg-[#2c2a2a] text-center">
+                <img
+                  className="rounded-full object-cover w-[90px] h-[90px] border-4 border-[#f75555]"
+                  src="/imageProfile1.png"
+                  alt=""
+                />
+                <div>
+                  <h1 className="text-white font-bold">mellobytes</h1>
+                  <p className="text-[#7a7a7a] text-sm">
+                    Hello! I am a tech enthusiast based in New Delhi
+                  </p>
+                </div>
+                <button className="bg-[#f75555] rounded-full w-[195px] text-center text-white px-5 py-2">
+                  Follow
+                </button>
+              </div>
+            </div>
+            <div>
+              <div className="flex flex-col items-center justify-around gap-2 px-2 py-3 w-[220px] h-[280px] rounded-xl bg-[#2c2a2a] text-center">
+                <img
+                  className="rounded-full object-cover w-[90px] h-[90px] border-4 border-[#f75555]"
+                  src="/imageProfile1.png"
+                  alt=""
+                />
+                <div>
+                  <h1 className="text-white font-bold">mellobytes</h1>
+                  <p className="text-[#7a7a7a] text-sm">
+                    Hello! I am a tech enthusiast based in New Delhi
+                  </p>
+                </div>
+                <button className="bg-[#f75555] rounded-full w-[195px] text-center text-white px-5 py-2">
+                  Follow
+                </button>
+              </div>
+            </div>
+            <div>
+              <div className="flex flex-col items-center justify-around gap-2 px-2 py-3 w-[220px] h-[280px] rounded-xl bg-[#2c2a2a] text-center">
+                <img
+                  className="rounded-full object-cover w-[90px] h-[90px] border-4 border-[#f75555]"
+                  src="/imageProfile1.png"
+                  alt=""
+                />
+                <div>
+                  <h1 className="text-white font-bold">mellobytes</h1>
+                  <p className="text-[#7a7a7a] text-sm">
+                    Hello! I am a tech enthusiast based in New Delhi
+                  </p>
+                </div>
+                <button className="bg-[#f75555] rounded-full w-[195px] text-center text-white px-5 py-2">
+                  Follow
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="flex mt-16 gap-4 w-[1280px] overflow-x-auto [&::-webkit-scrollbar]:hidden bg-gradient-to-r from-black/10 via-transparent to-black/10">
-          <div>
-            <div className="flex flex-col items-center justify-around gap-2 px-2 py-3 w-[220px] h-[280px] rounded-xl bg-[#2c2a2a] text-center">
-              <img
-                className="rounded-full object-cover w-[90px] h-[90px] border-4 border-[#f75555]"
-                src="/imageProfile1.png"
-                alt=""
-              />
-              <div>
-                <h1 className="text-white font-bold">mellobytes</h1>
-                <p className="text-[#7a7a7a] text-sm">
-                  Hello! I am a tech enthusiast based in New Delhi
-                </p>
-              </div>
-              <button className="bg-[#f75555] rounded-full w-[195px] text-center text-white px-5 py-2">
-                Follow
-              </button>
-            </div>
-          </div>
-          <div>
-            <div className="flex flex-col items-center justify-around gap-2 px-2 py-3 w-[220px] h-[280px] rounded-xl bg-[#2c2a2a] text-center">
-              <img
-                className="rounded-full object-cover w-[90px] h-[90px] border-4 border-[#f75555]"
-                src="/imageProfile1.png"
-                alt=""
-              />
-              <div>
-                <h1 className="text-white font-bold">mellobytes</h1>
-                <p className="text-[#7a7a7a] text-sm">
-                  Hello! I am a tech enthusiast based in New Delhi
-                </p>
-              </div>
-              <button className="bg-[#f75555] rounded-full w-[195px] text-center text-white px-5 py-2">
-                Follow
-              </button>
-            </div>
-          </div>
-          <div>
-            <div className="flex flex-col items-center justify-around gap-2 px-2 py-3 w-[220px] h-[280px] rounded-xl bg-[#2c2a2a] text-center">
-              <img
-                className="rounded-full object-cover w-[90px] h-[90px] border-4 border-[#f75555]"
-                src="/imageProfile1.png"
-                alt=""
-              />
-              <div>
-                <h1 className="text-white font-bold">mellobytes</h1>
-                <p className="text-[#7a7a7a] text-sm">
-                  Hello! I am a tech enthusiast based in New Delhi
-                </p>
-              </div>
-              <button className="bg-[#f75555] rounded-full w-[195px] text-center text-white px-5 py-2">
-                Follow
-              </button>
-            </div>
-          </div>
-          <div>
-            <div className="flex flex-col items-center justify-around gap-2 px-2 py-3 w-[220px] h-[280px] rounded-xl bg-[#2c2a2a] text-center">
-              <img
-                className="rounded-full object-cover w-[90px] h-[90px] border-4 border-[#f75555]"
-                src="/imageProfile1.png"
-                alt=""
-              />
-              <div>
-                <h1 className="text-white font-bold">mellobytes</h1>
-                <p className="text-[#7a7a7a] text-sm">
-                  Hello! I am a tech enthusiast based in New Delhi
-                </p>
-              </div>
-              <button className="bg-[#f75555] rounded-full w-[195px] text-center text-white px-5 py-2">
-                Follow
-              </button>
-            </div>
-          </div>
-          <div>
-            <div className="flex flex-col items-center justify-around gap-2 px-2 py-3 w-[220px] h-[280px] rounded-xl bg-[#2c2a2a] text-center">
-              <img
-                className="rounded-full object-cover w-[90px] h-[90px] border-4 border-[#f75555]"
-                src="/imageProfile1.png"
-                alt=""
-              />
-              <div>
-                <h1 className="text-white font-bold">mellobytes</h1>
-                <p className="text-[#7a7a7a] text-sm">
-                  Hello! I am a tech enthusiast based in New Delhi
-                </p>
-              </div>
-              <button className="bg-[#f75555] rounded-full w-[195px] text-center text-white px-5 py-2">
-                Follow
-              </button>
-            </div>
-          </div>
-          <div>
-            <div className="flex flex-col items-center justify-around gap-2 px-2 py-3 w-[220px] h-[280px] rounded-xl bg-[#2c2a2a] text-center">
-              <img
-                className="rounded-full object-cover w-[90px] h-[90px] border-4 border-[#f75555]"
-                src="/imageProfile1.png"
-                alt=""
-              />
-              <div>
-                <h1 className="text-white font-bold">mellobytes</h1>
-                <p className="text-[#7a7a7a] text-sm">
-                  Hello! I am a tech enthusiast based in New Delhi
-                </p>
-              </div>
-              <button className="bg-[#f75555] rounded-full w-[195px] text-center text-white px-5 py-2">
-                Follow
-              </button>
-            </div>
-          </div>
-          <div>
-            <div className="flex flex-col items-center justify-around gap-2 px-2 py-3 w-[220px] h-[280px] rounded-xl bg-[#2c2a2a] text-center">
-              <img
-                className="rounded-full object-cover w-[90px] h-[90px] border-4 border-[#f75555]"
-                src="/imageProfile1.png"
-                alt=""
-              />
-              <div>
-                <h1 className="text-white font-bold">mellobytes</h1>
-                <p className="text-[#7a7a7a] text-sm">
-                  Hello! I am a tech enthusiast based in New Delhi
-                </p>
-              </div>
-              <button className="bg-[#f75555] rounded-full w-[195px] text-center text-white px-5 py-2">
-                Follow
-              </button>
-            </div>
-          </div>
-          <div>
-            <div className="flex flex-col items-center justify-around gap-2 px-2 py-3 w-[220px] h-[280px] rounded-xl bg-[#2c2a2a] text-center">
-              <img
-                className="rounded-full object-cover w-[90px] h-[90px] border-4 border-[#f75555]"
-                src="/imageProfile1.png"
-                alt=""
-              />
-              <div>
-                <h1 className="text-white font-bold">mellobytes</h1>
-                <p className="text-[#7a7a7a] text-sm">
-                  Hello! I am a tech enthusiast based in New Delhi
-                </p>
-              </div>
-              <button className="bg-[#f75555] rounded-full w-[195px] text-center text-white px-5 py-2">
-                Follow
-              </button>
-            </div>
-          </div>
-          <div>
-            <div className="flex flex-col items-center justify-around gap-2 px-2 py-3 w-[220px] h-[280px] rounded-xl bg-[#2c2a2a] text-center">
-              <img
-                className="rounded-full object-cover w-[90px] h-[90px] border-4 border-[#f75555]"
-                src="/imageProfile1.png"
-                alt=""
-              />
-              <div>
-                <h1 className="text-white font-bold">mellobytes</h1>
-                <p className="text-[#7a7a7a] text-sm">
-                  Hello! I am a tech enthusiast based in New Delhi
-                </p>
-              </div>
-              <button className="bg-[#f75555] rounded-full w-[195px] text-center text-white px-5 py-2">
-                Follow
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      ) : (
+        ""
+      )}
 
       <div className="flex items-center gap-5 mt-32 justify-between">
         <h1 className={`${isDarkMode ? "text-white" : "text-black"} text-3xl`}>
