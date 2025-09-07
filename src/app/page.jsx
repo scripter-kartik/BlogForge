@@ -27,6 +27,7 @@ export default function Page() {
         isDarkMode={isDarkMode}
         loginDone={loginDone}
         signupDone={signupDone}
+        setLoginDone={setLoginDone}
       />
       <Home
         isDarkMode={isDarkMode}

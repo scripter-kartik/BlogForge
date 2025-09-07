@@ -9,7 +9,8 @@ import { CiBrightnessDown } from "react-icons/ci";
 import { MdOutlineDarkMode } from "react-icons/md";
 import { LuPencil } from "react-icons/lu";
 import { LuLogOut } from "react-icons/lu";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 
 export default function Navbar({
   setIsLoginActive,
@@ -18,10 +19,25 @@ export default function Navbar({
   setIsDarkMode,
   loginDone,
   signupDone,
+  setLoginDone,
 }) {
   console.log("Navbar loginDone:", loginDone, "signupDone:", signupDone);
 
   const [accountInfoActive, setAccountInfoActive] = useState(false);
+  const divRef = useRef();
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (divRef.current && !divRef.current.contains(event.target)) {
+        setAccountInfoActive(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [setAccountInfoActive]);
 
   return (
     <div
@@ -83,7 +99,8 @@ export default function Navbar({
         )}
         {loginDone || signupDone ? (
           <div className="flex gap-4 items-center justify-center">
-            <button
+            <Link 
+            href="/write"
               className={`flex items-center justify-center gap-3 border-[1px] ${
                 isDarkMode
                   ? "border-white hover:bg-white text-white"
@@ -92,7 +109,8 @@ export default function Navbar({
             >
               <LuPencil />
               Write a post
-            </button>
+            </Link>
+
             <div
               className="relative"
               onClick={() => setAccountInfoActive((prev) => !prev)}
@@ -103,28 +121,39 @@ export default function Navbar({
                 alt=""
               />
               {accountInfoActive && (
-                <div className={`flex flex-col items-center justify-center gap-2 absolute top-12 right-4 bg-[#1c1d1d] shadow-2xl p-5 ${isDarkMode ? "text-white" : "text-black"}`}>
-                  <h1>kartikagarwal</h1>
+                <div
+                  ref={divRef}
+                  className={`flex flex-col items-start justify-center gap-2 font-light absolute top-12 right-4 shadow-2xl p-5 rounded-xl ${
+                    isDarkMode
+                      ? "text-white bg-[#1c1d1d]"
+                      : "text-black bg-[#f6f6f7]"
+                  }`}
+                >
+                  <h1 className="font-bold">kartikagarwal</h1>
                   <p>View Profile</p>
                   <div className="flex items-center justify-center gap-2">
                     {isDarkMode ? (
-                      <div>
-                        <CiBrightnessDown
-                          className="text-white w-5 h-5 hover:text-[#f75555]"
-                          onClick={() => setIsDarkMode(false)}
-                        />
+                      <div
+                        className="hover:text-[#f75555] flex items-center gap-2 cursor-pointer"
+                        onClick={() => setIsDarkMode(false)}
+                      >
+                        <CiBrightnessDown className="w-5 h-5" />
+                        <p>theme</p>
                       </div>
                     ) : (
-                      <div>
-                        <MdOutlineDarkMode
-                          className="text-black w-5 h-5 hover:text-[#f75555]"
-                          onClick={() => setIsDarkMode(true)}
-                        />
+                      <div
+                        className="hover:text-[#f75555] flex items-center gap-2 cursor-pointer"
+                        onClick={() => setIsDarkMode(true)}
+                      >
+                        <MdOutlineDarkMode className="w-5 h-5" />
+                        <p>theme</p>
                       </div>
                     )}
-                    <p>Theme</p>
                   </div>
-                  <div className="flex items-center justify-center gap-2">
+                  <div
+                    className="flex items-center justify-center gap-2 hover:text-[#f75555] cursor-pointer"
+                    onClick={() => setLoginDone(false)}
+                  >
                     <LuLogOut />
                     <p>Logout</p>
                   </div>
