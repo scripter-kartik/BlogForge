@@ -10,6 +10,7 @@ export default function Login({
   isDarkMode,
   setLoginDone,
   setIsSignupActive,
+  setLoading,
 }) {
   const [emailFocused, setEmailFocused] = useState(false);
   const [email, setEmail] = useState("");
@@ -69,6 +70,12 @@ export default function Login({
       setMessage("An unexpected error occurred");
     }
   }
+
+  const nextAuthLogin = () => {
+    setLoginDone(true);
+    setLoading(true);
+    signIn("google");
+  };
 
   return (
     <div
@@ -193,7 +200,7 @@ export default function Login({
       </div>
 
       <button
-        onClick={() => signIn("google")}
+        onClick={nextAuthLogin}
         className="w-full flex items-center gap-3 justify-center h-12 rounded-full border border-black bg-white text-black font-bold mb-2 hover:bg-gray-100 transition"
       >
         <FcGoogle className="w-6 h-6" />

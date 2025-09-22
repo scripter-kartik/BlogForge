@@ -7,6 +7,7 @@ import Login from "@/components/LoginForm.jsx";
 import Signup from "@/components/SignupForm.jsx";
 import { useState, useEffect } from "react";
 import Loading from "@/components/Loading.jsx";
+import SessionListener from "@/components/SessionListener.jsx";
 
 export default function Page() {
   const [isLoginActive, setIsLoginActive] = useState(false);
@@ -54,6 +55,7 @@ export default function Page() {
         isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f6f6f7]"
       }`}
     >
+      <SessionListener setLoginDone={setLoginDone} />
       <Navbar
         setIsLoginActive={setIsLoginActive}
         setIsSignupActive={setIsSignupActive}
@@ -81,6 +83,7 @@ export default function Page() {
             isDarkMode={isDarkMode}
             setLoginDone={setLoginDone}
             setIsSignupActive={setIsSignupActive}
+            setLoading={setLoading}
           />
         </div>
       )}
