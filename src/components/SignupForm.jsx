@@ -2,11 +2,14 @@
 import { ImCross } from "react-icons/im";
 import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 
 export default function Signup({
   setIsSignupActive,
   isDarkMode,
   setSignupDone,
+  setIsLoginActive,
 }) {
   const [usernameFocused, setUsernameFocused] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
@@ -18,8 +21,8 @@ export default function Signup({
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [message, setMessage] = useState("");
+  const router = useRouter();
 
-  // Simple client-side password confirmation check
   function validateForm() {
     return password === confirm && password.length >= 6 && email && username;
   }
@@ -42,8 +45,12 @@ export default function Signup({
 
       if (data.success) {
         setSignupDone(true);
-        setMessage("Signup successful! You can now log in.");
-        // Optionally reset form or auto-switch to login
+        setMessage("Signup successful!");
+        router.push("/");
+
+        setTimeout(() => {
+          setIsSignupActive(false);
+        }, 1000);
       } else {
         setSignupDone(false);
         setMessage(data.message || "Signup failed");
@@ -88,7 +95,7 @@ export default function Signup({
               isDarkMode
                 ? "text-white border-[#494948]"
                 : "text-black border-gray-300"
-            } w-full h-12 rounded px-4 bg-transparent text-white border-[1px] border-[#373939]
+            } w-full h-12 rounded px-4 bg-transparent border-[1px] border-[#373939]
             focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 peer placeholder-transparent`}
             placeholder="Username"
             id="signup-username"
@@ -240,11 +247,8 @@ export default function Signup({
       </div>
 
       <button
-        className={`w-full flex items-center gap-3 justify-center h-12 rounded-full font-bold mb-2 hover:bg-gray-100 transition border border-black  ${
-          isDarkMode
-            ? "text-white  hover:bg-white"
-            : "text-black  hover:bg-black"
-        }`}
+        onClick={() => signIn("google")}
+        className={`w-full flex items-center gap-3 justify-center h-12 rounded-full font-bold mb-2 transition border bg-white hover:bg-gray-100 border-black`}
       >
         <FcGoogle className="w-6 h-6" />
         Continue with Google
@@ -256,7 +260,13 @@ export default function Signup({
         } text-center mt-6 text-sm`}
       >
         Already registered?{" "}
-        <a href="#login" className="text-[#f75555] font-bold hover:underline">
+        <a
+          onClick={() => {
+            setIsLoginActive(true);
+            setIsSignupActive(false);
+          }}
+          className="text-[#f75555] font-bold hover:underline cursor-pointer"
+        >
           Login
         </a>
       </p>

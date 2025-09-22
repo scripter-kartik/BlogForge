@@ -1,51 +1,28 @@
 import mongoose from "mongoose";
 
-const MONGO_URI = process.env.MONGO_URI;
-
-if (!MONGO_URI) {
-  throw new Error(
-    "Please define the MONGO_URI environment variable inside .env.local"
-  );
-}
-
-/**
- * Cached connection to prevent multiple connections between hot reloads
- * or serverless function re-invocations.
- */
-let cached = global.mongoose;
-
-if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
-}
-
-async function dbConnection() {
-  if (cached.conn) {
-    return cached.conn;
-  }
-
-  if (!cached.promise) {
-    const opts = {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      // you can add dbName here if desired, e.g.,
-      // dbName: "your-db-name"
-    };
-
-    cached.promise = mongoose.connect(MONGO_URI, opts).then((mongoose) => {
-      console.log("Connected to MongoDB");
-      return mongoose;
-    });
-  }
-
+const connectDB = async () => {
   try {
-    cached.conn = await cached.promise;
+    if (mongoose.connections[0].readyState) {
+      console.log("Already connected to MongoDB");
+      return;
+    }
+
+    console.log("Attempting to connect to MongoDB...");
+    console.log("MONGO_URI exists:", !!process.env.MONGO_URI);
+
+    const conn = await mongoose.connect(process.env.MONGO_URI, {
+      // Remove deprecated options if using newer mongoose
+    });
+
+    console.log("✅ MONGODB CONNECTED successfully!");
+    console.log(`Connected to: ${conn.connection.host}`);
   } catch (error) {
-    cached.promise = null; // so we can retry on next call
-    console.error("MongoDB connection error:", error);
-    throw error;
+    console.error("❌ MongoDB connection error:", error.message);
+    console.error("Full error:", error);
+    process.exit(1);
   }
+};
 
-  return cached.conn;
-}
+connectDB();
 
-export default dbConnection;
+export default connectDB;

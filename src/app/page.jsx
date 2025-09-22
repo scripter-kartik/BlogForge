@@ -5,7 +5,8 @@ import Home from "@/components/Home.jsx";
 import HomePost from "@/components/HomePost.jsx";
 import Login from "@/components/LoginForm.jsx";
 import Signup from "@/components/SignupForm.jsx";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Loading from "@/components/Loading.jsx";
 
 export default function Page() {
   const [isLoginActive, setIsLoginActive] = useState(false);
@@ -13,6 +14,39 @@ export default function Page() {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [loginDone, setLoginDone] = useState(false);
   const [signupDone, setSignupDone] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      fetch("/api/verify-token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            setLoginDone(true);
+          } else {
+            localStorage.removeItem("token");
+            setLoginDone(false);
+          }
+          setLoading(false);
+        })
+        .catch(() => {
+          localStorage.removeItem("token");
+          setLoginDone(false);
+          setLoading(false);
+        });
+    } else {
+      setLoading(false);
+    }
+  }, []);
+
+  if (loading) {
+    return <Loading />;
+  }
 
   return (
     <div
@@ -46,6 +80,7 @@ export default function Page() {
             setIsLoginActive={setIsLoginActive}
             isDarkMode={isDarkMode}
             setLoginDone={setLoginDone}
+            setIsSignupActive={setIsSignupActive}
           />
         </div>
       )}
@@ -56,6 +91,7 @@ export default function Page() {
             setIsSignupActive={setIsSignupActive}
             isDarkMode={isDarkMode}
             setSignupDone={setSignupDone}
+            setIsLoginActive={setIsLoginActive}
           />
         </div>
       )}

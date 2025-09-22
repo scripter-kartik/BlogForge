@@ -39,6 +39,13 @@ export default function Navbar({
     };
   }, [setAccountInfoActive]);
 
+  function handleLogout() {
+    localStorage.removeItem("token");
+    setLoginDone(false);
+    setIsLoginActive(false);
+    setIsSignupActive(false);
+  }
+
   return (
     <div
       className={`w-[1280px] flex justify-between items-center fixed py-3 transition-colors duration-500 ${
@@ -99,8 +106,8 @@ export default function Navbar({
         )}
         {loginDone || signupDone ? (
           <div className="flex gap-4 items-center justify-center">
-            <Link 
-            href="/write"
+            <Link
+              href="/write"
               className={`flex items-center justify-center gap-3 border-[1px] ${
                 isDarkMode
                   ? "border-white hover:bg-white text-white"
@@ -130,7 +137,9 @@ export default function Navbar({
                   }`}
                 >
                   <h1 className="font-bold">kartikagarwal</h1>
-                  <p>View Profile</p>
+                  <Link href="/profile">
+                    <p>View Profile</p>
+                  </Link>
                   <div className="flex items-center justify-center gap-2">
                     {isDarkMode ? (
                       <div
@@ -152,7 +161,7 @@ export default function Navbar({
                   </div>
                   <div
                     className="flex items-center justify-center gap-2 hover:text-[#f75555] cursor-pointer"
-                    onClick={() => setLoginDone(false)}
+                    onClick={handleLogout}
                   >
                     <LuLogOut />
                     <p>Logout</p>

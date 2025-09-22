@@ -1,4 +1,9 @@
-export default function Home({ isDarkMode, loginDone, signupDone }) {
+export default function Home({
+  isDarkMode,
+  loginDone,
+  signupDone,
+  setLoginDone,
+}) {
   return (
     <div className="w-[1280px] mt-[130px] h-auto">
       {loginDone || signupDone ? (

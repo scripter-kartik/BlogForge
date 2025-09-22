@@ -1,22 +1,49 @@
 "use client";
 import { ImCross } from "react-icons/im";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FcGoogle } from "react-icons/fc";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 
-export default function Login({ setIsLoginActive, isDarkMode, setLoginDone }) {
+export default function Login({
+  setIsLoginActive,
+  isDarkMode,
+  setLoginDone,
+  setIsSignupActive,
+}) {
   const [emailFocused, setEmailFocused] = useState(false);
   const [email, setEmail] = useState("");
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const router = useRouter();
 
-  // Handle form submit for login
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      fetch("/api/verify-token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            setLoginDone(true);
+          } else {
+            localStorage.removeItem("token");
+            setLoginDone(false);
+          }
+        });
+    }
+  }, []);
+
   async function handleLogin(e) {
     e.preventDefault();
 
     try {
       const res = await fetch("/api/login", {
-        method: "POST", // Note: GET with body is unusual, consider POST for login
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
@@ -26,9 +53,14 @@ export default function Login({ setIsLoginActive, isDarkMode, setLoginDone }) {
       const data = await res.json();
 
       if (data.success) {
+        localStorage.setItem("token", data.token);
         setLoginDone(true);
         setMessage(`Welcome back, ${data.data.name}!`);
-        // Optionally: redirect user, store tokens, etc.
+        router.push("/");
+
+        setTimeout(() => {
+          setIsLoginActive(false);
+        }, 1000);
       } else {
         setLoginDone(false);
         setMessage(data.message || "Login failed");
@@ -73,7 +105,7 @@ export default function Login({ setIsLoginActive, isDarkMode, setLoginDone }) {
               isDarkMode
                 ? "text-white border-[#494948]"
                 : "text-black border-gray-300"
-            } w-full h-12 rounded px-4 bg-transparent text-white border-[1px]
+            } w-full h-12 rounded px-4 bg-transparent border-[1px]
             focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 peer
             placeholder-transparent`}
             placeholder="Email"
@@ -160,7 +192,10 @@ export default function Login({ setIsLoginActive, isDarkMode, setLoginDone }) {
         ></span>
       </div>
 
-      <button className="w-full flex items-center gap-3 justify-center h-12 rounded-full border border-black bg-white text-black font-bold mb-2 hover:bg-gray-100 transition">
+      <button
+        onClick={() => signIn("google")}
+        className="w-full flex items-center gap-3 justify-center h-12 rounded-full border border-black bg-white text-black font-bold mb-2 hover:bg-gray-100 transition"
+      >
         <FcGoogle className="w-6 h-6" />
         Continue with Google
       </button>
@@ -171,7 +206,13 @@ export default function Login({ setIsLoginActive, isDarkMode, setLoginDone }) {
         } mt-6 text-sm`}
       >
         Don’t have an account?{" "}
-        <a href="#signup" className="text-[#f75555] font-bold hover:underline">
+        <a
+          onClick={() => {
+            setIsSignupActive(true);
+            setIsLoginActive(false);
+          }}
+          className="text-[#f75555] font-bold hover:underline cursor-pointer"
+        >
           Sign up
         </a>
       </p>

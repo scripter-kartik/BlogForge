@@ -1,20 +1,15 @@
+import { NextResponse } from "next/server";
 import { User } from "../../../lib/models/User.js";
 import bcrypt from "bcryptjs";
-import db from "../../../lib/database/db.js";
-
-
+import "../../../lib/database/db.js";
 
 export async function POST(request) {
   try {
-    await db();
     const { name, email, password } = await request.json();
 
     if (!name || !email || !password) {
-      return Response.json(
-        {
-          success: false,
-          message: "please fill all the details",
-        },
+      return NextResponse.json(
+        { message: "please fill out all the details", success: false },
         { status: 400 }
       );
     }
@@ -22,28 +17,29 @@ export async function POST(request) {
     const existingUser = await User.findOne({ email });
 
     if (existingUser) {
-      return Response.json(
-        {
-          success: false,
-          message: "User with this email already exists",
-        },
-        { status: 400 }
+      return NextResponse.json(
+        { message: "user already exists", success: false },
+        { status: 409 }
       );
     }
-    const hashPassword = await bcrypt.hash(password, 10);
-    const newUser = await User.create({ name, email, password: hashPassword });
 
-    return Response.json(
+    const hashPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({ name, email, password: hashPassword });
+
+    const { password: _, ...userWithoutPassword } = user.toObject();
+
+    return NextResponse.json(
       {
+        message: "user created successfully",
         success: true,
-        data: newUser,
+        user: userWithoutPassword,
       },
       { status: 201 }
     );
   } catch (error) {
-    console.log("Error", error);
-    return Response.json(
-      { success: false, message: "Internal server error" },
+    console.error("error occured during signing up", error);
+    return NextResponse.json(
+      { message: "error occured during signing up", success: false },
       { status: 500 }
     );
   }
