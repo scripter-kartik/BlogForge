@@ -12,19 +12,24 @@ const authOptions = {
   session: {
     strategy: "jwt",
   },
-  debug: process.env.NODE_ENV === "development",
-  logger: {
-    error(code, metadata) {
-      console.error("NextAuth Error:", code, metadata);
-    },
-  },
   callbacks: {
     async jwt({ token, account, profile }) {
-      console.log("JWT callback:", { token, account, profile });
+      if (account && account.provider === "google") {
+        token.accessToken = account.access_token;
+        token.idToken = account.id_token;
+        if (profile) {
+          token.email = profile.email;
+          token.name = profile.name;
+          token.picture = profile.picture;
+        }
+      }
       return token;
     },
     async session({ session, token }) {
-      console.log("Session callback:", { session, token });
+      session.accessToken = token.accessToken;
+      session.user.email = token.email;
+      session.user.name = token.name;
+      session.user.image = token.picture;
       return session;
     },
   },
