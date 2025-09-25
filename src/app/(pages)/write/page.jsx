@@ -4,6 +4,8 @@ import Navbar from "../../../components/Navbar.jsx";
 import BlogEditor from "../../../components/BlogEditor.jsx";
 import { GrGallery } from "react-icons/gr";
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation.js";
+import { usePosts } from "@/context/PostsContext.jsx";
 
 const page = () => {
   const [isLoginActive, setIsLoginActive] = useState(false);
@@ -13,7 +15,12 @@ const page = () => {
   const [signupDone, setSignupDone] = useState(false);
   const [coverImage, setCoverImage] = useState(null);
   const [randomColor, setRandomColor] = useState("");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [tag, setTag] = useState("");
   const fileInputRef = useRef(null);
+  const router = useRouter();
+  const [posts, setPosts] = usePosts();
 
   useEffect(() => {
     const colors = [
@@ -34,6 +41,37 @@ const page = () => {
     const randomIndex = Math.floor(Math.random() * colors.length);
     setRandomColor(colors[randomIndex]);
   }, []);
+
+  const postData = {
+    title,
+    description,
+    tags: tag.split(",").map((t) => t.trim()),
+    coverImage,
+  };
+
+  async function handlePublish() {
+    try {
+      const response = await fetch("/api/blogposts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(postData),
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        setPosts([...posts, data]);
+        setTitle("");
+        setDescription("");
+        setTag("");
+        alert("Post published");
+        router.push("/");
+      } else {
+        alert("There is an error in post publishing");
+      }
+    } catch (error) {
+      console.error("Error :", error);
+    }
+  }
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
@@ -90,6 +128,8 @@ const page = () => {
             } transition-colors duration-500`}
             type="text"
             placeholder="Post Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
           />
           <div className="relative">
             <input
@@ -100,6 +140,8 @@ const page = () => {
               } transition-colors duration-500`}
               type="text"
               placeholder="Post description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
             />
             <p className="absolute right-0 top-[70px] text-[12px]">0/250</p>
           </div>
@@ -111,6 +153,8 @@ const page = () => {
             } transition-colors duration-500`}
             type="text"
             placeholder="Tags (comma-seperated)"
+            value={tag}
+            onChange={(e) => setTag(e.target.value)}
           />
 
           <div className="flex items-center gap-2 font-semibold">
@@ -167,6 +211,7 @@ const page = () => {
           </div>
 
           <button
+            onClick={handlePublish}
             className={`w-72 border p-2 mt-6 rounded-full ${
               isDarkMode
                 ? "hover:bg-[#FFFFFF] hover:text-black border-white"

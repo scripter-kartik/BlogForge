@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { User } from "@/lib/models/User.js";
 
 const BlogPostSchema = new mongoose.Schema({
   title: { type: String, required: true },
@@ -10,7 +11,7 @@ const BlogPostSchema = new mongoose.Schema({
 
   starRating: { type: Number, default: 0 },
   commentCount: { type: Number, default: 0 },
-  Views: { type: Number, default: 0 },
+  views: { type: Number, default: 0 },
   estimateRead: { type: Number, default: 0 },
 
   createdAt: { type: Date, default: Date.now },
@@ -18,4 +19,4 @@ const BlogPostSchema = new mongoose.Schema({
 });
 
 export const Blog =
-  mongoose.models.blogs || mongoose.model("user", BlogPostSchema);
+  mongoose.models.blogs || mongoose.model("blogs", BlogPostSchema);
