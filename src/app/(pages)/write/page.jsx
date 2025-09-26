@@ -20,7 +20,7 @@ const page = () => {
   const [tag, setTag] = useState("");
   const fileInputRef = useRef(null);
   const router = useRouter();
-  const [posts, setPosts] = usePosts();
+  const { posts, setPosts } = usePosts();
 
   useEffect(() => {
     const colors = [
@@ -43,10 +43,18 @@ const page = () => {
   }, []);
 
   const postData = {
+    id: Date.now(),
     title,
     description,
     tags: tag.split(",").map((t) => t.trim()),
     coverImage,
+    authorName: "lazysloth",
+    authorImage: "/imageProfile1.png",
+    category: "Latest",
+    starRating: 4,
+    views: 0,
+    commentCount: 0,
+    estimateRead: 3,
   };
 
   async function handlePublish() {
@@ -59,7 +67,7 @@ const page = () => {
       const data = await response.json();
 
       if (response.ok) {
-        setPosts([...posts, data]);
+        setPosts((prevPosts) => [...prevPosts, data]);
         setTitle("");
         setDescription("");
         setTag("");

@@ -7,7 +7,7 @@ const PostsContext = createContext();
 export const PostsProvider = ({ children }) => {
   const [posts, setPosts] = useState([
     {
-      id: 1,
+      _id: 1,
       title: "Building Scalable REST APIs with Node.js and Express",
       description:
         "Learn how to build scalable, maintainable REST APIs using Node.js and Express...",
@@ -22,7 +22,7 @@ export const PostsProvider = ({ children }) => {
       category: "Featured",
     },
     {
-      id: 2,
+      _id: 2,
       title: "How AI is Revolutionizing Code Review Workflows",
       description:
         "Explore how AI is transforming code reviews, cutting review time, spotting bugs, summarizing pull requests, and enabling smarter suggestions...",
@@ -37,7 +37,7 @@ export const PostsProvider = ({ children }) => {
       category: "Featured",
     },
     {
-      id: 3,
+      _id: 3,
       title: "Getting Started With Next.js 14",
       description:
         "A beginner-friendly guide to building a blazing fast web app with Next.js 14...",
@@ -52,7 +52,7 @@ export const PostsProvider = ({ children }) => {
       category: "Trending",
     },
     {
-      id: 4,
+      _id: 4,
       title: "What I Learned Teaching Myself to Code",
       description:
         "Teaching myself to code was messy: too many roadmaps, constant Googling, and feeling behind. But sticking to basics, building small projects, and finding a community finally helped me make real progress.",
@@ -67,7 +67,7 @@ export const PostsProvider = ({ children }) => {
       category: "Trending",
     },
     {
-      id: 5,
+      _id: 5,
       title: "Building Scalable REST APIs with Node.js and Express",
       description:
         "Learn how to build scalable, maintainable REST APIs using Node.js and Express. This technical guide covers project structure, routing, middleware, error handling, and best practices to create robust backends for modern applications.",
@@ -82,7 +82,7 @@ export const PostsProvider = ({ children }) => {
       category: "Trending",
     },
     {
-      id: 6,
+      _id: 6,
       title: "The Power of Collaboration in Software Development",
       description:
         "Know why effective collaboration is essential in modern software development. Learn about key tools, proven strategies, and metrics to measure team success in building high-quality, maintainable software products together.",
@@ -101,7 +101,7 @@ export const PostsProvider = ({ children }) => {
       category: "Trending",
     },
     {
-      id: 7,
+      _id: 7,
       title: "Optimizing Your Postgres-Powered API: A Practical Guide",
       description:
         "An in depth guide into optimizing PostgreSQL-based APIs for performance and scalability. Covers connection pooling, smart indexing, pagination, caching, and real query analysis. Ideal for backend devs aiming to fine-tune their Postgres stack.",
@@ -116,7 +116,7 @@ export const PostsProvider = ({ children }) => {
       category: "Trending",
     },
     {
-      id: 8,
+      _id: 8,
       title:
         "Why Web Accessibility Should Be a Priority in Your Development Workflow",
       description:
@@ -132,7 +132,7 @@ export const PostsProvider = ({ children }) => {
       category: "Trending",
     },
     {
-      id: 9,
+      _id: 9,
       title: "Why Edge Computing is the Silent Revolution of the Internet",
       description:
         "With AI and IoT growing rapidly, the demand for decentralized computation is no longer just a buzzword; it’s a necessity. Imagine a world where your devices don’t need to “ask the cloud” before acting. That’s what the future edge is enabling.",
@@ -147,7 +147,7 @@ export const PostsProvider = ({ children }) => {
       category: "Latest",
     },
     {
-      id: 10,
+      _id: 10,
       title: "Real-Time Web with WebSockets: A Beginner's Guide",
       description:
         "Learn how WebSockets enable real-time features like chat, live updates, and collaborative tools. This guide covers the basics, compares WebSockets to polling, and provides practical examples with Node.js and Socket.IO for developers building interact",
@@ -162,7 +162,7 @@ export const PostsProvider = ({ children }) => {
       category: "Latest",
     },
     {
-      id: 11,
+      _id: 11,
       title:
         "An Introduction to Server-Side Rendering (SSR) for Web Developers",
       description:
@@ -178,7 +178,7 @@ export const PostsProvider = ({ children }) => {
       category: "Latest",
     },
     {
-      id: 12,
+      _id: 12,
       title: "​Debugging JavaScript Effectively: Tips for Real-World Issues",
       description:
         "This post shares practical debugging techniques for JavaScript developers. Learn how to use DevTools, isolate bugs, step through async code, and prevent issues with linters. Build confidence and speed by improving how you find and fix errors.",
@@ -193,7 +193,7 @@ export const PostsProvider = ({ children }) => {
       category: "Latest",
     },
     {
-      id: 13,
+      _id: 13,
       title: "​Mastering Custom React Hooks: A Practical Guide",
       description:
         "Learn how to create powerful and reusable custom React hooks. This guide walks you through real examples like useFetch and useLocalStorage, and explains best practices to write cleaner, more maintainable React code with custom logic.",

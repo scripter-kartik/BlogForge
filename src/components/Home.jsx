@@ -1,9 +1,55 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+
 export default function Home({
   isDarkMode,
   loginDone,
   signupDone,
   setLoginDone,
 }) {
+  const [userInfo, setUserInfo] = useState(null);
+  const [userStats, setUserStats] = useState();
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchUserStats = async (username) => {
+      try {
+        const res = await fetch(`/api/user/stats/${username}`);
+        const data = await res.json();
+
+        if (res.ok) {
+          setUserStats({
+            totalViews: data.totalViews,
+            totalPosts: data.totalPosts,
+            viewsPerPosts:
+              data.totalPosts > 0
+                ? (data.totalViews / data.totalPosts).toFixed(1)
+                : 0,
+            avgRating: data.avgRating || 0,
+          });
+        } else {
+          console.error("Failed to fetch stats:", data.error);
+        }
+      } catch (error) {
+        console.error("Error fetching stats:", error);
+      }
+    };
+
+    const storedUser = localStorage.getItem("user");
+
+    if ((loginDone || signupDone) && storedUser) {
+      const user = JSON.parse(storedUser);
+      setUserInfo(user);
+      fetchUserStats(user.username);
+    }
+  }, [loginDone, signupDone]);
+
+  const handleWritePost = () => {
+    router.push("/write");
+  };
+
   return (
     <div className="w-[1280px] mt-[130px] h-auto">
       {loginDone || signupDone ? (
@@ -13,44 +59,57 @@ export default function Home({
           }`}
         >
           <h1 className="text-4xl font-bold">
-            Welcome back <span className="text-[#f75555]">kartikagarwal</span>!
+            Welcome back{" "}
+            <span className="text-[#f75555]">{userInfo?.name || "User"}</span>!
           </h1>
-          <div className="flex justify-center items-center gap-6">
-            <div
-              className={`flex flex-col gap-2 border-[1px] ${
-                isDarkMode ? "border-[#494949]" : "border-[#dbdada]"
-              } shadow-lg w-[300px] h-[135px] rounded-xl p-5`}
-            >
-              <h1 className="text-xl font-bold">Views</h1>
-              <h1 className="text-xl font-bold">0</h1>
-              <p className="text-sm">+0.0% from last period</p>
+          {userStats ? (
+            <div className="flex justify-center items-center gap-6">
+              <div
+                className={`flex flex-col gap-2 border-[1px] ${
+                  isDarkMode ? "border-[#494949]" : "border-[#dbdada]"
+                } shadow-lg w-[300px] h-[135px] rounded-xl p-5`}
+              >
+                <h1 className="text-xl font-bold">Views</h1>
+                <h1 className="text-xl font-bold">{userStats.totalViews}</h1>
+                <p className="text-sm">+0.0% from last period</p>
+              </div>
+              <div
+                className={`flex flex-col gap-2 border-[1px] ${
+                  isDarkMode ? "border-[#494949]" : "border-[#dbdada]"
+                } shadow-lg w-[300px] h-[135px] rounded-xl p-5`}
+              >
+                <h1 className="text-xl font-bold">Views/Post</h1>
+                <h1 className="text-xl font-bold">
+                  {userStats.totalPosts > 0
+                    ? (userStats.totalViews / userStats.totalPosts).toFixed(1)
+                    : 0}
+                </h1>
+              </div>
+              <div
+                className={`flex flex-col gap-2 border-[1px] ${
+                  isDarkMode ? "border-[#494949]" : "border-[#dbdada]"
+                } shadow-lg w-[300px] h-[135px] rounded-xl p-5`}
+              >
+                <h1 className="text-xl font-bold">Posts</h1>
+                <h1 className="text-xl font-bold">{userStats.totalPosts}</h1>
+              </div>
+              <div
+                className={`flex flex-col gap-2 border-[1px] ${
+                  isDarkMode ? "border-[#494949]" : "border-[#dbdada]"
+                } shadow-lg w-[300px] h-[135px] rounded-xl p-5`}
+              >
+                <h1 className="text-xl font-bold">Avg Rating</h1>
+                <h1 className="text-xl font-bold">
+                  {userStats.avgRating.toFixed(2)}
+                </h1>
+              </div>
             </div>
-            <div
-              className={`flex flex-col gap-2 border-[1px] ${
-                isDarkMode ? "border-[#494949]" : "border-[#dbdada]"
-              } shadow-lg w-[300px] h-[135px] rounded-xl p-5`}
-            >
-              <h1 className="text-xl font-bold">Views/Post</h1>
-              <h1 className="text-xl font-bold">0</h1>
-            </div>
-            <div
-              className={`flex flex-col gap-2 border-[1px] ${
-                isDarkMode ? "border-[#494949]" : "border-[#dbdada]"
-              } shadow-lg w-[300px] h-[135px] rounded-xl p-5`}
-            >
-              <h1 className="text-xl font-bold">Posts</h1>
-              <h1 className="text-xl font-bold">0</h1>
-            </div>
-            <div
-              className={`flex flex-col gap-2 border-[1px] ${
-                isDarkMode ? "border-[#494949]" : "border-[#dbdada]"
-              } shadow-lg w-[300px] h-[135px] rounded-xl p-5`}
-            >
-              <h1 className="text-xl font-bold">Avg Rating</h1>
-              <h1 className="text-xl font-bold">0.00</h1>
-            </div>
-          </div>
+          ) : (
+            <p>Loading stats...</p>
+          )}
+
           <button
+            onClick={handleWritePost}
             className={`border-[1px] ${
               isDarkMode
                 ? "border-white hover:bg-white"

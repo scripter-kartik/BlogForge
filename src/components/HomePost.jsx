@@ -14,7 +14,19 @@ export default function HomePosts({ isDarkMode, loginDone, signupDone }) {
         const api = await fetch("/api/blogposts");
         const data = await api.json();
         console.log(data);
-        setPosts(data);
+        const postsWithCategory = data.map((post) => ({
+          ...post,
+          id: post._id,
+          category: post.category || "Latest",
+          starRating: post.starRating || 4,
+          views: post.views || 0,
+          commentCount: post.commentCount || 0,
+          estimatedRead: post.estimatedRead || 3,
+          authorName: post.authorName || "lazysloth",
+          authorImage: post.authorImage || "/imageProfile1.png",
+        }));
+
+        setPosts((prevPosts) => [...prevPosts, ...postsWithCategory]);
       } catch (error) {
         console.error("Error in HomePost:", error);
       }
@@ -34,7 +46,7 @@ export default function HomePosts({ isDarkMode, loginDone, signupDone }) {
     return posts
       .filter((post) => post.category === category)
       .map((post) => (
-        <div key={post.id} className="w-[1280px] mt-8 cursor-pointer">
+        <div key={post._id} className="w-[1280px] mt-8 cursor-pointer">
           <div
             className={`w-[1280px] ${
               isDarkMode ? "text-white bg-[#2c2a2a]" : "text-black bg-[#eeeded]"

@@ -9,6 +9,12 @@ const BlogPostSchema = new mongoose.Schema({
   content: { type: String },
   tags: [String],
 
+  category: {
+    type: String,
+    enum: ["Featured", "Trending", "Latest"],
+    default: "Latest",
+  },
+
   starRating: { type: Number, default: 0 },
   commentCount: { type: Number, default: 0 },
   views: { type: Number, default: 0 },

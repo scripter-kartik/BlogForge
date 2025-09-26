@@ -31,8 +31,12 @@ export default function Login({
         .then((data) => {
           if (data.success) {
             setLoginDone(true);
+            if (data.user) {
+              localStorage.setItem("user", JSON.stringify(data.user));
+            }
           } else {
             localStorage.removeItem("token");
+            localStorage.removeItem("user");
             setLoginDone(false);
           }
         });
@@ -54,6 +58,7 @@ export default function Login({
       const data = await res.json();
 
       if (data.success) {
+        localStorage.setItem("user", JSON.stringify(data.user));
         localStorage.setItem("token", data.token);
         setLoginDone(true);
         setMessage(`Welcome back, ${data.data.name}!`);
