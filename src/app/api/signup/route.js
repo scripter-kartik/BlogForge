@@ -5,18 +5,19 @@ import "../../../lib/database/db.js";
 
 export async function POST(request) {
   try {
-    const { name, email, password } = await request.json();
+    const { name, email, password, username } = await request.json();
 
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !username) {
       return NextResponse.json(
         { message: "please fill out all the details", success: false },
         { status: 400 }
       );
     }
 
-    const existingUser = await User.findOne({ email });
+    const existingEmail = await User.findOne({ email });
+    const existingUsername = await User.findOne({ username });
 
-    if (existingUser) {
+    if (existingEmail || existingUsername) {
       return NextResponse.json(
         { message: "user already exists", success: false },
         { status: 409 }
@@ -24,7 +25,12 @@ export async function POST(request) {
     }
 
     const hashPassword = await bcrypt.hash(password, 10);
-    const user = await User.create({ name, email, password: hashPassword });
+    const user = await User.create({
+      name,
+      email,
+      username,
+      password: hashPassword,
+    });
 
     const { password: _, ...userWithoutPassword } = user.toObject();
 

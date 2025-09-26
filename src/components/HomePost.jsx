@@ -26,7 +26,7 @@ export default function HomePosts({ isDarkMode, loginDone, signupDone }) {
           authorImage: post.authorImage || "/imageProfile1.png",
         }));
 
-        setPosts((prevPosts) => [...prevPosts, ...postsWithCategory]);
+        setPosts(postsWithCategory);
       } catch (error) {
         console.error("Error in HomePost:", error);
       }

@@ -7,8 +7,8 @@ export default function Profile() {
   const [isLoginActive, setIsLoginActive] = useState(false);
   const [isSignupActive, setIsSignupActive] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
-  const [loginDone, setLoginDone] = useState(false);
-  const [signupDone, setSignupDone] = useState(false);
+  const [loginDone, setLoginDone] = useState(true);
+  const [signupDone, setSignupDone] = useState(true);
   const [userStats, setUserStats] = useState(null);
   const [userInfo, setUserInfo] = useState(null);
   const [userPosts, setUserPosts] = useState([]);
@@ -84,7 +84,7 @@ export default function Profile() {
 
   const handleLogout = () => {
     localStorage.removeItem("user");
-    window.location.href = "/"; // or router.push("/")
+    window.location.href = "/";
   };
 
   return (

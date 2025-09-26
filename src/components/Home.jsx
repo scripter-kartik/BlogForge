@@ -3,52 +3,120 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-export default function Home({
-  isDarkMode,
-  loginDone,
-  signupDone,
-  setLoginDone,
-}) {
+export default function Home({ isDarkMode, loginDone, signupDone }) {
   const [userInfo, setUserInfo] = useState(null);
-  const [userStats, setUserStats] = useState();
+  const [userStats, setUserStats] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
-    const fetchUserStats = async (username) => {
-      try {
-        const res = await fetch(`/api/user/stats/${username}`);
-        const data = await res.json();
+    const fetchUserInfoAndStats = async () => {
+      if (!loginDone && !signupDone) return;
 
-        if (res.ok) {
-          setUserStats({
-            totalViews: data.totalViews,
-            totalPosts: data.totalPosts,
-            viewsPerPosts:
-              data.totalPosts > 0
-                ? (data.totalViews / data.totalPosts).toFixed(1)
-                : 0,
-            avgRating: data.avgRating || 0,
-          });
-        } else {
-          console.error("Failed to fetch stats:", data.error);
+      setLoading(true);
+      setError(null);
+
+      try {
+        // Fetch user info - CORRECT ORDER: Check status first, then parse JSON
+        console.log("Fetching user info...");
+        const userRef = await fetch("/api/user/home");
+
+        // ✅ Check status FIRST
+        if (!userRef.ok) {
+          const errorText = await userRef.text(); // Get error as text first
+          console.error(
+            `API Error - Status: ${userRef.status}, Response: ${errorText}`
+          );
+          throw new Error(
+            `Failed to fetch user info: ${userRef.status} - ${errorText}`
+          );
         }
+
+        // ✅ Only parse JSON if response is OK
+        let userData;
+        try {
+          userData = await userRef.json();
+          console.log("User data received:", userData);
+        } catch (jsonError) {
+          console.error("Failed to parse JSON:", jsonError);
+          throw new Error("Invalid JSON response from server");
+        }
+
+        setUserInfo(userData);
+
+        // Fetch user stats
+        console.log("Fetching user stats for:", userData.username);
+        const statsRes = await fetch(`/api/user/stats/${userData.username}`);
+
+        if (!statsRes.ok) {
+          const errorText = await statsRes.text();
+          console.error(
+            `Stats API Error - Status: ${statsRes.status}, Response: ${errorText}`
+          );
+          throw new Error(
+            `Failed to fetch stats: ${statsRes.status} - ${errorText}`
+          );
+        }
+
+        const statsData = await statsRes.json();
+        console.log("Stats data received:", statsData);
+
+        setUserStats({
+          totalViews: statsData.totalViews || 0,
+          totalPosts: statsData.totalPosts || 0,
+          viewsPerPosts:
+            statsData.totalPosts > 0
+              ? (statsData.totalViews / statsData.totalPosts).toFixed(1)
+              : "0.0",
+          avgRating: statsData.avgRating || 0,
+        });
       } catch (error) {
-        console.error("Error fetching stats:", error);
+        console.error("Error fetching user info or stats:", error);
+        setError(error.message);
+      } finally {
+        setLoading(false);
       }
     };
 
-    const storedUser = localStorage.getItem("user");
-
-    if ((loginDone || signupDone) && storedUser) {
-      const user = JSON.parse(storedUser);
-      setUserInfo(user);
-      fetchUserStats(user.username);
-    }
+    fetchUserInfoAndStats();
   }, [loginDone, signupDone]);
 
   const handleWritePost = () => {
     router.push("/write");
   };
+
+  // Show loading state
+  if ((loginDone || signupDone) && loading) {
+    return (
+      <div className="w-[1280px] mt-[130px] h-auto flex justify-center items-center">
+        <p className={isDarkMode ? "text-white" : "text-black"}>Loading...</p>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="w-[1280px] mt-[130px] h-auto">
+        <div
+          className={`text-center ${isDarkMode ? "text-white" : "text-black"}`}
+        >
+          <p className="text-red-500 mb-4">Error: {error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className={`px-4 py-2 border rounded ${
+              isDarkMode
+                ? "border-white hover:bg-white hover:text-black"
+                : "border-black hover:bg-black hover:text-white"
+            }`}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-[1280px] mt-[130px] h-auto">
@@ -62,7 +130,8 @@ export default function Home({
             Welcome back{" "}
             <span className="text-[#f75555]">{userInfo?.name || "User"}</span>!
           </h1>
-          {userStats ? (
+
+          {userStats && (
             <div className="flex justify-center items-center gap-6">
               <div
                 className={`flex flex-col gap-2 border-[1px] ${
@@ -79,11 +148,7 @@ export default function Home({
                 } shadow-lg w-[300px] h-[135px] rounded-xl p-5`}
               >
                 <h1 className="text-xl font-bold">Views/Post</h1>
-                <h1 className="text-xl font-bold">
-                  {userStats.totalPosts > 0
-                    ? (userStats.totalViews / userStats.totalPosts).toFixed(1)
-                    : 0}
-                </h1>
+                <h1 className="text-xl font-bold">{userStats.viewsPerPosts}</h1>
               </div>
               <div
                 className={`flex flex-col gap-2 border-[1px] ${
@@ -104,8 +169,6 @@ export default function Home({
                 </h1>
               </div>
             </div>
-          ) : (
-            <p>Loading stats...</p>
           )}
 
           <button
