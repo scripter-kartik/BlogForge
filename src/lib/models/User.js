@@ -1,3 +1,4 @@
+// src/lib/models/User.js - UPDATED (Fixed bio field)
 import mongoose from "mongoose";
 
 const UserSchema = new mongoose.Schema(
@@ -18,11 +19,17 @@ const UserSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: false,
+      required: false, // Not required for Google OAuth users
       minlength: 8,
     },
     image: {
       type: String,
+      default: null,
+    },
+    bio: {
+      type: String,
+      default: "",
+      maxlength: 500,
     },
   },
   {

@@ -1,3 +1,5 @@
+// src/app/api/blogposts/route.js
+
 import dbConnect from "@/lib/database/db.js";
 import { Blog } from "@/lib/models/Blog.js";
 import { NextResponse } from "next/server";

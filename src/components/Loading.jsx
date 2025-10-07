@@ -1,3 +1,5 @@
+//src.components/Loading.jsx
+
 export default function Loading() {
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50">

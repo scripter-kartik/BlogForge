@@ -1,3 +1,5 @@
+// src/context/PostsContext.jsx
+
 "use client";
 
 import { useContext, useState, createContext } from "react";

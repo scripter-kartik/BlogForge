@@ -1,3 +1,5 @@
+// src/app/api/user/home/route.js
+
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route.js";
@@ -20,7 +22,7 @@ export async function GET(req) {
     const user = await User.findOne({ email: session.user.email });
 
     if (!user) {
-      return NextResponse.json({ message: "User not found" }, { status: 404 });
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     return NextResponse.json({

@@ -1,14 +1,13 @@
+// src/components/SignupForm.jsx - COMPLETE SIGNUP COMPONENT
 "use client";
 import { ImCross } from "react-icons/im";
 import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
-import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 
 export default function Signup({
   setIsSignupActive,
   isDarkMode,
-  setSignupDone,
   setIsLoginActive,
 }) {
   const [usernameFocused, setUsernameFocused] = useState(false);
@@ -21,18 +20,30 @@ export default function Signup({
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [message, setMessage] = useState("");
-  const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
   function validateForm() {
-    return password === confirm && password.length >= 6 && email && username;
+    if (password !== confirm) {
+      setMessage("Passwords do not match");
+      return false;
+    }
+    if (password.length < 6) {
+      setMessage("Password must be at least 6 characters");
+      return false;
+    }
+    if (!email || !username || !password) {
+      setMessage("All fields are required");
+      return false;
+    }
+    return true;
   }
 
   async function handleSignup(e) {
     e.preventDefault();
-    if (!validateForm()) {
-      setMessage("Passwords must match, and all fields are required.");
-      return;
-    }
+    if (!validateForm()) return;
+
+    setLoading(true);
+    setMessage("");
 
     try {
       const res = await fetch("/api/signup", {
@@ -44,21 +55,31 @@ export default function Signup({
       const data = await res.json();
 
       if (data.success) {
-        setSignupDone(true);
-        setMessage("Signup successful!");
-        router.push("/");
-
+        setMessage("Account created successfully! Please login.");
         setTimeout(() => {
           setIsSignupActive(false);
-        }, 1000);
+          setIsLoginActive(true);
+        }, 1500);
       } else {
-        setSignupDone(false);
         setMessage(data.message || "Signup failed");
       }
     } catch (error) {
+      console.error("Signup error:", error);
       setMessage("An unexpected error occurred");
+    } finally {
+      setLoading(false);
     }
   }
+
+  const handleGoogleSignup = async () => {
+    setLoading(true);
+    try {
+      await signIn("google", { callbackUrl: "/" });
+    } catch (error) {
+      setMessage("Google signup failed");
+      setLoading(false);
+    }
+  };
 
   return (
     <div
@@ -69,15 +90,16 @@ export default function Signup({
       <ImCross
         className={`absolute right-5 top-5 w-3 h-3 ${
           isDarkMode ? "text-white" : "text-black"
-        } text-xl cursor-pointer`}
+        } cursor-pointer hover:text-[#f75555]`}
         onClick={() => setIsSignupActive(false)}
       />
+
       <h1
         className={`${
           isDarkMode ? "text-white" : "text-black"
         } text-2xl font-bold mb-6`}
       >
-        Sign up
+        Create Account
       </h1>
       <hr className="border-t-[1px] border-red-500 mb-8" />
 
@@ -91,12 +113,14 @@ export default function Signup({
             onChange={(e) => setUsername(e.target.value)}
             autoComplete="username"
             required
+            disabled={loading}
             className={`${
               isDarkMode
                 ? "text-white border-[#494948]"
                 : "text-black border-gray-300"
-            } w-full h-12 rounded px-4 bg-transparent border-[1px] border-[#373939]
-            focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 peer placeholder-transparent`}
+            } w-full h-12 rounded px-4 bg-transparent border-[1px]
+            focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 
+            peer placeholder-transparent disabled:opacity-50`}
             placeholder="Username"
             id="signup-username"
           />
@@ -105,7 +129,7 @@ export default function Signup({
             className={`absolute left-4 transition-all duration-200 px-1 pointer-events-none ${
               usernameFocused || username
                 ? `text-xs -top-3 text-[#f75555] ${
-                    isDarkMode ? "bg-[#191b1e]" : "bg-white"
+                    isDarkMode ? "bg-[#1c1d1d]" : "bg-white"
                   } font-medium`
                 : "text-base top-3 text-gray-400"
             }`}
@@ -123,12 +147,14 @@ export default function Signup({
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="email"
             required
+            disabled={loading}
             className={`${
               isDarkMode
                 ? "text-white border-[#494948]"
                 : "text-black border-gray-300"
-            } w-full h-12 rounded px-4 bg-transparent text-white border-[1px] border-[#373939]
-            focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 peer placeholder-transparent`}
+            } w-full h-12 rounded px-4 bg-transparent border-[1px]
+            focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 
+            peer placeholder-transparent disabled:opacity-50`}
             placeholder="Email"
             id="signup-email"
           />
@@ -137,7 +163,7 @@ export default function Signup({
             className={`absolute left-4 transition-all duration-200 px-1 pointer-events-none ${
               emailFocused || email
                 ? `text-xs -top-3 text-[#f75555] ${
-                    isDarkMode ? "bg-[#191b1e]" : "bg-white"
+                    isDarkMode ? "bg-[#1c1d1d]" : "bg-white"
                   } font-medium`
                 : "text-base top-3 text-gray-400"
             }`}
@@ -155,12 +181,14 @@ export default function Signup({
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="new-password"
             required
+            disabled={loading}
             className={`${
               isDarkMode
                 ? "text-white border-[#494948]"
                 : "text-black border-gray-300"
-            } w-full h-12 rounded px-4 bg-transparent text-white border-[1px] border-[#373939] 
-            focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 peer placeholder-transparent`}
+            } w-full h-12 rounded px-4 bg-transparent border-[1px]
+            focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 
+            peer placeholder-transparent disabled:opacity-50`}
             placeholder="Password"
             id="signup-password"
           />
@@ -169,12 +197,12 @@ export default function Signup({
             className={`absolute left-4 transition-all duration-200 px-1 pointer-events-none ${
               passwordFocused || password
                 ? `text-xs -top-3 text-[#f75555] ${
-                    isDarkMode ? "bg-[#191b1e]" : "bg-white"
+                    isDarkMode ? "bg-[#1c1d1d]" : "bg-white"
                   } font-medium`
                 : "text-base top-3 text-gray-400"
             }`}
           >
-            Password
+            Password (min 6 characters)
           </label>
         </div>
 
@@ -187,12 +215,14 @@ export default function Signup({
             onChange={(e) => setConfirm(e.target.value)}
             autoComplete="new-password"
             required
+            disabled={loading}
             className={`${
               isDarkMode
                 ? "text-white border-[#494948]"
                 : "text-black border-gray-300"
-            } w-full h-12 rounded px-4 bg-transparent text-white border-[1px] border-[#373939]
-            focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 peer placeholder-transparent`}
+            } w-full h-12 rounded px-4 bg-transparent border-[1px]
+            focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 
+            peer placeholder-transparent disabled:opacity-50`}
             placeholder="Confirm Password"
             id="signup-confirm"
           />
@@ -201,7 +231,7 @@ export default function Signup({
             className={`absolute left-4 transition-all duration-200 px-1 pointer-events-none ${
               confirmFocused || confirm
                 ? `text-xs -top-3 text-[#f75555] ${
-                    isDarkMode ? "bg-[#191b1e]" : "bg-white"
+                    isDarkMode ? "bg-[#1c1d1d]" : "bg-white"
                   } font-medium`
                 : "text-base top-3 text-gray-400"
             }`}
@@ -212,19 +242,19 @@ export default function Signup({
 
         <button
           type="submit"
-          className={`${
-            isDarkMode
-              ? "text-white  hover:bg-white hover:text-black"
-              : "text-black  hover:bg-black hover:text-white"
-          } w-full h-12 rounded-full bg-[#f75555] text-white font-bold mt-2 mb-4 transition`}
+          disabled={loading}
+          className={`w-full h-12 rounded-full bg-[#f75555] text-white font-bold mt-2 mb-4 
+          transition hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed`}
         >
-          Signup
+          {loading ? "Creating account..." : "Create Account"}
         </button>
 
         {message && (
           <p
-            className={`text-center mb-2 ${
-              isDarkMode ? "text-red-400" : "text-red-600"
+            className={`text-center mb-4 text-sm ${
+              message.includes("successfully")
+                ? "text-green-500"
+                : "text-red-500"
             }`}
           >
             {message}
@@ -238,7 +268,7 @@ export default function Signup({
             isDarkMode ? "border-[#494948]" : "border-gray-300"
           }`}
         ></span>
-        <span className="px-3 text-gray-400">OR</span>
+        <span className="px-3 text-gray-400 text-sm">OR</span>
         <span
           className={`flex-grow border-t ${
             isDarkMode ? "border-[#494948]" : "border-gray-300"
@@ -247,8 +277,11 @@ export default function Signup({
       </div>
 
       <button
-        onClick={() => signIn("google")}
-        className={`w-full flex items-center gap-3 justify-center h-12 rounded-full font-bold mb-2 transition border bg-white hover:bg-gray-100 border-black`}
+        onClick={handleGoogleSignup}
+        disabled={loading}
+        className="w-full flex items-center gap-3 justify-center h-12 rounded-full 
+        font-bold mb-4 transition border bg-white hover:bg-gray-100 border-gray-300
+        text-black disabled:opacity-50"
       >
         <FcGoogle className="w-6 h-6" />
         Continue with Google
@@ -256,19 +289,19 @@ export default function Signup({
 
       <p
         className={`${
-          isDarkMode ? "text-gray-400" : "text-[#494948]"
-        } text-center mt-6 text-sm`}
+          isDarkMode ? "text-gray-400" : "text-gray-600"
+        } text-center text-sm`}
       >
-        Already registered?{" "}
-        <a
+        Already have an account?{" "}
+        <button
           onClick={() => {
             setIsLoginActive(true);
             setIsSignupActive(false);
           }}
-          className="text-[#f75555] font-bold hover:underline cursor-pointer"
+          className="text-[#f75555] font-bold hover:underline"
         >
-          Login
-        </a>
+          Login here
+        </button>
       </p>
     </div>
   );

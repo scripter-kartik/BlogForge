@@ -1,3 +1,5 @@
+// src/lib/database/db.js
+
 import mongoose from "mongoose";
 
 const connectDB = async () => {

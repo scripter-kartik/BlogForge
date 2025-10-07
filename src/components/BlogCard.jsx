@@ -1,3 +1,5 @@
+// src/components/BlogCard.jsx
+
 import { FaStar, FaRegStar } from "react-icons/fa";
 import { BiComment } from "react-icons/bi";
 import { IoEyeOutline } from "react-icons/io5";

@@ -1,3 +1,4 @@
+// src/components/Navbar.jsx - UPDATED (Using NextAuth)
 "use client";
 
 import { RiHome3Line } from "react-icons/ri";
@@ -9,20 +10,20 @@ import { CiBrightnessDown } from "react-icons/ci";
 import { MdOutlineDarkMode } from "react-icons/md";
 import { LuPencil } from "react-icons/lu";
 import { LuLogOut } from "react-icons/lu";
+import { MdEmojiEmotions } from "react-icons/md";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { signOut } from "next-auth/react";
+import { useAuth } from "@/hooks/useAuth";
+import { getRandomProfileImage } from "@/lib/profileImage.js";
 
 export default function Navbar({
   setIsLoginActive,
   setIsSignupActive,
   isDarkMode,
   setIsDarkMode,
-  loginDone,
-  signupDone,
-  setLoginDone,
 }) {
-  console.log("Navbar loginDone:", loginDone, "signupDone:", signupDone);
-
+  const { isAuthenticated, user } = useAuth();
   const [accountInfoActive, setAccountInfoActive] = useState(false);
   const divRef = useRef();
 
@@ -39,12 +40,10 @@ export default function Navbar({
     };
   }, [setAccountInfoActive]);
 
-  function handleLogout() {
-    localStorage.removeItem("token");
-    setLoginDone(false);
-    setIsLoginActive(false);
-    setIsSignupActive(false);
-  }
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: "/" });
+    setAccountInfoActive(false);
+  };
 
   return (
     <div
@@ -69,13 +68,11 @@ export default function Navbar({
           <FaRegClock />
           <p>Latest</p>
         </div>
-        {loginDone || signupDone ? (
+        {isAuthenticated && (
           <div className="flex items-center gap-2 cursor-pointer hover:text-[#f75555]">
             <FaRegStar />
             <p>For you</p>
           </div>
-        ) : (
-          ""
         )}
       </div>
       <div className="flex items-center gap-5">
@@ -92,19 +89,21 @@ export default function Navbar({
         {isDarkMode ? (
           <div>
             <CiBrightnessDown
-              className="text-white w-5 h-5 hover:text-[#f75555]"
+              // Continue from where the Navbar component left off:
+
+              className="text-white w-5 h-5 hover:text-[#f75555] cursor-pointer"
               onClick={() => setIsDarkMode(false)}
             />
           </div>
         ) : (
           <div>
             <MdOutlineDarkMode
-              className="text-black w-5 h-5 hover:text-[#f75555]"
+              className="text-black w-5 h-5 hover:text-[#f75555] cursor-pointer"
               onClick={() => setIsDarkMode(true)}
             />
           </div>
         )}
-        {loginDone || signupDone ? (
+        {isAuthenticated ? (
           <div className="flex gap-4 items-center justify-center">
             <Link
               href="/write"
@@ -123,22 +122,30 @@ export default function Navbar({
               onClick={() => setAccountInfoActive((prev) => !prev)}
             >
               <img
-                className="w-[35px] h-[35px] rounded-full object-cover"
-                src="/imageProfile1.png"
-                alt=""
+                className="w-[35px] h-[35px] rounded-full object-cover cursor-pointer"
+                src={getRandomProfileImage(
+                  user?.image,
+                  user?.username || user?.email
+                )}
+                alt="Profile"
               />
               {accountInfoActive && (
                 <div
                   ref={divRef}
-                  className={`flex flex-col items-start justify-center gap-2 font-light absolute top-12 right-4 shadow-2xl p-5 rounded-xl ${
+                  className={`flex flex-col items-start justify-center w-40 gap-2 font-light absolute top-12 right-2 shadow-2xl p-5 rounded-xl ${
                     isDarkMode
                       ? "text-white bg-[#1c1d1d]"
                       : "text-black bg-[#f6f6f7]"
                   }`}
                 >
-                  <h1 className="font-bold">kartikagarwal</h1>
+                  <h1 className="font-bold">{user?.username || ""}</h1>
                   <Link href="/profile">
-                    <p>View Profile</p>
+                    <div className="hover:text-[#f75555] flex items-center gap-2 cursor-pointer">
+                      <MdEmojiEmotions className="w-5 h-5" />
+                      <p className="hover:text-[#f75555] cursor-pointer">
+                        Profile
+                      </p>
+                    </div>
                   </Link>
                   <div className="flex items-center justify-center gap-2">
                     {isDarkMode ? (

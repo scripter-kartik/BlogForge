@@ -1,85 +1,57 @@
+// src/components/LoginForm.jsx - UPDATED (Using NextAuth)
 "use client";
 import { ImCross } from "react-icons/im";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
-import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 
 export default function Login({
   setIsLoginActive,
   isDarkMode,
-  setLoginDone,
   setIsSignupActive,
-  setLoading,
 }) {
   const [emailFocused, setEmailFocused] = useState(false);
   const [email, setEmail] = useState("");
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
-  const router = useRouter();
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      fetch("/api/verify-token", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success) {
-            setLoginDone(true);
-            if (data.user) {
-              localStorage.setItem("user", JSON.stringify(data.user));
-            }
-          } else {
-            localStorage.removeItem("token");
-            localStorage.removeItem("user");
-            setLoginDone(false);
-          }
-        });
-    }
-  }, []);
+  const [loading, setLoading] = useState(false);
 
   async function handleLogin(e) {
     e.preventDefault();
+    setLoading(true);
+    setMessage("");
 
     try {
-      const res = await fetch("/api/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
       });
 
-      const data = await res.json();
-
-      if (data.success) {
-        localStorage.setItem("user", JSON.stringify(data.user));
-        localStorage.setItem("token", data.token);
-        setLoginDone(true);
-        setMessage(`Welcome back, ${data.data.name}!`);
-        router.push("/");
-
+      if (result?.error) {
+        setMessage("Invalid email or password");
+      } else if (result?.ok) {
+        setMessage("Login successful!");
         setTimeout(() => {
           setIsLoginActive(false);
         }, 1000);
-      } else {
-        setLoginDone(false);
-        setMessage(data.message || "Login failed");
       }
     } catch (error) {
       setMessage("An unexpected error occurred");
+    } finally {
+      setLoading(false);
     }
   }
 
-  const nextAuthLogin = () => {
-    setLoginDone(true);
+  const handleGoogleLogin = async () => {
     setLoading(true);
-    signIn("google");
+    try {
+      await signIn("google", { callbackUrl: "/" });
+    } catch (error) {
+      setMessage("Google login failed");
+      setLoading(false);
+    }
   };
 
   return (
@@ -113,13 +85,14 @@ export default function Login({
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="email"
             required
+            disabled={loading}
             className={`${
               isDarkMode
                 ? "text-white border-[#494948]"
                 : "text-black border-gray-300"
             } w-full h-12 rounded px-4 bg-transparent border-[1px]
             focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 peer
-            placeholder-transparent`}
+            placeholder-transparent disabled:opacity-50`}
             placeholder="Email"
             id="login-email"
           />
@@ -147,12 +120,13 @@ export default function Login({
             onBlur={() => setPasswordFocused(false)}
             onChange={(e) => setPassword(e.target.value)}
             required
+            disabled={loading}
             className={`${
               isDarkMode
                 ? "text-white border-[#494948]"
-                : "text-black  border-gray-300"
-            } w-full h-12 rounded px-4 bg-transparent text-white border-[1px]
-            focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 peer placeholder-transparent`}
+                : "text-black border-gray-300"
+            } w-full h-12 rounded px-4 bg-transparent border-[1px]
+            focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 peer placeholder-transparent disabled:opacity-50`}
             placeholder="Password"
             id="login-password"
           />
@@ -170,20 +144,25 @@ export default function Login({
 
         <button
           type="submit"
+          disabled={loading}
           className={`w-full h-12 rounded-full bg-[#f75555] ${
             isDarkMode
-              ? "text-white  hover:bg-white hover:text-black"
-              : "text-black  hover:bg-black hover:text-white"
-          } font-bold mt-2 mb-8 transition`}
+              ? "text-white hover:bg-white hover:text-black"
+              : "text-black hover:bg-black hover:text-white"
+          } font-bold mt-2 mb-8 transition disabled:opacity-50 disabled:cursor-not-allowed`}
         >
-          Login
+          {loading ? "Logging in..." : "Login"}
         </button>
       </form>
 
       {message && (
         <p
           className={`text-center mb-4 ${
-            isDarkMode ? "text-red-400" : "text-red-600"
+            message.includes("successful")
+              ? "text-green-500"
+              : isDarkMode
+              ? "text-red-400"
+              : "text-red-600"
           }`}
         >
           {message}
@@ -194,19 +173,20 @@ export default function Login({
         <span
           className={`flex-grow border-t ${
             isDarkMode ? "border-[#494948]" : "border-gray-300"
-          } `}
+          }`}
         ></span>
         <span className="px-3 text-gray-400">OR</span>
         <span
           className={`flex-grow border-t ${
             isDarkMode ? "border-[#494948]" : "border-gray-300"
-          } `}
+          }`}
         ></span>
       </div>
 
       <button
-        onClick={nextAuthLogin}
-        className="w-full flex items-center gap-3 justify-center h-12 rounded-full border border-black bg-white text-black font-bold mb-2 hover:bg-gray-100 transition"
+        onClick={handleGoogleLogin}
+        disabled={loading}
+        className="w-full flex items-center gap-3 justify-center h-12 rounded-full border border-black bg-white text-black font-bold mb-2 hover:bg-gray-100 transition disabled:opacity-50"
       >
         <FcGoogle className="w-6 h-6" />
         Continue with Google
@@ -217,7 +197,7 @@ export default function Login({
           isDarkMode ? "text-gray-400" : "text-[#494948]"
         } mt-6 text-sm`}
       >
-        Don’t have an account?{" "}
+        Don't have an account?{" "}
         <a
           onClick={() => {
             setIsSignupActive(true);

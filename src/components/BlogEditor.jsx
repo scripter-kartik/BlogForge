@@ -1,3 +1,5 @@
+// src/components/BlogEditor.jsx
+
 "use client";
 
 import React, { useState, useRef } from "react";

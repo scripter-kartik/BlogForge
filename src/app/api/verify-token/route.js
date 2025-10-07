@@ -1,3 +1,5 @@
+// src/app/api/verify-token/route.js
+
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { User } from "../../../lib/models/User.js";

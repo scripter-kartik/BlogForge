@@ -1,67 +1,27 @@
+// src/components/Home.jsx - UPDATED (No localStorage)
 "use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
+import { apiClient } from "@/lib/api";
 
-export default function Home({ isDarkMode, loginDone, signupDone }) {
-  const [userInfo, setUserInfo] = useState(null);
+export default function Home({ isDarkMode }) {
+  const { isAuthenticated, user, loading: authLoading } = useAuth();
   const [userStats, setUserStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
-    const fetchUserInfoAndStats = async () => {
-      if (!loginDone && !signupDone) return;
+    const fetchUserStats = async () => {
+      if (!isAuthenticated || !user?.username) return;
 
       setLoading(true);
       setError(null);
 
       try {
-        // Fetch user info - CORRECT ORDER: Check status first, then parse JSON
-        console.log("Fetching user info...");
-        const userRef = await fetch("/api/user/home");
-
-        // ✅ Check status FIRST
-        if (!userRef.ok) {
-          const errorText = await userRef.text(); // Get error as text first
-          console.error(
-            `API Error - Status: ${userRef.status}, Response: ${errorText}`
-          );
-          throw new Error(
-            `Failed to fetch user info: ${userRef.status} - ${errorText}`
-          );
-        }
-
-        // ✅ Only parse JSON if response is OK
-        let userData;
-        try {
-          userData = await userRef.json();
-          console.log("User data received:", userData);
-        } catch (jsonError) {
-          console.error("Failed to parse JSON:", jsonError);
-          throw new Error("Invalid JSON response from server");
-        }
-
-        setUserInfo(userData);
-
-        // Fetch user stats
-        console.log("Fetching user stats for:", userData.username);
-        const statsRes = await fetch(`/api/user/stats/${userData.username}`);
-
-        if (!statsRes.ok) {
-          const errorText = await statsRes.text();
-          console.error(
-            `Stats API Error - Status: ${statsRes.status}, Response: ${errorText}`
-          );
-          throw new Error(
-            `Failed to fetch stats: ${statsRes.status} - ${errorText}`
-          );
-        }
-
-        const statsData = await statsRes.json();
-        console.log("Stats data received:", statsData);
-
+        const statsData = await apiClient.getUserStats(user.username);
         setUserStats({
           totalViews: statsData.totalViews || 0,
           totalPosts: statsData.totalPosts || 0,
@@ -72,22 +32,22 @@ export default function Home({ isDarkMode, loginDone, signupDone }) {
           avgRating: statsData.avgRating || 0,
         });
       } catch (error) {
-        console.error("Error fetching user info or stats:", error);
+        console.error("Error fetching user stats:", error);
         setError(error.message);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUserInfoAndStats();
-  }, [loginDone, signupDone]);
+    fetchUserStats();
+  }, [isAuthenticated, user]);
 
   const handleWritePost = () => {
     router.push("/write");
   };
 
   // Show loading state
-  if ((loginDone || signupDone) && loading) {
+  if (authLoading || (isAuthenticated && loading)) {
     return (
       <div className="w-[1280px] mt-[130px] h-auto flex justify-center items-center">
         <p className={isDarkMode ? "text-white" : "text-black"}>Loading...</p>
@@ -120,7 +80,7 @@ export default function Home({ isDarkMode, loginDone, signupDone }) {
 
   return (
     <div className="w-[1280px] mt-[130px] h-auto">
-      {loginDone || signupDone ? (
+      {isAuthenticated ? (
         <div
           className={`flex flex-col gap-10 justify-between items-start ${
             isDarkMode ? "text-white" : "text-black"
@@ -128,7 +88,7 @@ export default function Home({ isDarkMode, loginDone, signupDone }) {
         >
           <h1 className="text-4xl font-bold">
             Welcome back{" "}
-            <span className="text-[#f75555]">{userInfo?.name || "User"}</span>!
+            <span className="text-[#f75555]">{user?.name || "User"}</span>!
           </h1>
 
           {userStats && (

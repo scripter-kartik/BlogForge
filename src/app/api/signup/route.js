@@ -1,3 +1,5 @@
+// src/app/api/signup/route.js
+
 import { NextResponse } from "next/server";
 import { User } from "../../../lib/models/User.js";
 import bcrypt from "bcryptjs";
