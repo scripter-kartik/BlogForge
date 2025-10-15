@@ -32,7 +32,7 @@ export default function Login({
       if (result?.error) {
         setMessage("Invalid email or password");
       } else if (result?.ok) {
-        setMessage("Login successful!");
+        setMessage("Login successfull!");
         setTimeout(() => {
           setIsLoginActive(false);
         }, 1000);
