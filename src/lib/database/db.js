@@ -1,30 +1,45 @@
 // src/lib/database/db.js
-
 import mongoose from "mongoose";
 
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
+
+/**
+ * connectDB - safe mongoose connection helper for serverless / node environments
+ * Usage: await connectDB();
+ */
 const connectDB = async () => {
-  try {
-    if (mongoose.connections[0].readyState) {
-      console.log("Already connected to MongoDB");
-      return;
-    }
-
-    console.log("Attempting to connect to MongoDB...");
-    console.log("MONGO_URI exists:", !!process.env.MONGO_URI);
-
-    const conn = await mongoose.connect(process.env.MONGO_URI, {
-      // Remove deprecated options if using newer mongoose
-    });
-
-    console.log("✅ MONGODB CONNECTED successfully!");
-    console.log(`Connected to: ${conn.connection.host}`);
-  } catch (error) {
-    console.error("❌ MongoDB connection error:", error.message);
-    console.error("Full error:", error);
-    process.exit(1);
+  if (cached.conn) {
+    // Already connected
+    return cached.conn;
   }
-};
 
-connectDB();
+  if (!process.env.MONGO_URI) {
+    throw new Error("MONGO_URI environment variable is not set.");
+  }
+
+  if (!cached.promise) {
+    const opts = {
+      // use the defaults for recent mongoose versions
+      // pass options only if you need to set them
+    };
+
+    cached.promise = mongoose
+      .connect(process.env.MONGO_URI, opts)
+      .then((mongooseInstance) => {
+        return mongooseInstance;
+      })
+      .catch((err) => {
+        cached.promise = null;
+        throw err;
+      });
+  }
+
+  cached.conn = await cached.promise;
+  return cached.conn;
+};
 
 export default connectDB;

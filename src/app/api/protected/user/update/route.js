@@ -1,134 +1,108 @@
-import { NextResponse } from "next/server";
-import connectDB from "@/lib/database/db.js";
-import { User } from "@/lib/models/User.js";
-import bcrypt from "bcryptjs";
-import { IncomingForm } from "formidable";
-import fs from "fs";
-import path from "path";
+// ============================================
+// 5. FIX: src/app/api/protected/user/update/route.js
+// Change from POST to PATCH
+// ============================================
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+// src/app/api/protected/user/update/route.js
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { NextResponse } from "next/server";
+import fs from "fs/promises";
+import path from "path";
+import { v4 as uuidv4 } from "uuid";
+import connectDB from "@/lib/database/db";
+import { User } from "@/lib/models/User";
+import bcrypt from "bcryptjs";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function PATCH(req) {
   try {
     await connectDB();
 
-    const userEmail = req.headers.get("user-email");
-    if (!userEmail) {
+    const session = await getServerSession(authOptions);
+    if (!session) {
       return NextResponse.json(
-        { message: "Unauthorized - No user email found" },
+        { success: false, message: "Unauthorized" },
         { status: 401 }
       );
     }
 
-    const contentType = req.headers.get("content-type") || "";
-    if (contentType.includes("multipart/form-data")) {
-      const form = new IncomingForm({
-        uploadDir: path.join(process.cwd(), "/public/uploads"),
-        keepExtensions: true,
-        maxFileSize: 5 * 1024 * 1024,
-      });
+    const formData = await req.formData();
 
-      if (!fs.existsSync(form.uploadDir)) {
-        fs.mkdirSync(form.uploadDir, { recursive: true });
-      }
-
-      const { fields, files } = await new Promise((resolve, reject) => {
-        form.parse(req, (err, fields, files) => {
-          if (err) return reject(err);
-          resolve({ fields, files });
-        });
-      });
-
-      const { username, email, name, bio, password } = fields;
-      const updatedFields = { email, name, bio };
-
-      if (password && password.trim()) {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        updatedFields.password = hashedPassword;
-      }
-
-      if (files.profileImage) {
-        const file = files.profileImage;
-        const imageName = path.basename(file.filepath);
-        updatedFields.image = `/uploads/${imageName}`;
-      }
-
-      if (email !== userEmail) {
-        const existingUser = await User.findOne({
-          email: email,
-          email: { $ne: userEmail },
-        });
-        if (existingUser) {
-          return NextResponse.json(
-            { message: "Email already in use" },
-            { status: 409 }
-          );
-        }
-      }
-
-      const user = await User.findOneAndUpdate(
-        { email: userEmail },
-        { $set: updatedFields },
-        { new: true }
-      ).select("-password");
-
-      if (!user) {
-        return NextResponse.json(
-          { message: "User not found" },
-          { status: 404 }
-        );
-      }
-
-      return NextResponse.json({
-        message: "Profile updated successfully",
-        user,
-      });
-    }
-
-    // Non multipart JSON update
-    const { username, email, name, bio, password } = await req.json();
-    const updatedFields = { email, name, bio };
-
-    if (password && password.trim()) {
-      const hashedPassword = await bcrypt.hash(password, 10);
-      updatedFields.password = hashedPassword;
-    }
-
-    if (email !== userEmail) {
-      const existingUser = await User.findOne({
-        email: email,
-        email: { $ne: userEmail },
-      });
-      if (existingUser) {
-        return NextResponse.json(
-          { message: "Email already in use" },
-          { status: 409 }
-        );
-      }
-    }
-
-    const user = await User.findOneAndUpdate(
-      { email: userEmail },
-      { $set: updatedFields },
-      { new: true }
-    ).select("-password");
+    const userEmail = session.user.email;
+    const user = await User.findOne({ email: userEmail });
 
     if (!user) {
-      return NextResponse.json({ message: "User not found" }, { status: 404 });
+      return NextResponse.json(
+        { success: false, message: "User not found" },
+        { status: 404 }
+      );
     }
 
+    let imageUrl = user.image;
+
+    // Handle profile image upload
+    const profileImage = formData.get("profileImage");
+    if (profileImage && profileImage.size > 0) {
+      const uploadDir = path.join(process.cwd(), "public/uploads");
+      await fs.mkdir(uploadDir, { recursive: true });
+
+      const bytes = await profileImage.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+
+      const ext = path.extname(profileImage.name || ".jpg");
+      const safeName = `${uuidv4()}${ext}`;
+      const newPath = path.join(uploadDir, safeName);
+
+      await fs.writeFile(newPath, buffer);
+      imageUrl = `/uploads/${safeName}`;
+
+      // Delete old image if it exists
+      if (user.image && user.image.startsWith("/uploads/")) {
+        const oldImagePath = path.join(process.cwd(), "public", user.image);
+        try {
+          await fs.unlink(oldImagePath);
+        } catch (err) {
+          console.log("Could not delete old image:", err);
+        }
+      }
+    }
+
+    // Update user fields
+    const name = formData.get("name");
+    const bio = formData.get("bio");
+    const password = formData.get("password");
+    const email = formData.get("email");
+
+    if (name) user.name = name;
+    if (bio !== null) user.bio = bio;
+    if (email) user.email = email;
+    user.image = imageUrl;
+
+    // Only update password if provided
+    if (password && password.trim() !== "") {
+      user.password = await bcrypt.hash(password, 10);
+    }
+
+    const updatedUser = await user.save();
+
     return NextResponse.json({
+      success: true,
       message: "Profile updated successfully",
-      user,
+      user: {
+        name: updatedUser.name,
+        email: updatedUser.email,
+        username: updatedUser.username,
+        bio: updatedUser.bio,
+        image: updatedUser.image,
+      },
     });
-  } catch (err) {
-    console.error("Profile update error:", err);
+  } catch (error) {
+    console.error("Profile update error:", error);
     return NextResponse.json(
-      { message: "Server error occurred while updating profile" },
+      { success: false, message: error.message || "Failed to update profile" },
       { status: 500 }
     );
   }

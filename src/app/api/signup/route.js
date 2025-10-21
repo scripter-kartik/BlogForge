@@ -1,53 +1,89 @@
+// 4. CREATE NEW FILE: src/app/api/signup/route.js
+// ============================================
+
 // src/app/api/signup/route.js
-
 import { NextResponse } from "next/server";
-import { User } from "../../../lib/models/User.js";
+import connectDB from "@/lib/database/db.js";
+import { User } from "@/lib/models/User.js";
 import bcrypt from "bcryptjs";
-import "../../../lib/database/db.js";
 
-export async function POST(request) {
+export async function POST(req) {
   try {
-    const { name, email, password, username } = await request.json();
+    await connectDB();
 
-    if (!name || !email || !password || !username) {
+    const { name, username, email, password } = await req.json();
+
+    // Validation
+    if (!name || !username || !email || !password) {
       return NextResponse.json(
-        { message: "please fill out all the details", success: false },
+        { success: false, message: "All fields are required" },
         { status: 400 }
       );
     }
 
-    const existingEmail = await User.findOne({ email });
-    const existingUsername = await User.findOne({ username });
-
-    if (existingEmail || existingUsername) {
+    if (password.length < 6) {
       return NextResponse.json(
-        { message: "user already exists", success: false },
-        { status: 409 }
+        {
+          success: false,
+          message: "Password must be at least 6 characters",
+        },
+        { status: 400 }
       );
     }
 
-    const hashPassword = await bcrypt.hash(password, 10);
-    const user = await User.create({
-      name,
-      email,
-      username,
-      password: hashPassword,
+    // Check if user already exists
+    const existingUser = await User.findOne({
+      $or: [{ email }, { username }],
     });
 
-    const { password: _, ...userWithoutPassword } = user.toObject();
+    if (existingUser) {
+      if (existingUser.email === email) {
+        return NextResponse.json(
+          { success: false, message: "Email already registered" },
+          { status: 409 }
+        );
+      }
+      if (existingUser.username === username) {
+        return NextResponse.json(
+          { success: false, message: "Username already taken" },
+          { status: 409 }
+        );
+      }
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create user
+    const newUser = await User.create({
+      name,
+      username,
+      email,
+      password: hashedPassword,
+      bio: "",
+      image: null,
+    });
 
     return NextResponse.json(
       {
-        message: "user created successfully",
         success: true,
-        user: userWithoutPassword,
+        message: "Account created successfully",
+        user: {
+          id: newUser._id.toString(),
+          name: newUser.name,
+          username: newUser.username,
+          email: newUser.email,
+        },
       },
       { status: 201 }
     );
   } catch (error) {
-    console.error("error occured during signing up", error);
+    console.error("Signup error:", error);
     return NextResponse.json(
-      { message: "error occured during signing up", success: false },
+      {
+        success: false,
+        message: error.message || "Failed to create account",
+      },
       { status: 500 }
     );
   }
