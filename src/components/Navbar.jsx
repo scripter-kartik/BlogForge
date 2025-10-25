@@ -76,7 +76,7 @@ export default function Navbar({
         </Link>
 
         {isAuthenticated && (
-          <Link href="/foryou" className={linkClass("/foryou")}>
+          <Link href="/for-you" className={linkClass("/foryou")}>
             <FaRegStar className={pathname === "/foryou" ? "text-[#f75555]" : ""} />
             <p>For you</p>
           </Link>

@@ -9,19 +9,19 @@ import { BiComment } from "react-icons/bi";
 import { apiClient } from "@/lib/api";
 import { getRandomProfileImage } from "@/lib/profileImage";
 
-export default function TrendingPage() {
-  const [trendingPosts, setTrendingPosts] = useState([]);
+export default function LatestPage() {
+  const [latestPosts, setLatestPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    async function fetchTrendingPosts() {
+    async function fetchLatestPosts() {
       try {
         setLoading(true);
         setError(null);
-        const data = await apiClient.getTrendingBlogs();
+        const data = await apiClient.getLatestBlogs();
 
         const normalized = data.map((post) => ({
           ...post,
@@ -33,23 +33,23 @@ export default function TrendingPage() {
           authorImage: getRandomProfileImage(post.author?.image, post.author?.name),
         }));
 
-        setTrendingPosts(normalized);
+        setLatestPosts(normalized);
       } catch (err) {
-        console.error("Failed to load trending posts:", err);
-        setError("Failed to load trending posts.");
+        console.error("Failed to load latest posts:", err);
+        setError("Failed to load latest posts.");
       } finally {
         setLoading(false);
       }
     }
 
-    fetchTrendingPosts();
+    fetchLatestPosts();
   }, []);
 
   const renderPosts = (posts) => {
     if (!posts.length) {
       return (
         <p className={`w-full text-center mt-8 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
-          No trending posts yet.
+          No latest posts yet.
         </p>
       );
     }
@@ -100,7 +100,7 @@ export default function TrendingPage() {
     ));
   };
 
-  if (loading) return <div className="w-full min-h-screen flex justify-center items-center"><p className={isDarkMode ? "text-white" : "text-black"}>Loading trending posts...</p></div>;
+  if (loading) return <div className="w-full min-h-screen flex justify-center items-center"><p className={isDarkMode ? "text-white" : "text-black"}>Loading latest posts...</p></div>;
   if (error) return <div className="w-full min-h-screen flex justify-center items-center"><p className="text-red-500">{error}</p></div>;
 
   return (
@@ -110,10 +110,10 @@ export default function TrendingPage() {
       </div>
 
       <div className="max-w-[1280px] mx-auto pt-28 px-6 pb-16">
-        {renderPosts(trendingPosts)}
+        {renderPosts(latestPosts)}
 
         {/* End of posts message */}
-        {trendingPosts.length > 0 && (
+        {latestPosts.length > 0 && (
           <p className={`text-center mt-12 text-sm ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
              You’ve reached the end
           </p>

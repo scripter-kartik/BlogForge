@@ -1,4 +1,3 @@
-// src/components/HomePost.jsx - UPDATED (No localStorage, using API client)
 "use client";
 
 import { FaRegStar } from "react-icons/fa6";
@@ -18,7 +17,7 @@ export default function HomePost({ isDarkMode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [suggestedUsers, setSuggestedUsers] = useState([]);
-  const router = useRouter()
+  const router = useRouter();
 
   useEffect(() => {
     async function fetchData() {
@@ -28,10 +27,10 @@ export default function HomePost({ isDarkMode }) {
 
         const data = await apiClient.getAllPosts();
 
-        const postsWithCategory = data.map((post) => ({
+        // Normalize data
+        const normalized = data.map((post) => ({
           ...post,
           id: post._id,
-          category: post.category || "Latest",
           starRating: post.starRating || 4,
           views: post.views || 0,
           commentCount: post.commentCount || 0,
@@ -43,7 +42,7 @@ export default function HomePost({ isDarkMode }) {
           ),
         }));
 
-        setPosts(postsWithCategory);
+        setPosts(normalized);
       } catch (error) {
         console.error("Error in HomePost:", error);
         setError("Failed to load posts. Please try again.");
@@ -68,25 +67,45 @@ export default function HomePost({ isDarkMode }) {
     fetchSuggestedUsers();
   }, []);
 
-  const renderPostsByCategory = (category) => {
-    const categoryPosts = posts.filter((post) => post.category === category);
+  // 🔥 Auto-generate sections
+  const getFeaturedPosts = () =>
+    [...posts]
+      .sort((a, b) => b.starRating - a.starRating)
+      .slice(0, 2);
 
-    if (categoryPosts.length === 0) {
+  const getTrendingPosts = () =>
+    [...posts]
+      .sort((a, b) => b.views - a.views)
+      .slice(0, 6);
+
+  const getLatestPosts = () =>
+    [...posts]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 6);
+
+  const renderPosts = (postList) => {
+    if (postList.length === 0) {
       return (
         <div
-          className={`w-[1280px] mt-8 text-center py-8 ${isDarkMode ? "text-gray-400" : "text-gray-600"
-            }`}
+          className={`w-[1280px] mt-8 text-center py-8 ${
+            isDarkMode ? "text-gray-400" : "text-gray-600"
+          }`}
         >
-          <p>No {category.toLowerCase()} posts yet.</p>
+          <p>No posts found.</p>
         </div>
       );
     }
 
-    return categoryPosts.map((post) => (
-      <div key={post._id} className="w-[1280px] mt-8 cursor-pointer" onClick={() => router.push(`/blog/${post._id}`)}>
+    return postList.map((post) => (
+      <div
+        key={post._id}
+        className="w-[1280px] mt-8 cursor-pointer"
+        onClick={() => router.push(`/blog/${post._id}`)}
+      >
         <div
-          className={`w-[1280px] ${isDarkMode ? "text-white bg-[#2c2a2a]" : "text-black bg-[#eeeded]"
-            } flex gap-6 p-5 rounded-lg transition-colors duration-500 hover:shadow-lg`}
+          className={`w-[1280px] ${
+            isDarkMode ? "text-white bg-[#2D2D2D]" : "text-black bg-[#eeeded]"
+          } flex gap-6 p-5 rounded-lg transition-colors duration-500 hover:shadow-lg`}
         >
           {post.coverImage && (
             <img
@@ -120,16 +139,18 @@ export default function HomePost({ isDarkMode }) {
               {post.tags?.map((tag, idx) => (
                 <div
                   key={idx}
-                  className={`${isDarkMode ? "bg-[#454343]" : "bg-gray-200"
-                    } px-2 py-1 text-xs rounded transition-colors duration-500`}
+                  className={`${
+                    isDarkMode ? "bg-[#454343]" : "bg-gray-200"
+                  } px-2 py-1 text-xs rounded transition-colors duration-500`}
                 >
                   #{tag}
                 </div>
               ))}
             </div>
             <div
-              className={`${isDarkMode ? "text-white" : "text-black"
-                } flex items-center gap-4 text-sm`}
+              className={`${
+                isDarkMode ? "text-white" : "text-black"
+              } flex items-center gap-4 text-sm`}
             >
               <div className="flex items-center gap-1">
                 <FaRegStar className="text-yellow-500" />
@@ -170,10 +191,11 @@ export default function HomePost({ isDarkMode }) {
         <p className="text-red-500 mb-4">{error}</p>
         <button
           onClick={() => window.location.reload()}
-          className={`px-4 py-2 border rounded ${isDarkMode
-            ? "border-white text-white hover:bg-white hover:text-black"
-            : "border-black text-black hover:bg-black hover:text-white"
-            }`}
+          className={`px-4 py-2 border rounded ${
+            isDarkMode
+              ? "border-white text-white hover:bg-white hover:text-black"
+              : "border-black text-black hover:bg-black hover:text-white"
+          }`}
         >
           Retry
         </button>
@@ -181,27 +203,33 @@ export default function HomePost({ isDarkMode }) {
     );
   }
 
+  const featured = getFeaturedPosts();
+  const trending = getTrendingPosts();
+  const latest = getLatestPosts();
+
   return (
     <div className="w-[1280px] mt-[165px] mb-[70px]">
       {/* Featured Posts Section */}
       <div className="flex items-center gap-2 justify-between">
         <h1
-          className={`${isDarkMode ? "text-white" : "text-black"
-            } text-3xl font-bold`}
+          className={`${
+            isDarkMode ? "text-white" : "text-black"
+          } text-3xl font-bold`}
         >
           Featured posts
         </h1>
         <hr className="w-[1000px] border-t-[1px] border-[#f75555]" />
       </div>
-      {renderPostsByCategory("Featured")}
+      {renderPosts(featured)}
 
-      {/* Suggested Users Section - Only for authenticated users */}
+      {/* Suggested Users Section */}
       {isAuthenticated && (
         <div>
           <div className="flex items-center gap-2 justify-between mt-28">
             <h1
-              className={`${isDarkMode ? "text-white" : "text-black"
-                } text-3xl font-bold`}
+              className={`${
+                isDarkMode ? "text-white" : "text-black"
+              } text-3xl font-bold`}
             >
               Suggested Users
             </h1>
@@ -236,26 +264,28 @@ export default function HomePost({ isDarkMode }) {
       {/* Trending Posts Section */}
       <div className="flex items-center gap-2 mt-32 justify-between">
         <h1
-          className={`${isDarkMode ? "text-white" : "text-black"
-            } text-3xl font-bold`}
+          className={`${
+            isDarkMode ? "text-white" : "text-black"
+          } text-3xl font-bold`}
         >
           Trending posts
         </h1>
         <hr className="w-[1000px] border-t-[1px] border-[#f75555]" />
       </div>
-      {renderPostsByCategory("Trending")}
+      {renderPosts(trending)}
 
       {/* Latest Posts Section */}
       <div className="flex items-center gap-2 mt-32 justify-between">
         <h1
-          className={`${isDarkMode ? "text-white" : "text-black"
-            } text-3xl font-bold`}
+          className={`${
+            isDarkMode ? "text-white" : "text-black"
+          } text-3xl font-bold`}
         >
           Latest posts
         </h1>
         <hr className="w-[1000px] border-t-[1px] border-[#f75555]" />
       </div>
-      {renderPostsByCategory("Latest")}
+      {renderPosts(latest)}
     </div>
   );
 }
