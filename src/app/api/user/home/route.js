@@ -26,11 +26,14 @@ export async function GET(req) {
     }
 
     return NextResponse.json({
+      _id: user._id.toString(),
       name: user.name,
       username: user.username,
       email: user.email,
       image: user.image || null,
-      _id: user._id.toString(),
+      bio: user.bio || "",
+      followers: user.followers || [],
+      following: user.following || [],
     });
   } catch (error) {
     console.error("Error in /api/user/home:", error);

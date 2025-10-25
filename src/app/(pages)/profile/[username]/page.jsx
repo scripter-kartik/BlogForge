@@ -1,11 +1,11 @@
-// src/app/(pages)/profile/[username]/page.jsx
-
 "use client";
 
 import Navbar from "../../../../components/Navbar.jsx";
+import FollowersModal from "../../../../components/FollowersModal.jsx";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { useFollow } from "@/hooks/useFollow";
 import { apiClient } from "@/lib/api";
 import { getRandomProfileImage } from "@/lib/profileImage.js";
 import { signOut } from "next-auth/react";
@@ -16,6 +16,7 @@ export default function Profile() {
   const router = useRouter();
 
   const { isAuthenticated, user: authUser, loading: authLoading } = useAuth();
+  const { toggleFollow, loading: followLoading } = useFollow();
 
   const [user, setUser] = useState(null);
   const [userStats, setUserStats] = useState(null);
@@ -25,6 +26,9 @@ export default function Profile() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalType, setModalType] = useState(null);
 
   const [formData, setFormData] = useState({
     username: "",
@@ -61,8 +65,16 @@ export default function Profile() {
 
         const postsData = await apiClient.getUserPosts(userData.username);
         setUserPosts(postsData.posts || []);
+
+        // Check if current user is following this user
+        if (isAuthenticated && authUser?._id) {
+          const isUserFollowing = userData.followers?.some(
+            (followerId) => followerId.toString() === authUser._id
+          );
+          setIsFollowing(isUserFollowing || false);
+        }
       } catch (err) {
-        console.error(err);
+        console.error("Error loading profile:", err);
         setError("Failed to load profile data");
       } finally {
         setLoading(false);
@@ -70,7 +82,24 @@ export default function Profile() {
     };
 
     fetchUserData();
-  }, [username]);
+  }, [username, isAuthenticated, authUser]);
+
+  const handleFollowClick = async () => {
+    if (!isAuthenticated) {
+      router.push("/auth/signin");
+      return;
+    }
+
+    const result = await toggleFollow(user._id, isFollowing);
+    if (result) {
+      setIsFollowing(result.isFollowing);
+      // Update stats to reflect new follower count
+      setUserStats((prev) => ({
+        ...prev,
+        followers: result.followersCount,
+      }));
+    }
+  };
 
   // Handle updates (only for own profile)
   const handleFileChange = async (e) => {
@@ -264,8 +293,24 @@ export default function Profile() {
             </div>
 
             <div className="flex gap-4">
-              <p>{userStats?.followers || 0} followers</p>
-              <p>{userStats?.following || 0} following</p>
+              <button
+                onClick={() => {
+                  setModalType("followers");
+                  setModalOpen(true);
+                }}
+                className="hover:opacity-70 transition-opacity cursor-pointer"
+              >
+                {userStats?.followers || 0} followers
+              </button>
+              <button
+                onClick={() => {
+                  setModalType("following");
+                  setModalOpen(true);
+                }}
+                className="hover:opacity-70 transition-opacity cursor-pointer"
+              >
+                {userStats?.following || 0} following
+              </button>
             </div>
 
             <div className="flex gap-4">
@@ -277,12 +322,26 @@ export default function Profile() {
               Member since {user?.createdAt ? formatDate(user.createdAt) : "N/A"}
             </p>
 
-            {isOwnProfile && (
+            {isOwnProfile ? (
               <button
                 onClick={handleLogout}
                 className="border-[1px] border-[#f75555] text-[#f75555] px-4 py-1 rounded hover:text-red-600 hover:border-red-600 transition-colors"
               >
                 Logout
+              </button>
+            ) : (
+              <button
+                onClick={handleFollowClick}
+                disabled={followLoading}
+                className={`px-6 py-2 rounded font-medium transition-colors ${
+                  isFollowing
+                    ? isDarkMode
+                      ? "bg-gray-600 hover:bg-gray-700 text-white"
+                      : "bg-gray-400 hover:bg-gray-500 text-white"
+                    : "bg-[#f75555] hover:bg-red-600 text-white"
+                } ${followLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                {followLoading ? "..." : isFollowing ? "Following" : "Follow"}
               </button>
             )}
           </div>
@@ -403,6 +462,29 @@ export default function Profile() {
           )}
         </div>
       </div>
+
+      {/* Followers Modal */}
+      <FollowersModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        type={modalType}
+        userIds={
+          modalType === "followers"
+            ? user?.followers || []
+            : user?.following || []
+        }
+        isDarkMode={isDarkMode}
+        onFollowChange={(isFollowing) => {
+          // Refresh stats immediately when follow state changes
+          if (modalType === "following" && !isFollowing) {
+            // User unfollowed someone, decrease following count
+            setUserStats((prev) => ({
+              ...prev,
+              following: Math.max(0, (prev?.following || 1) - 1),
+            }));
+          }
+        }}
+      />
     </div>
   );
 }

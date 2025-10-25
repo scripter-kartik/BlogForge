@@ -1,5 +1,4 @@
 // src/app/api/user/stats/[username]/route.js
-
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/database/db.js";
 import { User } from "@/lib/models/User.js";
@@ -10,25 +9,34 @@ export async function GET(req, { params }) {
     await connectDB();
     const { username } = params;
 
+    if (!username) {
+      return NextResponse.json(
+        { error: "Username is required" },
+        { status: 400 }
+      );
+    }
+
     const user = await User.findOne({ username });
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const blogs = await Blog.find({ author: user._id });
+    // Get user's posts
+    const userPosts = await Blog.find({ author: user._id });
 
-    const totalViews = blogs.reduce((acc, blog) => acc + blog.views, 0);
-    const totalPosts = blogs.length;
-    const avgRating =
-      totalPosts > 0
-        ? blogs.reduce((sum, blog) => sum + blog.starRating, 0) / totalPosts
-        : 0;
+    // Calculate stats
+    const totalPosts = userPosts.length;
+    const totalViews = userPosts.reduce((sum, post) => sum + (post.views || 0), 0);
+    const totalRating = userPosts.reduce((sum, post) => sum + (post.starRating || 0), 0);
+    const avgRating = totalPosts > 0 ? totalRating / totalPosts : 0;
 
     return NextResponse.json({
-      totalViews,
+      followers: user.followers?.length || 0,
+      following: user.following?.length || 0,
       totalPosts,
-      avgRating: Number(avgRating.toFixed(2)),
+      totalViews,
+      avgRating,
     });
   } catch (error) {
     console.error("Error fetching user stats:", error);

@@ -1,4 +1,4 @@
-// src/app/api/user/[username]/route.js
+// src/app/api/user/by-id/[userId]/route.js
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/database/db.js";
 import { User } from "@/lib/models/User.js";
@@ -6,16 +6,16 @@ import { User } from "@/lib/models/User.js";
 export async function GET(req, { params }) {
   try {
     await connectDB();
-    const { username } = params;
+    const { userId } = params;
 
-    if (!username) {
+    if (!userId) {
       return NextResponse.json(
-        { error: "Username is required" },
+        { error: "User ID is required" },
         { status: 400 }
       );
     }
 
-    const user = await User.findOne({ username }).select(
+    const user = await User.findById(userId).select(
       "name username email image bio createdAt followers following"
     );
 
@@ -35,7 +35,7 @@ export async function GET(req, { params }) {
       following: user.following || [],
     });
   } catch (error) {
-    console.error("Error fetching user by username:", error);
+    console.error("Error fetching user by ID:", error);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }

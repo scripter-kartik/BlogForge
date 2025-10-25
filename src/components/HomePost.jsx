@@ -7,16 +7,19 @@ import { FaRegClock } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import { usePosts } from "@/context/PostsContext";
 import { useAuth } from "@/hooks/useAuth";
+import { useFollow } from "@/hooks/useFollow";
 import { apiClient } from "@/lib/api";
 import { getRandomProfileImage } from "@/lib/profileImage";
 import { useRouter } from "next/navigation";
 
 export default function HomePost({ isDarkMode }) {
   const { posts, setPosts } = usePosts();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const { toggleFollow, loading: followLoading, followingState } = useFollow();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [suggestedUsers, setSuggestedUsers] = useState([]);
+  const [followStates, setFollowStates] = useState({});
   const router = useRouter();
 
   useEffect(() => {
@@ -59,13 +62,56 @@ export default function HomePost({ isDarkMode }) {
       try {
         const res = await fetch("/api/suggested-users");
         const data = await res.json();
+        
+        // Check if data is an array
+        if (!Array.isArray(data)) {
+          console.error("Suggested users data is not an array:", data);
+          setSuggestedUsers([]);
+          return;
+        }
+
         setSuggestedUsers(data);
+
+        // Fetch current user's following list
+        const userRes = await fetch("/api/user/home");
+        const userData = await userRes.json();
+        const followingIds = userData.following || [];
+
+        // Initialize follow states based on actual data
+        const states = {};
+        data.forEach((user) => {
+          states[user._id] = followingIds.some(id => id.toString() === user._id);
+        });
+        setFollowStates(states);
       } catch (error) {
         console.error("Failed to load suggested users", error);
+        setSuggestedUsers([]);
       }
     }
-    fetchSuggestedUsers();
-  }, []);
+
+    if (isAuthenticated) {
+      fetchSuggestedUsers();
+    }
+  }, [isAuthenticated]);
+
+  const handleFollowClick = async (e, userId) => {
+    e.stopPropagation();
+
+    if (!isAuthenticated) {
+      router.push("/auth/signin");
+      return;
+    }
+
+    const currentState = followStates[userId] || false;
+    const result = await toggleFollow(userId, currentState);
+
+    if (result) {
+      setFollowStates((prev) => ({
+        ...prev,
+        [userId]: result.isFollowing,
+      }));
+    }
+  };
 
   // 🔥 Auto-generate sections
   const getFeaturedPosts = () =>
@@ -236,9 +282,12 @@ export default function HomePost({ isDarkMode }) {
             <hr className="w-[1000px] border-t-[1px] border-[#f75555]" />
           </div>
           <div className="flex mt-16 gap-4 w-[1280px] overflow-x-auto [&::-webkit-scrollbar]:hidden bg-gradient-to-r from-black/10 via-transparent to-black/10 pb-4">
-            {suggestedUsers.map((user, index) => (
-              <div key={index} className="flex-shrink-0">
-                <div className="flex flex-col items-center justify-around gap-2 px-2 py-3 w-[220px] h-[280px] rounded-xl bg-[#2c2a2a] text-center shadow-lg">
+            {suggestedUsers.map((user) => (
+              <div key={user._id} className="flex-shrink-0">
+                <div 
+                  onClick={() => router.push(`/profile/${user.username}`)}
+                  className="flex flex-col items-center justify-around gap-2 px-2 py-3 w-[220px] h-[280px] rounded-xl bg-[#2c2a2a] text-center shadow-lg cursor-pointer hover:opacity-80 transition-opacity"
+                >
                   <img
                     className="rounded-full object-cover w-[90px] h-[90px] border-4 border-[#f75555]"
                     src={getRandomProfileImage(user.image, user.name)}
@@ -251,8 +300,18 @@ export default function HomePost({ isDarkMode }) {
                     <h1 className="text-white font-bold">{user.name}</h1>
                     <p className="text-[#7a7a7a] text-sm">{user.bio}</p>
                   </div>
-                  <button className="bg-[#f75555] rounded-full w-[195px] text-center text-white px-5 py-2 hover:bg-red-600 transition-colors">
-                    Follow
+                  <button
+                    onClick={(e) => handleFollowClick(e, user._id)}
+                    disabled={followLoading}
+                    className={`rounded-full w-[195px] text-center text-white px-5 py-2 transition-colors ${
+                      followStates[user._id]
+                        ? isDarkMode
+                          ? "bg-gray-600 hover:bg-gray-700"
+                          : "bg-gray-400 hover:bg-gray-500"
+                        : "bg-[#f75555] hover:bg-red-600"
+                    } ${followLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                  >
+                    {followLoading ? "..." : followStates[user._id] ? "Following" : "Follow"}
                   </button>
                 </div>
               </div>

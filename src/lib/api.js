@@ -1,3 +1,4 @@
+// lib/api.js (Updated)
 class ApiClient {
   constructor() {
     this.baseURL = process.env.NEXT_PUBLIC_API_URL || "";
@@ -79,6 +80,14 @@ class ApiClient {
     });
   }
 
+  // ✅ Follow methods (NEW)
+  async toggleFollow(targetUserId) {
+    return this.request("/api/follow", {
+      method: "POST",
+      body: { targetUserId },
+    });
+  }
+
   // ✅ Blog methods
   async getAllPosts() {
     return this.request("/api/blogposts");
@@ -110,7 +119,7 @@ class ApiClient {
     return this.request("/api/blogposts/latest");
   }
 
-  // ✅ For You (✨ Add this)
+  // ✅ For You
   async getForYouBlogs() {
     return this.request("/api/blogposts/for-you");
   }
