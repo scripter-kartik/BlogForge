@@ -22,8 +22,7 @@ import {
   Check,
 } from "lucide-react";
 
-const BlogEditor = ({ isDarkMode }) => {
-  const [content, setContent] = useState("");
+const BlogEditor = ({ isDarkMode, onContentChange }) => {
   const [showCodeModal, setShowCodeModal] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState("javascript");
   const [codeContent, setCodeContent] = useState("");
@@ -90,6 +89,14 @@ const BlogEditor = ({ isDarkMode }) => {
       document.execCommand("insertHTML", false, codeBlock);
       setShowCodeModal(false);
       setCodeContent("");
+    }
+  };
+
+  const handleEditorInput = (e) => {
+    const html = e.target.innerHTML;
+    // Pass content to parent component
+    if (onContentChange) {
+      onContentChange(html);
     }
   };
 
@@ -192,7 +199,7 @@ const BlogEditor = ({ isDarkMode }) => {
             <div
               className={`w-px h-6 ${
                 isDarkMode ? "bg-[#2A2A2A]" : "bg-[#ECEEF0]"
-              } transition-colors duration-500mx-2`}
+              } transition-colors duration-500 mx-2`}
             ></div>
 
             <ToolbarButton onClick={insertLink} title="Insert Link">
@@ -245,7 +252,7 @@ const BlogEditor = ({ isDarkMode }) => {
           } transition-colors duration-500 border border-gray-700 border-t-0 rounded-b-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
           style={{ minHeight: "500px" }}
           suppressContentEditableWarning={true}
-          onInput={(e) => setContent(e.target.innerHTML)}
+          onInput={handleEditorInput}
           data-placeholder="Start writing your blog post..."
         />
       </div>
@@ -320,7 +327,7 @@ const BlogEditor = ({ isDarkMode }) => {
                   isDarkMode
                     ? "bg-[#2A2A2A] text-green-400 "
                     : "bg-[#ECEEF0] text-green-600 "
-                } transition-colors duration-500 border border-gray-600 rounded-lgfont-mono text-sm focus:outline-none focus:border-blue-500 resize-none`}
+                } transition-colors duration-500 border border-gray-600 rounded-lg font-mono text-sm focus:outline-none focus:border-blue-500 resize-none`}
                 style={{
                   fontFamily: 'Consolas, Monaco, "Courier New", monospace',
                 }}

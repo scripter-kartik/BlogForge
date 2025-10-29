@@ -1,4 +1,4 @@
-// src/app/(pages)/write/page.jsx - UPDATED (No localStorage, using API client and auth)
+// src/app/(pages)/write/page.jsx - FIXED
 "use client";
 
 import Navbar from "../../../components/Navbar.jsx";
@@ -19,6 +19,7 @@ const WritePage = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [tag, setTag] = useState("");
+  const [content, setContent] = useState(""); // ✅ NEW: State for blog content
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState("");
   const fileInputRef = useRef(null);
@@ -27,13 +28,11 @@ const WritePage = () => {
   const { isAuthenticated, user, loading } = useAuth();
 
   useEffect(() => {
-    // Redirect if not authenticated
     if (!loading && !isAuthenticated) {
       router.push("/");
       return;
     }
 
-    // Set random gradient color for cover image placeholder
     const colors = [
       "bg-gradient-to-r from-purple-500 to-pink-500",
       "bg-gradient-to-r from-blue-500 to-cyan-500",
@@ -66,6 +65,10 @@ const WritePage = () => {
       setError("Description must be less than 250 characters");
       return false;
     }
+    if (!content.trim()) {
+      setError("Blog content is required");
+      return false;
+    }
     setError("");
     return true;
   };
@@ -84,6 +87,7 @@ const WritePage = () => {
         .map((t) => t.trim())
         .filter(Boolean),
       coverImage,
+      content: content, // ✅ Include content here
       category: "Latest",
       starRating: 0,
       views: 0,
@@ -97,13 +101,12 @@ const WritePage = () => {
     try {
       const newPost = await apiClient.createPost(postData);
 
-      // Update local posts state
       setPosts((prevPosts) => [newPost, ...prevPosts]);
 
-      // Reset form
       setTitle("");
       setDescription("");
       setTag("");
+      setContent(""); // ✅ Reset content
       setCoverImage(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -123,7 +126,6 @@ const WritePage = () => {
     const file = event.target.files[0];
     if (file) {
       if (file.type.startsWith("image/")) {
-        // Check file size (limit to 5MB)
         if (file.size > 5 * 1024 * 1024) {
           setError("Image size should be less than 5MB");
           return;
@@ -159,7 +161,11 @@ const WritePage = () => {
     }
   };
 
-  // Show loading while checking authentication
+  // ✅ NEW: Callback to receive content from BlogEditor
+  const handleContentChange = (newContent) => {
+    setContent(newContent);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -171,7 +177,6 @@ const WritePage = () => {
     );
   }
 
-  // Redirect message if not authenticated
   if (!isAuthenticated) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -342,9 +347,9 @@ const WritePage = () => {
           {/* Publish Button */}
           <button
             onClick={handlePublish}
-            disabled={publishing || !title.trim() || !description.trim()}
+            disabled={publishing || !title.trim() || !description.trim() || !content.trim()}
             className={`w-72 border p-3 rounded-full transition-colors duration-300 font-medium ${
-              publishing || !title.trim() || !description.trim()
+              publishing || !title.trim() || !description.trim() || !content.trim()
                 ? "opacity-50 cursor-not-allowed border-gray-400"
                 : isDarkMode
                 ? "hover:bg-[#FFFFFF] hover:text-black border-white text-white"
@@ -367,8 +372,8 @@ const WritePage = () => {
           </div>
         </div>
 
-        {/* Blog Editor */}
-        <BlogEditor isDarkMode={isDarkMode} />
+        {/* Blog Editor - ✅ Pass the callback */}
+        <BlogEditor isDarkMode={isDarkMode} onContentChange={handleContentChange} />
       </div>
     </div>
   );

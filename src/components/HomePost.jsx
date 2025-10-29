@@ -24,6 +24,28 @@ export default function HomePost({ isDarkMode }) {
   const scrollContainerRef = useRef(null);
   const router = useRouter();
 
+  // Gradient colors for fallback
+  const gradients = [
+    "bg-gradient-to-r from-purple-500 to-pink-500",
+    "bg-gradient-to-r from-blue-500 to-cyan-500",
+    "bg-gradient-to-r from-green-500 to-teal-500",
+    "bg-gradient-to-r from-orange-500 to-red-500",
+    "bg-gradient-to-r from-indigo-500 to-purple-500",
+    "bg-gradient-to-r from-pink-500 to-rose-500",
+    "bg-gradient-to-r from-yellow-500 to-orange-500",
+    "bg-gradient-to-r from-emerald-500 to-blue-500",
+    "bg-gradient-to-r from-violet-500 to-fuchsia-500",
+    "bg-gradient-to-r from-cyan-500 to-blue-500",
+    "bg-gradient-to-r from-red-500 to-pink-500",
+    "bg-gradient-to-r from-lime-500 to-green-500",
+  ];
+
+  // Function to get gradient for post
+  const getGradientForPost = (postId) => {
+    const hash = postId.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return gradients[hash % gradients.length];
+  };
+
   useEffect(() => {
     async function fetchData() {
       try {
@@ -44,6 +66,8 @@ export default function HomePost({ isDarkMode }) {
             post.authorImage,
             post.authorName || post.author
           ),
+          // Add gradient fallback color
+          gradientColor: getGradientForPost(post._id),
         }));
 
         setPosts(normalized);
@@ -160,16 +184,28 @@ export default function HomePost({ isDarkMode }) {
               : "text-black bg-[#E8EAEC] hover:bg-[#dfe1e4]"
             } flex gap-6 p-6 rounded-xl transition-all duration-300 hover:shadow-xl hover:scale-[1.01]`}
         >
-          {post.coverImage && (
-            <img
-              className="w-52 h-40 object-cover rounded-lg group-hover:shadow-md transition-shadow"
-              src={post.coverImage}
-              alt={post.title}
-              onError={(e) => {
-                e.target.style.display = "none";
-              }}
-            />
-          )}
+          {/* Cover Image or Gradient Fallback */}
+          <div
+            className={`w-52 h-40 object-cover rounded-lg group-hover:shadow-md transition-shadow flex-shrink-0 ${
+              !post.coverImage ? post.gradientColor : ""
+            }`}
+          >
+            {post.coverImage ? (
+              <img
+                className="w-52 h-40 object-cover rounded-lg group-hover:shadow-md transition-shadow"
+                src={post.coverImage}
+                alt={post.title}
+                onError={(e) => {
+                  e.target.style.display = "none";
+                }}
+              />
+            ) : (
+              <div className="w-52 h-40 rounded-lg flex items-center justify-center">
+                {/* Empty gradient div - styling from parent */}
+              </div>
+            )}
+          </div>
+
           <div className="flex flex-col gap-4 flex-1">
             <div className="flex flex-row justify-between items-start gap-4">
               <h1 className="font-bold text-2xl leading-tight">{post.title}</h1>
