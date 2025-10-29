@@ -6,7 +6,12 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   await dbConnect();
-  const posts = await Blog.find().sort({ createdAt: -1 }).lean();
+  
+  // ✅ FIX: Populate author field instead of using .lean()
+  const posts = await Blog.find()
+    .populate("author", "name username image")
+    .sort({ createdAt: -1 });
+  
   return NextResponse.json(posts);
 }
 
@@ -16,6 +21,10 @@ export async function POST(request) {
 
   try {
     const newPost = await Blog.create(body);
+    
+    // ✅ Populate author before returning
+    await newPost.populate("author", "name username image");
+    
     return NextResponse.json(newPost, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
+import { useAuth } from "@/hooks/useAuth";
 import { FaRegClock } from "react-icons/fa";
 import { IoEyeOutline } from "react-icons/io5";
 import { BiComment } from "react-icons/bi";
 
 export default function BlogPage() {
   const params = useParams();
+  const { user, isAuthenticated } = useAuth();
   const [blog, setBlog] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -21,33 +23,19 @@ export default function BlogPage() {
   const [replyInputs, setReplyInputs] = useState({});
   const [deletingIds, setDeletingIds] = useState(new Set());
 
-  // Replace with real auth in production
-  const currentUser = {
-    id: "64f1c123abc456def7890123",
-    username: "currentuser",
-    name: "Current User",
-    image: "/imageProfile1.png",
-  };
-
+  // ✅ DEBUG: Log user object
   useEffect(() => {
-    async function ensureUserExists() {
-      try {
-        await fetch("/api/test/create-user", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: currentUser.id,
-            name: currentUser.name,
-            username: currentUser.username,
-            email: "currentuser@example.com",
-          }),
-        });
-      } catch (err) {
-        console.error("❌ Failed to ensure user exists:", err);
-      }
+    if (user) {
+      console.log("👤 Current User Object:", user);
+      console.log("📝 User Fields:", {
+        id: user?.id,
+        _id: user?._id,
+        name: user?.name,
+        email: user?.email,
+        image: user?.image,
+      });
     }
-    ensureUserExists();
-  }, []);
+  }, [user]);
 
   // Fetch blog
   useEffect(() => {
@@ -81,6 +69,7 @@ export default function BlogPage() {
         const res = await fetch(`/api/comments?postId=${params.id}`);
         if (!res.ok) throw new Error("Failed to fetch comments");
         const data = await res.json();
+        console.log("📝 Fetched comments:", data);
         setComments(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error(err);
@@ -93,7 +82,15 @@ export default function BlogPage() {
   // Add comment
   const handleAddComment = async () => {
     const trimmed = newComment.trim();
-    if (!trimmed) return;
+    if (!trimmed || !isAuthenticated || !user) {
+      alert("Please login to comment");
+      return;
+    }
+
+    // ✅ Use user.id (NextAuth sets this as _id string)
+    const userId = user.id || user._id;
+    console.log("💬 Posting comment with userId:", userId, "User object:", user);
+
     setSubmitting(true);
     try {
       const res = await fetch(`/api/comments`, {
@@ -101,14 +98,25 @@ export default function BlogPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           postId: params.id,
-          authorId: currentUser.id,
+          authorId: userId,
           content: trimmed,
         }),
       });
+
       const responseData = await res.json();
+      console.log("📝 Comment response:", responseData);
+
       if (!res.ok) throw new Error(responseData.error || "Failed to post comment");
+
+      // ✅ Add new comment to state
       setComments([responseData, ...comments]);
       setNewComment("");
+
+      // ✅ Update blog post's comment count
+      setBlog((prevBlog) => ({
+        ...prevBlog,
+        commentCount: (prevBlog?.commentCount || 0) + 1,
+      }));
     } catch (err) {
       console.error("Failed to add comment:", err);
       alert(`Failed to post comment: ${err.message}`);
@@ -127,7 +135,15 @@ export default function BlogPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Failed to delete comment");
+
+      // ✅ Remove comment from state
       setComments(comments.filter((c) => c._id !== commentId));
+
+      // ✅ Update blog post's comment count
+      setBlog((prevBlog) => ({
+        ...prevBlog,
+        commentCount: Math.max(0, (prevBlog?.commentCount || 1) - 1),
+      }));
     } catch (err) {
       alert(`Failed to delete comment: ${err.message}`);
     } finally {
@@ -146,18 +162,29 @@ export default function BlogPage() {
 
   const handleAddReply = async (commentId) => {
     const reply = replyInputs[commentId]?.trim();
-    if (!reply) return;
+    if (!reply || !isAuthenticated || !user) {
+      alert("Please login to reply");
+      return;
+    }
+
+    const userId = user.id || user._id;
+    console.log("💬 Posting reply with userId:", userId);
+
     try {
       const res = await fetch(`/api/comments/${commentId}/replies`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          authorId: currentUser.id,
+          authorId: userId,
           content: reply,
         }),
       });
       const data = await res.json();
+      console.log("📝 Reply response:", data);
+
       if (!res.ok) throw new Error(data.error || "Failed to post reply");
+
+      // ✅ Update comments with new reply
       setComments(
         comments.map((c) =>
           c._id === commentId
@@ -181,6 +208,8 @@ export default function BlogPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Failed to delete reply");
+
+      // ✅ Update comments with reply removed
       setComments(
         comments.map((c) =>
           c._id === commentId
@@ -243,7 +272,6 @@ export default function BlogPage() {
       </div>
 
       <div className="max-w-[1280px] mx-auto pt-28 px-6 pb-16">
-
         {/* Blog Header */}
         <div className="mb-8">
           <Link
@@ -311,23 +339,33 @@ export default function BlogPage() {
           <h2 className="text-2xl font-bold mb-6">
             Comments ({comments.length})
           </h2>
-          {/* Comment Input */}
-          <div className="w-full bg-[#23272a] rounded p-4 mb-6">
-            <textarea
-              className="bg-transparent w-full outline-none px-2 py-2 rounded text-sm text-white resize-none"
-              placeholder="Write a comment..."
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              rows={3}
-            />
-            <button
-              onClick={handleAddComment}
-              disabled={submitting || !newComment.trim()}
-              className="mt-3 bg-[#f75555] hover:bg-red-600 text-white px-6 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {submitting ? "Posting..." : "Post Comment"}
-            </button>
-          </div>
+
+          {/* Comment Input - Show only if authenticated */}
+          {isAuthenticated ? (
+            <div className="w-full bg-[#23272a] rounded p-4 mb-6">
+              <textarea
+                className="bg-transparent w-full outline-none px-2 py-2 rounded text-sm text-white resize-none"
+                placeholder="Write a comment..."
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                rows={3}
+              />
+              <button
+                onClick={handleAddComment}
+                disabled={submitting || !newComment.trim()}
+                className="mt-3 bg-[#f75555] hover:bg-red-600 text-white px-6 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {submitting ? "Posting..." : "Post Comment"}
+              </button>
+            </div>
+          ) : (
+            <div className="w-full bg-[#23272a] rounded p-4 mb-6 text-center text-gray-400">
+              <Link href="/auth/signin" className="text-[#f75555] hover:underline">
+                Sign in
+              </Link>
+              {" "}to comment on this post
+            </div>
+          )}
 
           {/* Comments List */}
           <div className="flex flex-col gap-4">
@@ -360,7 +398,7 @@ export default function BlogPage() {
                             {new Date(comment.createdAt).toLocaleString()}
                           </span>
                         </div>
-                        {comment.author?._id === currentUser.id && (
+                        {comment.author?._id === user?.id && (
                           <button
                             onClick={() => handleDeleteComment(comment._id)}
                             disabled={deletingIds.has(comment._id)}
@@ -400,7 +438,7 @@ export default function BlogPage() {
                                 {new Date(reply.createdAt).toLocaleString()}
                               </span>
                             </div>
-                            {reply.author?._id === currentUser.id && (
+                            {reply.author?._id === user?.id && (
                               <button
                                 onClick={() =>
                                   handleDeleteReply(comment._id, reply._id)
@@ -424,27 +462,29 @@ export default function BlogPage() {
                     ))}
 
                     {/* Reply Input */}
-                    <div className="flex gap-2 mt-1">
-                      <input
-                        type="text"
-                        value={replyInputs[comment._id] || ""}
-                        onChange={(e) =>
-                          handleReplyChange(comment._id, e.target.value)
-                        }
-                        placeholder="Write a reply..."
-                        className="flex-1 bg-[#23272a] border border-gray-600 rounded px-3 py-2 text-sm text-white outline-none focus:border-[#f75555] transition-colors"
-                        onKeyPress={(e) => {
-                          if (e.key === "Enter") handleAddReply(comment._id);
-                        }}
-                      />
-                      <button
-                        onClick={() => handleAddReply(comment._id)}
-                        disabled={!replyInputs[comment._id]?.trim()}
-                        className="bg-[#f75555] hover:bg-red-600 text-white px-4 py-2 rounded text-sm disabled:opacity-50 transition-colors"
-                      >
-                        Reply
-                      </button>
-                    </div>
+                    {isAuthenticated && (
+                      <div className="flex gap-2 mt-1">
+                        <input
+                          type="text"
+                          value={replyInputs[comment._id] || ""}
+                          onChange={(e) =>
+                            handleReplyChange(comment._id, e.target.value)
+                          }
+                          placeholder="Write a reply..."
+                          className="flex-1 bg-[#23272a] border border-gray-600 rounded px-3 py-2 text-sm text-white outline-none focus:border-[#f75555] transition-colors"
+                          onKeyPress={(e) => {
+                            if (e.key === "Enter") handleAddReply(comment._id);
+                          }}
+                        />
+                        <button
+                          onClick={() => handleAddReply(comment._id)}
+                          disabled={!replyInputs[comment._id]?.trim()}
+                          className="bg-[#f75555] hover:bg-red-600 text-white px-4 py-2 rounded text-sm disabled:opacity-50 transition-colors"
+                        >
+                          Reply
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))

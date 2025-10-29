@@ -1,8 +1,9 @@
 // ============================================
-// UPDATED: src/app/api/comments/route.js
+// COMPLETE: src/app/api/comments/route.js
 // ============================================
 import connectDB from "@/lib/database/db.js";
 import { Comment } from "@/lib/models/Comment.js";
+import { Blog } from "@/lib/models/Blog.js";
 import { User } from "@/lib/models/User.js";
 import mongoose from "mongoose";
 
@@ -49,7 +50,7 @@ export async function POST(req) {
       console.log("❌ User not found:", authorId);
       return Response.json(
         { 
-          error: "User not found. Please make sure the user exists in the database.",
+          error: "User not found",
           details: `No user found with ID: ${authorId}`
         },
         { status: 404 }
@@ -66,9 +67,21 @@ export async function POST(req) {
     });
     console.log("✅ Comment created:", comment._id);
 
+    // ✅ UPDATE BLOG'S COMMENT COUNT
+    await Blog.findByIdAndUpdate(
+      postId,
+      { $inc: { commentCount: 1 } },
+      { new: true }
+    );
+    console.log("✅ Blog comment count updated");
+
     // Populate author details
-    await comment.populate("author", "username name image");
-    console.log("✅ Author populated:", comment.author);
+    await comment.populate("author", "username name image email");
+    console.log("✅ Comment populated:", {
+      author: comment.author,
+      content: comment.content,
+      _id: comment._id
+    });
 
     return Response.json(comment, { status: 201 });
   } catch (err) {
@@ -76,14 +89,12 @@ export async function POST(req) {
     console.error("Error details:", {
       name: err.name,
       message: err.message,
-      stack: err.stack
     });
 
     return Response.json(
       { 
         error: "Failed to create comment",
         details: err.message,
-        type: err.name
       },
       { status: 500 }
     );
@@ -102,15 +113,20 @@ export async function GET(req) {
       return Response.json([], { status: 200 });
     }
 
+    if (!mongoose.Types.ObjectId.isValid(postId)) {
+      return Response.json({ error: "Invalid postId" }, { status: 400 });
+    }
+
     const comments = await Comment.find({ postId })
       .populate("author", "username name image")
       .populate("replies.author", "username name image")
-      .sort({ createdAt: -1 })
-      .lean();
+      .sort({ createdAt: -1 });
+
+    console.log("✅ Fetched comments:", comments.length);
 
     return Response.json(comments, { status: 200 });
   } catch (err) {
-    console.error("Error fetching comments:", err);
+    console.error("❌ Error fetching comments:", err);
     return Response.json({ error: "Failed to fetch comments" }, { status: 500 });
   }
 }
@@ -127,15 +143,27 @@ export async function DELETE(req) {
       return Response.json({ error: "Missing commentId parameter" }, { status: 400 });
     }
 
+    if (!mongoose.Types.ObjectId.isValid(commentId)) {
+      return Response.json({ error: "Invalid commentId" }, { status: 400 });
+    }
+
     const deletedComment = await Comment.findByIdAndDelete(commentId);
 
     if (!deletedComment) {
       return Response.json({ error: "Comment not found" }, { status: 404 });
     }
 
+    // ✅ DECREMENT BLOG'S COMMENT COUNT
+    await Blog.findByIdAndUpdate(
+      deletedComment.postId,
+      { $inc: { commentCount: -1 } },
+      { new: true }
+    );
+    console.log("✅ Blog comment count decremented");
+
     return Response.json({ success: true, message: "Comment deleted" }, { status: 200 });
   } catch (err) {
-    console.error("Error deleting comment:", err);
+    console.error("❌ Error deleting comment:", err);
     return Response.json({ error: "Failed to delete comment" }, { status: 500 });
   }
 }

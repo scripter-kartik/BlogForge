@@ -61,10 +61,12 @@ export default function HomePost({ isDarkMode }) {
           views: post.views || 0,
           commentCount: post.commentCount || 0,
           estimatedRead: post.estimatedRead || 3,
-          authorName: post.authorName || "Anonymous",
+          // Get author name from populated author object or fallback
+          authorName: post.author?.name || post.authorName || "Anonymous",
+          // Get author image from populated author object or fallback
           authorImage: getRandomProfileImage(
-            post.authorImage,
-            post.authorName || post.author
+            post.author?.image || post.authorImage,
+            post.author?.name || post.authorName || "Anonymous"
           ),
           // Add gradient fallback color
           gradientColor: getGradientForPost(post._id),
@@ -85,13 +87,25 @@ export default function HomePost({ isDarkMode }) {
   useEffect(() => {
     async function fetchSuggestedUsers() {
       try {
+        console.log("👤 Fetching suggested users. Current user:", user);
+
         const res = await fetch("/api/suggested-users");
         const data = await res.json();
 
+        console.log("📝 Suggested users response:", data);
+
         if (!Array.isArray(data)) {
-          console.error("Suggested users data is not an array:", data);
+          console.error("❌ Suggested users data is not an array:", data);
           setSuggestedUsers([]);
           return;
+        }
+
+        // ✅ Check if current user is in the list
+        const currentUserInList = data.find(u => u._id === user?.id || u._id?.toString() === user?.id);
+        if (currentUserInList) {
+          console.warn("⚠️ WARNING: Current user found in suggestions:", currentUserInList);
+        } else {
+          console.log("✅ Current user is correctly excluded from suggestions");
         }
 
         setSuggestedUsers(data);
@@ -101,20 +115,21 @@ export default function HomePost({ isDarkMode }) {
         const followingIds = userData.following || [];
 
         const states = {};
-        data.forEach((user) => {
-          states[user._id] = followingIds.some(id => id.toString() === user._id);
+        data.forEach((suggestedUser) => {
+          states[suggestedUser._id] = followingIds.some(id => id.toString() === suggestedUser._id);
         });
         setFollowStates(states);
       } catch (error) {
-        console.error("Failed to load suggested users", error);
+        console.error("❌ Failed to load suggested users", error);
         setSuggestedUsers([]);
       }
     }
 
     if (isAuthenticated) {
+      console.log("🔄 isAuthenticated changed, fetching suggested users");
       fetchSuggestedUsers();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user]);
 
   const handleFollowClick = async (e, userId) => {
     e.stopPropagation();
@@ -180,31 +195,25 @@ export default function HomePost({ isDarkMode }) {
       >
         <div
           className={`w-[1280px] ${isDarkMode
-              ? "text-white bg-[#2D2D2D] hover:bg-[#353535]"
-              : "text-black bg-[#E8EAEC] hover:bg-[#dfe1e4]"
+            ? "text-white bg-[#2D2D2D] hover:bg-[#353535]"
+            : "text-black bg-[#E8EAEC] hover:bg-[#dfe1e4]"
             } flex gap-6 p-6 rounded-xl transition-all duration-300 hover:shadow-xl hover:scale-[1.01]`}
         >
           {/* Cover Image or Gradient Fallback */}
-          <div
-            className={`w-52 h-40 object-cover rounded-lg group-hover:shadow-md transition-shadow flex-shrink-0 ${
-              !post.coverImage ? post.gradientColor : ""
-            }`}
-          >
-            {post.coverImage ? (
-              <img
-                className="w-52 h-40 object-cover rounded-lg group-hover:shadow-md transition-shadow"
-                src={post.coverImage}
-                alt={post.title}
-                onError={(e) => {
-                  e.target.style.display = "none";
-                }}
-              />
-            ) : (
-              <div className="w-52 h-40 rounded-lg flex items-center justify-center">
-                {/* Empty gradient div - styling from parent */}
-              </div>
-            )}
-          </div>
+          {post.coverImage ? (
+            <img
+              className="w-52 h-40 object-cover rounded-lg group-hover:shadow-md transition-shadow flex-shrink-0"
+              src={post.coverImage}
+              alt={post.title}
+              onError={(e) => {
+                e.target.style.display = "none";
+              }}
+            />
+          ) : (
+            <div
+              className={`w-52 h-40 rounded-lg group-hover:shadow-md transition-shadow flex-shrink-0 ${post.gradientColor}`}
+            />
+          )}
 
           <div className="flex flex-col gap-4 flex-1">
             <div className="flex flex-row justify-between items-start gap-4">
@@ -232,8 +241,8 @@ export default function HomePost({ isDarkMode }) {
                 <div
                   key={idx}
                   className={`${isDarkMode
-                      ? "bg-[#3a3a3a] text-gray-300"
-                      : "bg-gray-200 text-gray-700"
+                    ? "bg-[#3a3a3a] text-gray-300"
+                    : "bg-gray-200 text-gray-700"
                     } px-3 py-1 text-xs font-medium rounded-full transition-colors duration-300`}
                 >
                   #{tag}
@@ -287,8 +296,8 @@ export default function HomePost({ isDarkMode }) {
         <button
           onClick={() => window.location.reload()}
           className={`px-6 py-2 rounded-lg font-medium transition-all ${isDarkMode
-              ? "border-2 border-white text-white hover:bg-white hover:text-black"
-              : "border-2 border-black text-black hover:bg-black hover:text-white"
+            ? "border-2 border-white text-white hover:bg-white hover:text-black"
+            : "border-2 border-black text-black hover:bg-black hover:text-white"
             }`}
         >
           Retry
@@ -333,8 +342,8 @@ export default function HomePost({ isDarkMode }) {
             <button
               onClick={() => scroll("left")}
               className={`absolute -left-16 top-1/2 -translate-y-1/2 z-10 p-3 rounded-full transition-all duration-300 ${isDarkMode
-                  ? "bg-[#2D2D2D] hover:bg-[#f75555] text-white"
-                  : "bg-gray-200 hover:bg-[#f75555] text-black hover:text-white"
+                ? "bg-[#2D2D2D] hover:bg-[#f75555] text-white"
+                : "bg-gray-200 hover:bg-[#f75555] text-black hover:text-white"
                 } opacity-0 group-hover:opacity-100`}
             >
               <ChevronLeft size={24} />
@@ -344,8 +353,8 @@ export default function HomePost({ isDarkMode }) {
             <div
               ref={scrollContainerRef}
               className={`flex gap-6 overflow-x-auto scroll-smooth pb-6 px-2 transition-colors duration-500 ${isDarkMode
-                  ? "bg-gradient-to-r from-[#1c1d1d] via-[#2D2D2D] to-[#1c1d1d]"
-                  : "bg-gradient-to-r from-[#f6f6f7] via-[#f5f5f5] to-[#f6f6f7]"
+                ? "bg-gradient-to-r from-[#1c1d1d] via-[#2D2D2D] to-[#1c1d1d]"
+                : "bg-gradient-to-r from-[#f6f6f7] via-[#f5f5f5] to-[#f6f6f7]"
                 } rounded-2xl [&::-webkit-scrollbar]:hidden`}
             >
               {suggestedUsers.map((user) => (
@@ -353,8 +362,8 @@ export default function HomePost({ isDarkMode }) {
                   <div
                     onClick={() => router.push(`/profile/${user.username}`)}
                     className={`flex flex-col items-center justify-around gap-4 px-4 py-6 w-[240px] h-[300px] rounded-2xl ${isDarkMode
-                        ? "bg-[#353535] hover:bg-[#3f3f3f]"
-                        : "bg-white hover:bg-gray-50"
+                      ? "bg-[#353535] hover:bg-[#3f3f3f]"
+                      : "bg-white hover:bg-gray-50"
                       } text-center shadow-lg hover:shadow-2xl cursor-pointer transition-colors duration-300 hover:scale-105 border ${isDarkMode ? "border-[#454545]" : "border-gray-200"
                       }`}
                   >
@@ -378,10 +387,10 @@ export default function HomePost({ isDarkMode }) {
                       onClick={(e) => handleFollowClick(e, user._id)}
                       disabled={followLoading}
                       className={`rounded-full w-full text-center text-white px-4 py-2.5 font-semibold transition-all duration-300 ${followStates[user._id]
-                          ? isDarkMode
-                            ? "bg-gray-600 hover:bg-gray-700"
-                            : "bg-gray-400 hover:bg-gray-500"
-                          : "bg-[#f75555] hover:bg-[#ff6666] hover:shadow-lg"
+                        ? isDarkMode
+                          ? "bg-gray-600 hover:bg-gray-700"
+                          : "bg-gray-400 hover:bg-gray-500"
+                        : "bg-[#f75555] hover:bg-[#ff6666] hover:shadow-lg"
                         } ${followLoading ? "opacity-50 cursor-not-allowed" : ""} active:scale-95`}
                     >
                       {followLoading ? "..." : followStates[user._id] ? "Following" : "Follow"}
@@ -395,8 +404,8 @@ export default function HomePost({ isDarkMode }) {
             <button
               onClick={() => scroll("right")}
               className={`absolute -right-16 top-1/2 -translate-y-1/2 z-10 p-3 rounded-full transition-all duration-300 ${isDarkMode
-                  ? "bg-[#2D2D2D] hover:bg-[#f75555] text-white"
-                  : "bg-gray-200 hover:bg-[#f75555] text-black hover:text-white"
+                ? "bg-[#2D2D2D] hover:bg-[#f75555] text-white"
+                : "bg-gray-200 hover:bg-[#f75555] text-black hover:text-white"
                 } opacity-0 group-hover:opacity-100`}
             >
               <ChevronRight size={24} />
