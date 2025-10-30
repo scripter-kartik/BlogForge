@@ -22,9 +22,8 @@ export default function Page() {
 
   return (
     <div
-      className={`min-h-screen flex flex-col items-center transition-colors duration-500 ${
-        isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f6f6f7]"
-      }`}
+      className={`min-h-screen flex flex-col items-center transition-colors duration-500 ${isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f6f6f7]"
+        }`}
     >
       <Navbar
         setIsLoginActive={setIsLoginActive}
@@ -33,7 +32,7 @@ export default function Page() {
         isDarkMode={isDarkMode}
       />
 
-      <Home isDarkMode={isDarkMode} />
+      <Home isDarkMode={isDarkMode} setIsLoginActive={setIsLoginActive} />
       <HomePost isDarkMode={isDarkMode} />
 
       {isLoginActive && (

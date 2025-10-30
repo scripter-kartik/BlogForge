@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
+import Login from "@/components/LoginForm";
+import Signup from "@/components/SignupForm";
 import { useAuth } from "@/hooks/useAuth";
 import { FaRegClock } from "react-icons/fa";
 import { IoEyeOutline } from "react-icons/io5";
@@ -16,6 +18,8 @@ export default function BlogPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isLoginActive, setIsLoginActive] = useState(false);
+  const [isSignupActive, setIsSignupActive] = useState(false);
 
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
@@ -83,7 +87,7 @@ export default function BlogPage() {
   const handleAddComment = async () => {
     const trimmed = newComment.trim();
     if (!trimmed || !isAuthenticated || !user) {
-      alert("Please login to comment");
+      setIsLoginActive(true);
       return;
     }
 
@@ -163,7 +167,7 @@ export default function BlogPage() {
   const handleAddReply = async (commentId) => {
     const reply = replyInputs[commentId]?.trim();
     if (!reply || !isAuthenticated || !user) {
-      alert("Please login to reply");
+      setIsLoginActive(true);
       return;
     }
 
@@ -231,7 +235,11 @@ export default function BlogPage() {
   // Loading
   if (loading) {
     return (
-      <div className="min-h-screen flex justify-center items-center bg-[#1c1d1d] text-white">
+      <div
+        className={`min-h-screen flex justify-center items-center transition-colors duration-500 ${
+          isDarkMode ? "bg-[#1c1d1d] text-white" : "bg-[#f6f6f7] text-black"
+        }`}
+      >
         Loading blog...
       </div>
     );
@@ -240,7 +248,11 @@ export default function BlogPage() {
   // Error
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col justify-center items-center bg-[#1c1d1d] text-white gap-4">
+      <div
+        className={`min-h-screen flex flex-col justify-center items-center gap-4 transition-colors duration-500 ${
+          isDarkMode ? "bg-[#1c1d1d] text-white" : "bg-[#f6f6f7] text-black"
+        }`}
+      >
         <p className="text-red-500 text-lg">{error}</p>
         <Link href="/" className="text-[#f75555] hover:underline">
           ← Back to Home
@@ -252,7 +264,11 @@ export default function BlogPage() {
   // Blog not found
   if (!blog) {
     return (
-      <div className="min-h-screen flex flex-col justify-center items-center bg-[#1c1d1d] text-white gap-4">
+      <div
+        className={`min-h-screen flex flex-col justify-center items-center gap-4 transition-colors duration-500 ${
+          isDarkMode ? "bg-[#1c1d1d] text-white" : "bg-[#f6f6f7] text-black"
+        }`}
+      >
         <p className="text-xl">Blog not found.</p>
         <Link href="/" className="text-[#f75555] hover:underline">
           ← Back to Home
@@ -263,12 +279,17 @@ export default function BlogPage() {
 
   return (
     <div
-      className={`min-h-screen ${
+      className={`min-h-screen transition-colors duration-500 ${
         isDarkMode ? "bg-[#1c1d1d] text-white" : "bg-[#f6f6f7] text-black"
-      } transition-colors duration-500`}
+      }`}
     >
-      <div className="fixed top-0 w-full flex justify-center bg-[#1c1d1d] z-50">
-        <Navbar isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />
+      <div className="fixed top-0 w-full flex justify-center z-50">
+        <Navbar
+          isDarkMode={isDarkMode}
+          setIsDarkMode={setIsDarkMode}
+          setIsLoginActive={setIsLoginActive}
+          setIsSignupActive={setIsSignupActive}
+        />
       </div>
 
       <div className="max-w-[1280px] mx-auto pt-28 px-6 pb-16">
@@ -283,11 +304,21 @@ export default function BlogPage() {
 
           <h1 className="text-4xl font-bold mb-3">{blog.title}</h1>
           {blog.description && (
-            <p className="text-gray-400 text-lg mb-4">{blog.description}</p>
+            <p
+              className={`text-lg mb-4 ${
+                isDarkMode ? "text-gray-400" : "text-gray-600"
+              }`}
+            >
+              {blog.description}
+            </p>
           )}
 
           {/* Blog Metadata */}
-          <div className="flex items-center gap-6 text-gray-400 text-sm">
+          <div
+            className={`flex items-center gap-6 text-sm ${
+              isDarkMode ? "text-gray-400" : "text-gray-600"
+            }`}
+          >
             {blog.author && (
               <div className="flex items-center gap-2">
                 <img
@@ -297,7 +328,9 @@ export default function BlogPage() {
                 />
                 <Link
                   href={`/profile/${blog.author.username}`}
-                  className="hover:underline text-white font-medium"
+                  className={`hover:underline font-medium ${
+                    isDarkMode ? "text-white" : "text-black"
+                  }`}
                 >
                   {blog.author.name || blog.author.username}
                 </Link>
@@ -324,27 +357,36 @@ export default function BlogPage() {
 
         {/* Blog Content */}
         {blog.content && (
-          <div className="prose prose-invert max-w-none mb-12">
-            <div
-              className="text-gray-300 leading-relaxed whitespace-pre-wrap"
-              dangerouslySetInnerHTML={{ __html: blog.content }}
-            />
+          <div
+            className={`max-w-none mb-12 leading-relaxed whitespace-pre-wrap ${
+              isDarkMode ? "text-gray-300" : "text-gray-700"
+            }`}
+          >
+            <div dangerouslySetInnerHTML={{ __html: blog.content }} />
           </div>
         )}
 
-        <hr className="border-gray-700 my-8" />
+        <hr
+          className={`my-8 ${isDarkMode ? "border-gray-700" : "border-gray-300"}`}
+        />
 
         {/* Comments Section */}
         <div className="mt-8">
-          <h2 className="text-2xl font-bold mb-6">
-            Comments ({comments.length})
-          </h2>
+          <h2 className="text-2xl font-bold mb-6">Comments ({comments.length})</h2>
 
           {/* Comment Input - Show only if authenticated */}
           {isAuthenticated ? (
-            <div className="w-full bg-[#23272a] rounded p-4 mb-6">
+            <div
+              className={`w-full rounded p-4 mb-6 transition-colors ${
+                isDarkMode ? "bg-[#23272a]" : "bg-gray-100"
+              }`}
+            >
               <textarea
-                className="bg-transparent w-full outline-none px-2 py-2 rounded text-sm text-white resize-none"
+                className={`bg-transparent w-full outline-none px-2 py-2 rounded text-sm resize-none ${
+                  isDarkMode
+                    ? "text-white placeholder-gray-500"
+                    : "text-black placeholder-gray-400"
+                }`}
                 placeholder="Write a comment..."
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
@@ -359,10 +401,19 @@ export default function BlogPage() {
               </button>
             </div>
           ) : (
-            <div className="w-full bg-[#23272a] rounded p-4 mb-6 text-center text-gray-400">
-              <Link href="/auth/signin" className="text-[#f75555] hover:underline">
+            <div
+              className={`w-full rounded p-4 mb-6 text-center transition-colors ${
+                isDarkMode
+                  ? "bg-[#23272a] text-gray-400"
+                  : "bg-gray-100 text-gray-600"
+              }`}
+            >
+              <button
+                onClick={() => setIsLoginActive(true)}
+                className="text-[#f75555] hover:underline"
+              >
                 Sign in
-              </Link>
+              </button>
               {" "}to comment on this post
             </div>
           )}
@@ -370,14 +421,20 @@ export default function BlogPage() {
           {/* Comments List */}
           <div className="flex flex-col gap-4">
             {comments.length === 0 ? (
-              <p className="text-gray-400 text-center py-8">
+              <p
+                className={`text-center py-8 ${
+                  isDarkMode ? "text-gray-400" : "text-gray-600"
+                }`}
+              >
                 No comments yet. Be the first to comment!
               </p>
             ) : (
               comments.map((comment) => (
                 <div
                   key={comment._id}
-                  className="flex flex-col gap-2 bg-[#2c2f33] p-4 rounded"
+                  className={`flex flex-col gap-2 p-4 rounded transition-colors ${
+                    isDarkMode ? "bg-[#2c2f33]" : "bg-gray-100"
+                  }`}
                 >
                   <div className="flex gap-3">
                     <img
@@ -392,9 +449,17 @@ export default function BlogPage() {
                             href={`/profile/${comment.author?.username}`}
                             className="font-semibold text-base text-[#f75555] hover:underline"
                           >
-                            {comment.author?.name || comment.author?.username || "Anonymous"}
+                            {comment.author?.name ||
+                              comment.author?.username ||
+                              "Anonymous"}
                           </Link>
-                          <span className="text-gray-500 text-xs block">
+                          <span
+                            className={`text-xs block ${
+                              isDarkMode
+                                ? "text-gray-500"
+                                : "text-gray-500"
+                            }`}
+                          >
                             {new Date(comment.createdAt).toLocaleString()}
                           </span>
                         </div>
@@ -410,7 +475,13 @@ export default function BlogPage() {
                           </button>
                         )}
                       </div>
-                      <p className="text-gray-300 text-sm mt-2">
+                      <p
+                        className={`text-sm mt-2 ${
+                          isDarkMode
+                            ? "text-gray-300"
+                            : "text-gray-700"
+                        }`}
+                      >
                         {comment.content}
                       </p>
                     </div>
@@ -432,9 +503,17 @@ export default function BlogPage() {
                                 href={`/profile/${reply.author?.username}`}
                                 className="font-semibold text-sm text-[#f75555] hover:underline"
                               >
-                                {reply.author?.name || reply.author?.username || "Anonymous"}
+                                {reply.author?.name ||
+                                  reply.author?.username ||
+                                  "Anonymous"}
                               </Link>
-                              <span className="text-gray-500 text-xs block">
+                              <span
+                                className={`text-xs block ${
+                                  isDarkMode
+                                    ? "text-gray-500"
+                                    : "text-gray-500"
+                                }`}
+                              >
                                 {new Date(reply.createdAt).toLocaleString()}
                               </span>
                             </div>
@@ -448,13 +527,21 @@ export default function BlogPage() {
                                 )}
                                 className="text-red-500 text-xs hover:text-red-400 disabled:opacity-50"
                               >
-                                {deletingIds.has(`${comment._id}-${reply._id}`)
+                                {deletingIds.has(
+                                  `${comment._id}-${reply._id}`
+                                )
                                   ? "Deleting..."
                                   : "Delete"}
                               </button>
                             )}
                           </div>
-                          <p className="text-gray-300 text-sm mt-1">
+                          <p
+                            className={`text-sm mt-1 ${
+                              isDarkMode
+                                ? "text-gray-300"
+                                : "text-gray-700"
+                            }`}
+                          >
                             {reply.content}
                           </p>
                         </div>
@@ -471,9 +558,14 @@ export default function BlogPage() {
                             handleReplyChange(comment._id, e.target.value)
                           }
                           placeholder="Write a reply..."
-                          className="flex-1 bg-[#23272a] border border-gray-600 rounded px-3 py-2 text-sm text-white outline-none focus:border-[#f75555] transition-colors"
+                          className={`flex-1 border rounded px-3 py-2 text-sm outline-none focus:border-[#f75555] transition-colors ${
+                            isDarkMode
+                              ? "bg-[#23272a] border-gray-600 text-white placeholder-gray-500"
+                              : "bg-white border-gray-300 text-black placeholder-gray-400"
+                          }`}
                           onKeyPress={(e) => {
-                            if (e.key === "Enter") handleAddReply(comment._id);
+                            if (e.key === "Enter")
+                              handleAddReply(comment._id);
                           }}
                         />
                         <button
@@ -492,6 +584,27 @@ export default function BlogPage() {
           </div>
         </div>
       </div>
+
+      {/* Auth Modals */}
+      {isLoginActive && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+          <Login
+            setIsLoginActive={setIsLoginActive}
+            isDarkMode={isDarkMode}
+            setIsSignupActive={setIsSignupActive}
+          />
+        </div>
+      )}
+
+      {isSignupActive && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+          <Signup
+            setIsSignupActive={setIsSignupActive}
+            isDarkMode={isDarkMode}
+            setIsLoginActive={setIsLoginActive}
+          />
+        </div>
+      )}
     </div>
   );
 }
