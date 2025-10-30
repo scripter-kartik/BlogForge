@@ -10,7 +10,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { useAuth } from "@/hooks/useAuth";
+import { useUser } from "@/context/UserContext";
 import { getRandomProfileImage } from "@/lib/profileImage.js";
 
 export default function Navbar({
@@ -19,7 +19,8 @@ export default function Navbar({
   isDarkMode,
   setIsDarkMode,
 }) {
-  const { isAuthenticated, user } = useAuth();
+  // ✅ USE USER CONTEXT INSTEAD OF useAuth
+  const { isAuthenticated, user } = useUser();
   const [accountInfoActive, setAccountInfoActive] = useState(false);
   const divRef = useRef();
   const pathname = usePathname();
@@ -140,7 +141,9 @@ export default function Navbar({
               className="relative cursor-pointer"
               onClick={() => setAccountInfoActive((prev) => !prev)}
             >
+              {/* ✅ ADD KEY AND IMAGE UPDATES IMMEDIATELY */}
               <img
+                key={user?.image}
                 className="w-[35px] h-[35px] rounded-full object-cover"
                 src={getRandomProfileImage(user?.image, user?.username || user?.email)}
                 alt="Profile"
@@ -154,7 +157,7 @@ export default function Navbar({
                       : "text-black bg-white"
                   }`}
                 >
-                  <h1 className="font-bold">{user?.username || ""}</h1>
+                  <h1 className="font-bold">{user?.name || user?.username || ""}</h1>
                   <Link href={`/profile/${user?.username || ""}`}>
                     <div className="hover:text-[#f75555] flex items-center gap-2 cursor-pointer transition-colors">
                       <MdEmojiEmotions className="w-5 h-5" />
