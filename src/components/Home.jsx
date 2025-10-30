@@ -1,14 +1,13 @@
-// src/components/Home.jsx
+// src/components/Home.jsx - UPDATED (No localStorage)
 "use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useUser } from "@/context/UserContext";
+import { useAuth } from "@/hooks/useAuth";
 import { apiClient } from "@/lib/api";
 
 export default function Home({ isDarkMode, setIsLoginActive }) {
-  // ✅ USE USER CONTEXT INSTEAD OF useAuth
-  const { isAuthenticated, user } = useUser();
+  const { isAuthenticated, user, loading: authLoading } = useAuth();
   const [userStats, setUserStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -48,7 +47,7 @@ export default function Home({ isDarkMode, setIsLoginActive }) {
   };
 
   // Show loading state
-  if (!isAuthenticated && loading) {
+  if (authLoading || (isAuthenticated && loading)) {
     return (
       <div className="w-[1280px] mt-[130px] h-auto flex justify-center items-center">
         <p className={isDarkMode ? "text-white" : "text-black"}>Loading...</p>
@@ -66,11 +65,10 @@ export default function Home({ isDarkMode, setIsLoginActive }) {
           <p className="text-red-500 mb-4">Error: {error}</p>
           <button
             onClick={() => window.location.reload()}
-            className={`px-4 py-2 border rounded ${
-              isDarkMode
+            className={`px-4 py-2 border rounded ${isDarkMode
                 ? "border-white hover:bg-white hover:text-black"
                 : "border-black hover:bg-black hover:text-white"
-            }`}
+              }`}
           >
             Retry
           </button>
@@ -83,11 +81,9 @@ export default function Home({ isDarkMode, setIsLoginActive }) {
     <div className="w-[1280px] mt-[130px] h-auto">
       {isAuthenticated ? (
         <div
-          className={`flex flex-col gap-10 justify-between items-start ${
-            isDarkMode ? "text-white" : "text-black"
-          }`}
+          className={`flex flex-col gap-10 justify-between items-start ${isDarkMode ? "text-white" : "text-black"
+            }`}
         >
-          {/* ✅ USER NAME UPDATES IMMEDIATELY */}
           <h1 className="text-4xl font-bold">
             Welcome back{" "}
             <span className="text-[#f75555]">{user?.name || "User"}</span>!
@@ -96,34 +92,30 @@ export default function Home({ isDarkMode, setIsLoginActive }) {
           {userStats && (
             <div className="flex justify-center items-center gap-6">
               <div
-                className={`flex flex-col gap-2 border-[1px] ${
-                  isDarkMode ? "border-[#494949]" : "border-[#dbdada]"
-                } shadow-lg w-[300px] h-[135px] rounded-xl p-5`}
+                className={`flex flex-col gap-2 border-[1px] ${isDarkMode ? "border-[#494949]" : "border-[#dbdada]"
+                  } shadow-lg w-[300px] h-[135px] rounded-xl p-5`}
               >
                 <h1 className="text-xl font-bold">Views</h1>
                 <h1 className="text-xl font-bold">{userStats.totalViews}</h1>
                 <p className="text-sm">+0.0% from last period</p>
               </div>
               <div
-                className={`flex flex-col gap-2 border-[1px] ${
-                  isDarkMode ? "border-[#494949]" : "border-[#dbdada]"
-                } shadow-lg w-[300px] h-[135px] rounded-xl p-5`}
+                className={`flex flex-col gap-2 border-[1px] ${isDarkMode ? "border-[#494949]" : "border-[#dbdada]"
+                  } shadow-lg w-[300px] h-[135px] rounded-xl p-5`}
               >
                 <h1 className="text-xl font-bold">Views/Post</h1>
                 <h1 className="text-xl font-bold">{userStats.viewsPerPosts}</h1>
               </div>
               <div
-                className={`flex flex-col gap-2 border-[1px] ${
-                  isDarkMode ? "border-[#494949]" : "border-[#dbdada]"
-                } shadow-lg w-[300px] h-[135px] rounded-xl p-5`}
+                className={`flex flex-col gap-2 border-[1px] ${isDarkMode ? "border-[#494949]" : "border-[#dbdada]"
+                  } shadow-lg w-[300px] h-[135px] rounded-xl p-5`}
               >
                 <h1 className="text-xl font-bold">Posts</h1>
                 <h1 className="text-xl font-bold">{userStats.totalPosts}</h1>
               </div>
               <div
-                className={`flex flex-col gap-2 border-[1px] ${
-                  isDarkMode ? "border-[#494949]" : "border-[#dbdada]"
-                } shadow-lg w-[300px] h-[135px] rounded-xl p-5`}
+                className={`flex flex-col gap-2 border-[1px] ${isDarkMode ? "border-[#494949]" : "border-[#dbdada]"
+                  } shadow-lg w-[300px] h-[135px] rounded-xl p-5`}
               >
                 <h1 className="text-xl font-bold">Avg Rating</h1>
                 <h1 className="text-xl font-bold">
@@ -135,11 +127,10 @@ export default function Home({ isDarkMode, setIsLoginActive }) {
 
           <button
             onClick={handleWritePost}
-            className={`border-[1px] ${
-              isDarkMode
+            className={`border-[1px] ${isDarkMode
                 ? "border-white hover:bg-white"
                 : "border-black hover:bg-black hover:text-white"
-            } rounded-full px-6 py-[8px] mt-2 hover:text-black hover:animate-pulse w-[200px] h-[50px] text-lg`}
+              } rounded-full px-6 py-[8px] mt-2 hover:text-black hover:animate-pulse w-[200px] h-[50px] text-lg`}
           >
             Write a post
           </button>
@@ -147,9 +138,8 @@ export default function Home({ isDarkMode, setIsLoginActive }) {
       ) : (
         <div className="flex justify-between items-start">
           <div
-            className={`flex flex-col gap-6 items-start mt-[28px] ${
-              isDarkMode ? "text-white" : "text-black"
-            }`}
+            className={`flex flex-col gap-6 items-start mt-[28px] ${isDarkMode ? "text-white" : "text-black"
+              }`}
           >
             <div className="flex flex-col gap-2 font-bold">
               <h1 className="text-5xl">Where developers</h1>
@@ -161,11 +151,10 @@ export default function Home({ isDarkMode, setIsLoginActive }) {
             </p>
             <button
               onClick={() => setIsLoginActive(true)}
-              className={`border-[1px] ${
-                isDarkMode
+              className={`border-[1px] ${isDarkMode
                   ? "border-white hover:bg-white"
                   : "border-black hover:bg-black hover:text-white"
-              } rounded-full px-6 py-[8px] mt-2 hover:text-black hover:animate-pulse`}
+                } rounded-full px-6 py-[8px] mt-2 hover:text-black hover:animate-pulse`}
             >
               Join the community
             </button>
