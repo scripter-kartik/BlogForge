@@ -8,7 +8,7 @@ import { MdOutlineDarkMode, MdEmojiEmotions } from "react-icons/md";
 import { LuPencil, LuLogOut } from "react-icons/lu";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useUser } from "@/context/UserContext";
 import { getRandomProfileImage } from "@/lib/profileImage.js";
@@ -19,11 +19,17 @@ export default function Navbar({
   isDarkMode,
   setIsDarkMode,
 }) {
-  // ✅ USE USER CONTEXT INSTEAD OF useAuth
   const { isAuthenticated, user } = useUser();
   const [accountInfoActive, setAccountInfoActive] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState({ posts: [], users: [] });
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  
   const divRef = useRef();
+  const searchRef = useRef();
   const pathname = usePathname();
+  const router = useRouter();
 
   // Close profile dropdown when clicking outside
   useEffect(() => {
@@ -31,12 +37,57 @@ export default function Navbar({
       if (divRef.current && !divRef.current.contains(event.target)) {
         setAccountInfoActive(false);
       }
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  // Debounced search
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (searchQuery.trim().length > 0) {
+        performSearch(searchQuery);
+      } else {
+        setSearchResults({ posts: [], users: [] });
+        setShowDropdown(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
+
+  const performSearch = async (query) => {
+    setIsSearching(true);
+    try {
+      const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+      const data = await response.json();
+      setSearchResults(data);
+      setShowDropdown(true);
+    } catch (error) {
+      console.error("Search error:", error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
+      setShowDropdown(false);
+      setSearchQuery("");
+    }
+  };
+
+  const handleResultClick = () => {
+    setShowDropdown(false);
+    setSearchQuery("");
+  };
 
   const handleLogout = async () => {
     await signOut({ callbackUrl: "/" });
@@ -89,22 +140,114 @@ export default function Navbar({
 
       {/* Right Section */}
       <div className="flex items-center gap-5">
-        {/* Search Box */}
-        <div
-          className={`w-[330px] flex items-center gap-2 font-sm border-b-[1px] py-2 px-3 transition-colors ${
-            isDarkMode
-              ? "border-[#ABB2BF]"
-              : "border-gray-400"
-          }`}
-        >
-          <IoSearch className="text-[#ABB2BF]" />
-          <input
-            className={`bg-transparent outline-none border-none text-sm ${
-              isDarkMode ? "text-white" : "text-black"
-            }`}
-            placeholder="Search post or users..."
-            type="text"
-          />
+        {/* Search Box with Dropdown */}
+        <div className="relative" ref={searchRef}>
+          <form onSubmit={handleSearchSubmit}>
+            <div
+              className={`w-[330px] flex items-center gap-2 font-sm border-b-[1px] py-2 px-3 transition-colors ${
+                isDarkMode ? "border-[#ABB2BF]" : "border-gray-400"
+              }`}
+            >
+              <IoSearch className="text-[#ABB2BF]" />
+              <input
+                className={`bg-transparent outline-none border-none text-sm w-full ${
+                  isDarkMode ? "text-white" : "text-black"
+                }`}
+                placeholder="Search posts or users..."
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => searchQuery && setShowDropdown(true)}
+              />
+              {isSearching && (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#f75555]"></div>
+              )}
+            </div>
+          </form>
+
+          {/* Search Dropdown */}
+          {showDropdown && (searchResults.posts.length > 0 || searchResults.users.length > 0) && (
+            <div
+              className={`absolute top-full mt-2 w-[450px] max-h-[500px] overflow-y-auto rounded-lg shadow-2xl z-50 ${
+                isDarkMode ? "bg-[#2a2b2b] text-white" : "bg-white text-black"
+              }`}
+            >
+              {/* Posts */}
+              {searchResults.posts.length > 0 && (
+                <div className="p-4">
+                  <h3 className="text-sm font-bold text-gray-500 mb-3">POSTS</h3>
+                  <div className="space-y-3">
+                    {searchResults.posts.slice(0, 3).map((post) => (
+                      <Link
+                        key={post._id}
+                        href={`/post/${post._id}`}
+                        onClick={handleResultClick}
+                        className={`block p-3 rounded-lg transition-colors ${
+                          isDarkMode ? "hover:bg-[#323333]" : "hover:bg-gray-100"
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <img
+                            src={getRandomProfileImage(post.author?.image, post.author?.username)}
+                            alt={post.author?.name}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold truncate">{post.title}</p>
+                            <p className="text-sm text-gray-500">
+                              by {post.author?.name || post.author?.username}
+                            </p>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Users */}
+              {searchResults.users.length > 0 && (
+                <div className={`p-4 ${searchResults.posts.length > 0 ? 'border-t' : ''} ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <h3 className="text-sm font-bold text-gray-500 mb-3">USERS</h3>
+                  <div className="space-y-3">
+                    {searchResults.users.slice(0, 3).map((user) => (
+                      <Link
+                        key={user._id}
+                        href={`/profile/${user.username}`}
+                        onClick={handleResultClick}
+                        className={`block p-3 rounded-lg transition-colors ${
+                          isDarkMode ? "hover:bg-[#323333]" : "hover:bg-gray-100"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={getRandomProfileImage(user.image, user.username)}
+                            alt={user.name}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold truncate">{user.name}</p>
+                            <p className="text-sm text-gray-500">@{user.username}</p>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* View All Results */}
+              <div className={`p-3 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                <Link
+                  href={`/search?q=${encodeURIComponent(searchQuery)}`}
+                  onClick={handleResultClick}
+                  className="block text-center text-[#f75555] hover:underline text-sm font-semibold"
+                >
+                  View all results for "{searchQuery}"
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Dark Mode Toggle */}
@@ -141,7 +284,6 @@ export default function Navbar({
               className="relative cursor-pointer"
               onClick={() => setAccountInfoActive((prev) => !prev)}
             >
-              {/* ✅ ADD KEY AND IMAGE UPDATES IMMEDIATELY */}
               <img
                 key={user?.image}
                 className="w-[35px] h-[35px] rounded-full object-cover"

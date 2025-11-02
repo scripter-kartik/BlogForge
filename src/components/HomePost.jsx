@@ -13,7 +13,7 @@ import { apiClient } from "@/lib/api";
 import { getRandomProfileImage } from "@/lib/profileImage";
 import { useRouter } from "next/navigation";
 
-export default function HomePost({ isDarkMode }) {
+export default function HomePost({ isDarkMode, searchResults }) {
   const { posts, setPosts } = usePosts();
   const { isAuthenticated, user } = useAuth();
   const { toggleFollow, loading: followLoading } = useFollow();
@@ -61,14 +61,11 @@ export default function HomePost({ isDarkMode }) {
           views: post.views || 0,
           commentCount: post.commentCount || 0,
           estimatedRead: post.estimatedRead || 3,
-          // Get author name from populated author object or fallback
           authorName: post.author?.name || post.authorName || "Anonymous",
-          // Get author image from populated author object or fallback
           authorImage: getRandomProfileImage(
             post.author?.image || post.authorImage,
             post.author?.name || post.authorName || "Anonymous"
           ),
-          // Add gradient fallback color
           gradientColor: getGradientForPost(post._id),
         }));
 
@@ -87,25 +84,12 @@ export default function HomePost({ isDarkMode }) {
   useEffect(() => {
     async function fetchSuggestedUsers() {
       try {
-        console.log("👤 Fetching suggested users. Current user:", user);
-
         const res = await fetch("/api/suggested-users");
         const data = await res.json();
 
-        console.log("📝 Suggested users response:", data);
-
         if (!Array.isArray(data)) {
-          console.error("❌ Suggested users data is not an array:", data);
           setSuggestedUsers([]);
           return;
-        }
-
-        // ✅ Check if current user is in the list
-        const currentUserInList = data.find(u => u._id === user?.id || u._id?.toString() === user?.id);
-        if (currentUserInList) {
-          console.warn("⚠️ WARNING: Current user found in suggestions:", currentUserInList);
-        } else {
-          console.log("✅ Current user is correctly excluded from suggestions");
         }
 
         setSuggestedUsers(data);
@@ -120,13 +104,12 @@ export default function HomePost({ isDarkMode }) {
         });
         setFollowStates(states);
       } catch (error) {
-        console.error("❌ Failed to load suggested users", error);
+        console.error("Failed to load suggested users", error);
         setSuggestedUsers([]);
       }
     }
 
     if (isAuthenticated) {
-      console.log("🔄 isAuthenticated changed, fetching suggested users");
       fetchSuggestedUsers();
     }
   }, [isAuthenticated, user]);
@@ -199,7 +182,6 @@ export default function HomePost({ isDarkMode }) {
             : "text-black bg-[#E8EAEC] hover:bg-[#dfe1e4]"
             } flex gap-6 p-6 rounded-xl transition-all duration-300 hover:shadow-xl hover:scale-[1.01]`}
         >
-          {/* Cover Image or Gradient Fallback */}
           {post.coverImage ? (
             <img
               className="w-52 h-40 object-cover rounded-lg group-hover:shadow-md transition-shadow flex-shrink-0"
@@ -276,6 +258,51 @@ export default function HomePost({ isDarkMode }) {
     ));
   };
 
+  const renderUsers = (userList) => {
+    if (userList.length === 0) return null;
+
+    return (
+      <div className="grid grid-cols-3 gap-6 mt-8">
+        {userList.map((user) => (
+          <div
+            key={user._id}
+            onClick={() => router.push(`/profile/${user.username}`)}
+            className={`flex flex-col items-center justify-around gap-4 px-4 py-6 rounded-2xl ${isDarkMode
+              ? "bg-[#2D2D2D] hover:bg-[#353535]"
+              : "bg-white hover:bg-gray-50"
+              } text-center shadow-lg hover:shadow-2xl cursor-pointer transition-all duration-300 hover:scale-105 border ${isDarkMode ? "border-[#454545]" : "border-gray-200"
+              }`}
+          >
+            <img
+              className="rounded-full object-cover w-20 h-20 border-4 border-[#f75555] hover:border-[#ff6666] transition-colors"
+              src={getRandomProfileImage(user.image, user.name)}
+              alt={user.name}
+              onError={(e) => {
+                e.target.src = "/imageProfile1.png";
+              }}
+            />
+            <div className="min-w-0 w-full">
+              <h1 className={`font-bold text-lg ${isDarkMode ? "text-white" : "text-black"} truncate`}>
+                {user.name}
+              </h1>
+              <p className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-600"} mb-2`}>
+                @{user.username}
+              </p>
+              {user.bio && (
+                <p className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-600"} line-clamp-2`}>
+                  {user.bio}
+                </p>
+              )}
+              <p className={`text-sm ${isDarkMode ? "text-gray-500" : "text-gray-500"} mt-2`}>
+                {user.followers?.length || 0} followers
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="w-[1280px] mt-[165px] mb-[70px] flex justify-center items-center min-h-[400px]">
@@ -306,6 +333,70 @@ export default function HomePost({ isDarkMode }) {
     );
   }
 
+  // If search is active, show search results
+  if (searchResults) {
+    return (
+      <div className="w-[1280px] mt-[165px] mb-[70px]">
+        {/* Search Results Header */}
+        <div className="flex items-center gap-4 justify-between mb-10">
+          <h1 className={`${isDarkMode ? "text-white" : "text-black"} text-4xl font-bold tracking-tight`}>
+            Search Results for "{searchResults.query}"
+          </h1>
+          <div className={`flex-1 h-1 rounded-full ${isDarkMode ? "bg-gradient-to-r from-[#f75555] to-transparent" : "bg-gradient-to-r from-[#f75555] to-transparent"}`}></div>
+        </div>
+
+        {/* Search Results Summary */}
+        <div className={`mb-8 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
+          <p className="text-lg">
+            Found {searchResults.posts.length} post{searchResults.posts.length !== 1 ? 's' : ''} and {searchResults.users.length} user{searchResults.users.length !== 1 ? 's' : ''}
+          </p>
+        </div>
+
+        {/* Posts Section */}
+        {searchResults.posts.length > 0 && (
+          <div className="mb-16">
+            <h2 className={`${isDarkMode ? "text-white" : "text-black"} text-2xl font-bold mb-6`}>
+              Posts ({searchResults.posts.length})
+            </h2>
+            {renderPosts(searchResults.posts.map(post => ({
+              ...post,
+              id: post._id,
+              starRating: post.starRating || 4,
+              views: post.views || 0,
+              commentCount: post.commentCount || 0,
+              estimatedRead: post.estimatedRead || 3,
+              authorName: post.author?.name || post.authorName || "Anonymous",
+              authorImage: getRandomProfileImage(
+                post.author?.image || post.authorImage,
+                post.author?.name || post.authorName || "Anonymous"
+              ),
+              gradientColor: getGradientForPost(post._id),
+            })))}
+          </div>
+        )}
+
+        {/* Users Section */}
+        {searchResults.users.length > 0 && (
+          <div>
+            <h2 className={`${isDarkMode ? "text-white" : "text-black"} text-2xl font-bold mb-6`}>
+              Users ({searchResults.users.length})
+            </h2>
+            {renderUsers(searchResults.users)}
+          </div>
+        )}
+
+        {/* No Results */}
+        {searchResults.posts.length === 0 && searchResults.users.length === 0 && (
+          <div className={`text-center py-16 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
+            <p className="text-2xl mb-4">No results found for "{searchResults.query}"</p>
+            <p className="text-lg">Try searching with different keywords</p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Regular home page content
   const featured = getFeaturedPosts();
   const trending = getTrendingPosts();
   const latest = getLatestPosts();
@@ -338,7 +429,6 @@ export default function HomePost({ isDarkMode }) {
           </div>
 
           <div className="relative group">
-            {/* Left Arrow */}
             <button
               onClick={() => scroll("left")}
               className={`absolute -left-16 top-1/2 -translate-y-1/2 z-10 p-3 rounded-full transition-all duration-300 ${isDarkMode
@@ -349,7 +439,6 @@ export default function HomePost({ isDarkMode }) {
               <ChevronLeft size={24} />
             </button>
 
-            {/* Suggested Users Container */}
             <div
               ref={scrollContainerRef}
               className={`flex gap-6 overflow-x-auto scroll-smooth pb-6 px-2 transition-colors duration-500 ${isDarkMode
@@ -400,7 +489,6 @@ export default function HomePost({ isDarkMode }) {
               ))}
             </div>
 
-            {/* Right Arrow */}
             <button
               onClick={() => scroll("right")}
               className={`absolute -right-16 top-1/2 -translate-y-1/2 z-10 p-3 rounded-full transition-all duration-300 ${isDarkMode
