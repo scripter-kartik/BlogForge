@@ -91,7 +91,6 @@ export default function BlogPage() {
       return;
     }
 
-    // ✅ Use user.id (NextAuth sets this as _id string)
     const userId = user.id || user._id;
     console.log("💬 Posting comment with userId:", userId, "User object:", user);
 
@@ -112,11 +111,9 @@ export default function BlogPage() {
 
       if (!res.ok) throw new Error(responseData.error || "Failed to post comment");
 
-      // ✅ Add new comment to state
       setComments([responseData, ...comments]);
       setNewComment("");
 
-      // ✅ Update blog post's comment count
       setBlog((prevBlog) => ({
         ...prevBlog,
         commentCount: (prevBlog?.commentCount || 0) + 1,
@@ -140,10 +137,8 @@ export default function BlogPage() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Failed to delete comment");
 
-      // ✅ Remove comment from state
       setComments(comments.filter((c) => c._id !== commentId));
 
-      // ✅ Update blog post's comment count
       setBlog((prevBlog) => ({
         ...prevBlog,
         commentCount: Math.max(0, (prevBlog?.commentCount || 1) - 1),
@@ -188,7 +183,6 @@ export default function BlogPage() {
 
       if (!res.ok) throw new Error(data.error || "Failed to post reply");
 
-      // ✅ Update comments with new reply
       setComments(
         comments.map((c) =>
           c._id === commentId
@@ -213,7 +207,6 @@ export default function BlogPage() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Failed to delete reply");
 
-      // ✅ Update comments with reply removed
       setComments(
         comments.map((c) =>
           c._id === commentId
@@ -249,11 +242,11 @@ export default function BlogPage() {
   if (error) {
     return (
       <div
-        className={`min-h-screen flex flex-col justify-center items-center gap-4 transition-colors duration-500 ${
+        className={`min-h-screen flex flex-col justify-center items-center gap-4 transition-colors duration-500 px-4 ${
           isDarkMode ? "bg-[#1c1d1d] text-white" : "bg-[#f6f6f7] text-black"
         }`}
       >
-        <p className="text-red-500 text-lg">{error}</p>
+        <p className="text-red-500 text-lg text-center">{error}</p>
         <Link href="/" className="text-[#f75555] hover:underline">
           ← Back to Home
         </Link>
@@ -265,11 +258,11 @@ export default function BlogPage() {
   if (!blog) {
     return (
       <div
-        className={`min-h-screen flex flex-col justify-center items-center gap-4 transition-colors duration-500 ${
+        className={`min-h-screen flex flex-col justify-center items-center gap-4 transition-colors duration-500 px-4 ${
           isDarkMode ? "bg-[#1c1d1d] text-white" : "bg-[#f6f6f7] text-black"
         }`}
       >
-        <p className="text-xl">Blog not found.</p>
+        <p className="text-xl text-center">Blog not found.</p>
         <Link href="/" className="text-[#f75555] hover:underline">
           ← Back to Home
         </Link>
@@ -292,20 +285,20 @@ export default function BlogPage() {
         />
       </div>
 
-      <div className="max-w-[1280px] mx-auto pt-28 px-6 pb-16">
+      <div className="max-w-[1280px] mx-auto pt-20 sm:pt-24 md:pt-28 px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16">
         {/* Blog Header */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <Link
             href="/"
-            className="text-[#f75555] hover:underline text-sm mb-4 inline-block"
+            className="text-[#f75555] hover:underline text-sm mb-3 sm:mb-4 inline-block"
           >
             ← Back to Blogs
           </Link>
 
-          <h1 className="text-4xl font-bold mb-3">{blog.title}</h1>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 sm:mb-3 break-words">{blog.title}</h1>
           {blog.description && (
             <p
-              className={`text-lg mb-4 ${
+              className={`text-base sm:text-lg mb-3 sm:mb-4 ${
                 isDarkMode ? "text-gray-400" : "text-gray-600"
               }`}
             >
@@ -315,7 +308,7 @@ export default function BlogPage() {
 
           {/* Blog Metadata */}
           <div
-            className={`flex items-center gap-6 text-sm ${
+            className={`flex flex-wrap items-center gap-3 sm:gap-4 lg:gap-6 text-xs sm:text-sm ${
               isDarkMode ? "text-gray-400" : "text-gray-600"
             }`}
           >
@@ -324,7 +317,7 @@ export default function BlogPage() {
                 <img
                   src={blog.author.image || "/imageProfile1.png"}
                   alt={blog.author.name}
-                  className="w-8 h-8 rounded-full"
+                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full"
                 />
                 <Link
                   href={`/profile/${blog.author.username}`}
@@ -338,19 +331,19 @@ export default function BlogPage() {
             )}
             {blog.createdAt && (
               <div className="flex items-center gap-1">
-                <FaRegClock />
-                <span>{new Date(blog.createdAt).toLocaleDateString()}</span>
+                <FaRegClock className="flex-shrink-0" />
+                <span className="whitespace-nowrap">{new Date(blog.createdAt).toLocaleDateString()}</span>
               </div>
             )}
             {blog.views !== undefined && (
               <div className="flex items-center gap-1">
-                <IoEyeOutline />
-                <span>{blog.views} views</span>
+                <IoEyeOutline className="flex-shrink-0" />
+                <span className="whitespace-nowrap">{blog.views} views</span>
               </div>
             )}
             <div className="flex items-center gap-1">
-              <BiComment />
-              <span>{comments.length} comments</span>
+              <BiComment className="flex-shrink-0" />
+              <span className="whitespace-nowrap">{comments.length} comments</span>
             </div>
           </div>
         </div>
@@ -358,7 +351,7 @@ export default function BlogPage() {
         {/* Blog Content */}
         {blog.content && (
           <div
-            className={`max-w-none mb-12 leading-relaxed whitespace-pre-wrap ${
+            className={`max-w-none mb-8 sm:mb-12 leading-relaxed whitespace-pre-wrap text-sm sm:text-base ${
               isDarkMode ? "text-gray-300" : "text-gray-700"
             }`}
           >
@@ -367,17 +360,17 @@ export default function BlogPage() {
         )}
 
         <hr
-          className={`my-8 ${isDarkMode ? "border-gray-700" : "border-gray-300"}`}
+          className={`my-6 sm:my-8 ${isDarkMode ? "border-gray-700" : "border-gray-300"}`}
         />
 
         {/* Comments Section */}
-        <div className="mt-8">
-          <h2 className="text-2xl font-bold mb-6">Comments ({comments.length})</h2>
+        <div className="mt-6 sm:mt-8">
+          <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Comments ({comments.length})</h2>
 
           {/* Comment Input - Show only if authenticated */}
           {isAuthenticated ? (
             <div
-              className={`w-full rounded p-4 mb-6 transition-colors ${
+              className={`w-full rounded p-3 sm:p-4 mb-4 sm:mb-6 transition-colors ${
                 isDarkMode ? "bg-[#23272a]" : "bg-gray-100"
               }`}
             >
@@ -395,14 +388,14 @@ export default function BlogPage() {
               <button
                 onClick={handleAddComment}
                 disabled={submitting || !newComment.trim()}
-                className="mt-3 bg-[#f75555] hover:bg-red-600 text-white px-6 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="mt-3 bg-[#f75555] hover:bg-red-600 text-white px-4 sm:px-6 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm sm:text-base"
               >
                 {submitting ? "Posting..." : "Post Comment"}
               </button>
             </div>
           ) : (
             <div
-              className={`w-full rounded p-4 mb-6 text-center transition-colors ${
+              className={`w-full rounded p-3 sm:p-4 mb-4 sm:mb-6 text-center transition-colors text-sm sm:text-base ${
                 isDarkMode
                   ? "bg-[#23272a] text-gray-400"
                   : "bg-gray-100 text-gray-600"
@@ -419,10 +412,10 @@ export default function BlogPage() {
           )}
 
           {/* Comments List */}
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3 sm:gap-4">
             {comments.length === 0 ? (
               <p
-                className={`text-center py-8 ${
+                className={`text-center py-6 sm:py-8 text-sm sm:text-base ${
                   isDarkMode ? "text-gray-400" : "text-gray-600"
                 }`}
               >
@@ -432,22 +425,22 @@ export default function BlogPage() {
               comments.map((comment) => (
                 <div
                   key={comment._id}
-                  className={`flex flex-col gap-2 p-4 rounded transition-colors ${
+                  className={`flex flex-col gap-2 p-3 sm:p-4 rounded transition-colors ${
                     isDarkMode ? "bg-[#2c2f33]" : "bg-gray-100"
                   }`}
                 >
-                  <div className="flex gap-3">
+                  <div className="flex gap-2 sm:gap-3">
                     <img
                       src={comment.author?.image || "/imageProfile1.png"}
                       alt={comment.author?.name || "User"}
-                      className="w-10 h-10 rounded-full border-2 border-[#f75555]"
+                      className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-[#f75555] flex-shrink-0"
                     />
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="min-w-0 flex-1">
                           <Link
                             href={`/profile/${comment.author?.username}`}
-                            className="font-semibold text-base text-[#f75555] hover:underline"
+                            className="font-semibold text-sm sm:text-base text-[#f75555] hover:underline truncate block"
                           >
                             {comment.author?.name ||
                               comment.author?.username ||
@@ -467,7 +460,7 @@ export default function BlogPage() {
                           <button
                             onClick={() => handleDeleteComment(comment._id)}
                             disabled={deletingIds.has(comment._id)}
-                            className="text-red-500 text-xs hover:text-red-400 disabled:opacity-50"
+                            className="text-red-500 text-xs hover:text-red-400 disabled:opacity-50 flex-shrink-0"
                           >
                             {deletingIds.has(comment._id)
                               ? "Deleting..."
@@ -476,7 +469,7 @@ export default function BlogPage() {
                         )}
                       </div>
                       <p
-                        className={`text-sm mt-2 ${
+                        className={`text-sm mt-2 break-words ${
                           isDarkMode
                             ? "text-gray-300"
                             : "text-gray-700"
@@ -488,20 +481,20 @@ export default function BlogPage() {
                   </div>
 
                   {/* Replies */}
-                  <div className="ml-12 mt-3 flex flex-col gap-3">
+                  <div className="ml-8 sm:ml-10 md:ml-12 mt-2 sm:mt-3 flex flex-col gap-2 sm:gap-3">
                     {(comment.replies || []).map((reply) => (
-                      <div key={reply._id} className="flex gap-3">
+                      <div key={reply._id} className="flex gap-2 sm:gap-3">
                         <img
                           src={reply.author?.image || "/imageProfile1.png"}
                           alt={reply.author?.name || "User"}
-                          className="w-8 h-8 rounded-full border-2 border-[#f75555]"
+                          className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 border-[#f75555] flex-shrink-0"
                         />
-                        <div className="flex-1">
-                          <div className="flex justify-between items-start">
-                            <div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between items-start gap-2">
+                            <div className="min-w-0 flex-1">
                               <Link
                                 href={`/profile/${reply.author?.username}`}
-                                className="font-semibold text-sm text-[#f75555] hover:underline"
+                                className="font-semibold text-xs sm:text-sm text-[#f75555] hover:underline truncate block"
                               >
                                 {reply.author?.name ||
                                   reply.author?.username ||
@@ -525,7 +518,7 @@ export default function BlogPage() {
                                 disabled={deletingIds.has(
                                   `${comment._id}-${reply._id}`
                                 )}
-                                className="text-red-500 text-xs hover:text-red-400 disabled:opacity-50"
+                                className="text-red-500 text-xs hover:text-red-400 disabled:opacity-50 flex-shrink-0"
                               >
                                 {deletingIds.has(
                                   `${comment._id}-${reply._id}`
@@ -536,7 +529,7 @@ export default function BlogPage() {
                             )}
                           </div>
                           <p
-                            className={`text-sm mt-1 ${
+                            className={`text-xs sm:text-sm mt-1 break-words ${
                               isDarkMode
                                 ? "text-gray-300"
                                 : "text-gray-700"
@@ -550,7 +543,7 @@ export default function BlogPage() {
 
                     {/* Reply Input */}
                     {isAuthenticated && (
-                      <div className="flex gap-2 mt-1">
+                      <div className="flex flex-col sm:flex-row gap-2 mt-1">
                         <input
                           type="text"
                           value={replyInputs[comment._id] || ""}
@@ -571,7 +564,7 @@ export default function BlogPage() {
                         <button
                           onClick={() => handleAddReply(comment._id)}
                           disabled={!replyInputs[comment._id]?.trim()}
-                          className="bg-[#f75555] hover:bg-red-600 text-white px-4 py-2 rounded text-sm disabled:opacity-50 transition-colors"
+                          className="bg-[#f75555] hover:bg-red-600 text-white px-4 py-2 rounded text-sm disabled:opacity-50 transition-colors flex-shrink-0"
                         >
                           Reply
                         </button>
@@ -587,7 +580,7 @@ export default function BlogPage() {
 
       {/* Auth Modals */}
       {isLoginActive && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <Login
             setIsLoginActive={setIsLoginActive}
             isDarkMode={isDarkMode}
@@ -597,7 +590,7 @@ export default function BlogPage() {
       )}
 
       {isSignupActive && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <Signup
             setIsSignupActive={setIsSignupActive}
             isDarkMode={isDarkMode}

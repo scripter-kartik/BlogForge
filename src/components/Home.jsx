@@ -144,38 +144,42 @@ export default function Home({ isDarkMode, setIsLoginActive }) {
         </div>
       ) : (
         <div className="flex flex-col lg:flex-row justify-between items-center lg:items-start gap-8 lg:gap-4">
-          <div
-            className={`flex flex-col gap-4 sm:gap-6 items-center lg:items-start mt-0 sm:mt-4 lg:mt-[28px] ${
-              isDarkMode ? "text-white" : "text-black"
-            } text-center lg:text-left`}
-          >
-            <div className="flex flex-col gap-2 font-bold">
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl">Where developers</h1>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl">Build, Write, and Share</h1>
-            </div>
-            <p className="text-base sm:text-lg lg:text-xl w-full lg:w-[750px]">
-              A space to share ideas, projects, lessons, and stories, and
-              connect with a thriving community of tech enthusiasts.
-            </p>
-            <button
-              onClick={() => setIsLoginActive(true)}
-              className={`border-[1px] ${
-                isDarkMode
-                  ? "border-white hover:bg-white"
-                  : "border-black hover:bg-black hover:text-white"
-              } rounded-full px-6 py-[8px] mt-2 hover:text-black hover:animate-pulse transition-all`}
-            >
-              Join the community
-            </button>
-          </div>
-          <div className="flex justify-center lg:justify-end w-full lg:w-auto">
-            <img 
-              className="w-64 h-52 sm:w-80 sm:h-64 lg:w-96 lg:h-80 object-contain" 
-              src="/image.png" 
-              alt="Community illustration" 
-            />
-          </div>
-        </div>
+          
+  {/* IMAGE FIRST ON MOBILE, LAST ON DESKTOP */}
+  <div className="order-1 lg:order-2 flex justify-center lg:justify-end w-full lg:w-auto">
+    <img 
+      className="w-96 h-80 object-contain" 
+      src="/image.png" 
+      alt="Community illustration" 
+    />
+  </div>
+
+  {/* TEXT AFTER IMAGE ON MOBILE, FIRST ON DESKTOP */}
+  <div
+    className={`order-2 lg:order-1 flex flex-col gap-4 sm:gap-6 items-center lg:items-start mt-0 sm:mt-4 lg:mt-[28px] ${
+      isDarkMode ? "text-white" : "text-black"
+    } text-center lg:text-left`}
+  >
+    <div className="flex flex-col gap-2 font-bold">
+      <h1 className="text-3xl sm:text-4xl lg:text-5xl">Where developers</h1>
+      <h1 className="text-4xl sm:text-5xl lg:text-6xl text-[#f75555]">Build, Write, and Share</h1>
+    </div>
+    <p className="text-base sm:text-lg lg:text-xl w-full lg:w-[750px]">
+      A space to share ideas, projects, lessons, and stories, and
+      connect with a thriving community of tech enthusiasts.
+    </p>
+    <button
+      onClick={() => setIsLoginActive(true)}
+      className={`border-[1px] ${
+        isDarkMode
+          ? "border-white hover:bg-white"
+          : "border-black hover:bg-black hover:text-white"
+      } rounded-full px-6 py-[8px] mt-2 hover:text-black hover:animate-pulse transition-all`}
+    >
+      Join the community
+    </button>
+  </div>
+</div>
       )}
     </div>
   );

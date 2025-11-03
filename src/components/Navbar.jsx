@@ -147,10 +147,10 @@ export default function Navbar({
               >
                 <IoSearch className="text-[#ABB2BF]" />
                 <input
-                  className={`bg-transparent outline-none border-none text-sm w-full ${
+                  className={`bg-transparent font-bold outline-none border-none text-sm w-full ${
                     isDarkMode ? "text-white placeholder-gray-400" : "text-black placeholder-gray-600"
                   }`}
-                  placeholder="Search posts or users..."
+                  placeholder="Search users..."
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -382,7 +382,7 @@ export default function Navbar({
 
       {/* Mobile - Top Bar (Search + Dark Mode) */}
       <div
-        className={`md:hidden fixed top-0 left-0 right-0 z-50 transition-colors duration-500 ${
+        className={`lg:hidden fixed top-0 left-0 right-0 z-50 transition-colors duration-500 ${
           isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f6f6f7]"
         } shadow-sm`}
       >
@@ -392,10 +392,10 @@ export default function Navbar({
             <div className="w-full flex items-center gap-2 font-sm border-b-2 border-[#f75555] py-2 px-3 transition-colors">
               <IoSearch className="text-[#f75555]" />
               <input
-                className={`bg-transparent outline-none border-none text-sm w-full ${
+                className={`bg-transparent outline-none border-none font-bold text-sm w-full ${
                   isDarkMode ? "text-white placeholder-gray-400" : "text-black placeholder-gray-600"
                 }`}
-                placeholder="Search..."
+                placeholder="Search users..."
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -480,7 +480,7 @@ export default function Navbar({
 
       {/* Mobile - Bottom Navigation */}
       <div
-        className={`md:hidden fixed bottom-0 left-0 right-0 z-50 transition-colors duration-500 ${
+        className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 transition-colors duration-500 ${
           isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f6f6f7]"
         } shadow-lg border-t ${isDarkMode ? "border-gray-700" : "border-gray-200"}`}
       >
