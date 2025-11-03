@@ -5,11 +5,12 @@ import FollowersModal from "../../../../components/FollowersModal.jsx";
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { useUser } from "@/context/UserContext"; // ✅ ADD THIS IMPORT
+import { useUser } from "@/context/UserContext";
 import { useFollow } from "@/hooks/useFollow";
 import { apiClient } from "@/lib/api";
 import { getRandomProfileImage } from "@/lib/profileImage.js";
 import { signOut } from "next-auth/react";
+import { FaRegStar, FaRegClock } from "react-icons/fa";
 
 export default function Profile() {
   const params = useParams();
@@ -17,7 +18,7 @@ export default function Profile() {
   const router = useRouter();
 
   const { isAuthenticated, user: authUser, loading: authLoading, updateSession } = useAuth();
-  const { refreshUser, updateUser } = useUser(); // ✅ ADD THIS HOOK
+  const { refreshUser, updateUser } = useUser();
   const { toggleFollow, loading: followLoading } = useFollow();
 
   const [user, setUser] = useState(null);
@@ -40,7 +41,27 @@ export default function Profile() {
     password: "",
   });
 
-  // ✅ Fetch profile data
+  // Gradient colors for posts
+  const gradients = [
+    "bg-gradient-to-r from-purple-500 to-pink-500",
+    "bg-gradient-to-r from-blue-500 to-cyan-500",
+    "bg-gradient-to-r from-green-500 to-teal-500",
+    "bg-gradient-to-r from-orange-500 to-red-500",
+    "bg-gradient-to-r from-indigo-500 to-purple-500",
+    "bg-gradient-to-r from-pink-500 to-rose-500",
+    "bg-gradient-to-r from-yellow-500 to-orange-500",
+    "bg-gradient-to-r from-emerald-500 to-blue-500",
+    "bg-gradient-to-r from-violet-500 to-fuchsia-500",
+    "bg-gradient-to-r from-cyan-500 to-blue-500",
+    "bg-gradient-to-r from-red-500 to-pink-500",
+    "bg-gradient-to-r from-lime-500 to-green-500",
+  ];
+
+  const getGradientForPost = (postId) => {
+    const hash = postId.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return gradients[hash % gradients.length];
+  };
+
   const fetchUserData = useCallback(async () => {
     if (!username) return;
 
@@ -69,7 +90,6 @@ export default function Profile() {
       const postsData = await apiClient.getUserPosts(userData.username);
       setUserPosts(postsData.posts || []);
 
-      // Check if current user is following this user
       if (isAuthenticated && authUser?._id) {
         const isUserFollowing = userData.followers?.some(
           (followerId) => followerId.toString() === authUser._id
@@ -88,7 +108,6 @@ export default function Profile() {
     fetchUserData();
   }, [fetchUserData]);
 
-  // ✅ Handle follow
   const handleFollowClick = async () => {
     if (!isAuthenticated) {
       router.push("/");
@@ -105,7 +124,6 @@ export default function Profile() {
     }
   };
 
-  // ✅ UPDATED handleFileChange FUNCTION
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -133,18 +151,15 @@ export default function Profile() {
         throw new Error(data.error || "Failed to update profile image");
       }
 
-      // ✅ Update local state
       setUser((prev) => ({
         ...prev,
         image: data.user.image,
       }));
 
-      // ✅ UPDATE GLOBAL USER CONTEXT IMMEDIATELY
       updateUser({
         image: data.user.image,
       });
 
-      // ✅ Also refresh the session
       await refreshUser();
 
       setSuccess("Profile image updated!");
@@ -157,14 +172,12 @@ export default function Profile() {
     }
   };
 
-  // ✅ Handle input change
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setError("");
     setSuccess("");
   };
 
-  // ✅ Validate form
   const validateForm = () => {
     if (!formData.name.trim()) {
       setError("Name is required");
@@ -185,7 +198,6 @@ export default function Profile() {
     return true;
   };
 
-  // ✅ UPDATED handleSave FUNCTION
   const handleSave = async () => {
     if (!validateForm()) return;
 
@@ -215,7 +227,6 @@ export default function Profile() {
         throw new Error(data.error || "Failed to update profile");
       }
 
-      // ✅ Update local state with new data
       setUser((prev) => ({
         ...prev,
         name: data.user.name,
@@ -223,13 +234,11 @@ export default function Profile() {
         bio: data.user.bio,
       }));
 
-      // ✅ UPDATE GLOBAL USER CONTEXT IMMEDIATELY
       updateUser({
         name: data.user.name,
         email: data.user.email,
       });
 
-      // ✅ Also refresh the session
       await refreshUser();
 
       setSuccess("Profile updated successfully!");
@@ -243,7 +252,6 @@ export default function Profile() {
     }
   };
 
-  // ✅ Handle logout
   const handleLogout = async () => {
     try {
       await signOut({ callbackUrl: "/" });
@@ -313,9 +321,9 @@ export default function Profile() {
           isDarkMode ? "text-white" : "text-black"
         }`}
       >
-        <div className="flex items-start justify-between w-full">
+        <div className="flex items-start justify-between w-full gap-12">
           {/* Profile Sidebar */}
-          <div className="flex flex-col items-center gap-6 w-80">
+          <div className="flex flex-col items-center gap-6 w-80 flex-shrink-0">
             <div className="relative w-64 h-64 rounded-full overflow-hidden border-4 border-[#f75555] group">
               <img
                 key={user?.image}
@@ -400,8 +408,8 @@ export default function Profile() {
           </div>
 
           {/* Profile Details */}
-          <div className="flex flex-col gap-4 items-start w-[900px]">
-            <h1 className="text-4xl font-bold mb-8">
+          <div className="flex flex-col gap-4 items-start flex-1">
+            <h1 className="text-4xl font-bold mb-4">
               {isOwnProfile ? `Welcome, ${user?.name || "User"}` : user?.name}
             </h1>
 
@@ -480,49 +488,103 @@ export default function Profile() {
                 )}
               </>
             ) : (
-              // Viewing someone else's profile
-              <p className={isDarkMode ? "text-gray-400" : "text-gray-600"}>
-                {user?.bio || "No bio yet"}
-              </p>
+              // Viewing someone else's profile - IMPROVED UI
+              <div className={`w-full p-6 rounded-xl ${isDarkMode ? "bg-[#2D2D2D]" : "bg-white"} shadow-lg`}>
+                <h3 className="text-xl font-bold mb-3">About</h3>
+                <p className={`text-base leading-relaxed ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}>
+                  {user?.bio || "No bio yet"}
+                </p>
+                <div className={`mt-4 pt-4 border-t ${isDarkMode ? "border-gray-700" : "border-gray-200"}`}>
+                  <p className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
+                    <span className="font-semibold">Email:</span> {user?.email}
+                  </p>
+                  <p className={`text-sm mt-2 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
+                    <span className="font-semibold">Username:</span> @{user?.username}
+                  </p>
+                </div>
+              </div>
             )}
           </div>
         </div>
 
         {/* User posts */}
-        <div className="mt-32 w-full mb-12">
-          <div className="flex items-center gap-5 mb-6">
-            <h1 className="text-3xl">
-              {isOwnProfile ? "Your posts" : "Posts"}
+        <div className="mt-16 w-full mb-12">
+          <div className="flex items-center gap-4 justify-between mb-10">
+            <h1 className={`${isDarkMode ? "text-white" : "text-black"} text-3xl font-bold tracking-tight`}>
+              {isOwnProfile ? "Your Posts" : `Posts by ${user?.name}`}
             </h1>
-            <div className="border-t-2 flex-1 border-[#f75555]"></div>
+            <div className={`flex-1 h-1 rounded-full ${isDarkMode ? "bg-gradient-to-r from-[#f75555] to-transparent" : "bg-gradient-to-r from-[#f75555] to-transparent"}`}></div>
           </div>
+          
           {userPosts.length > 0 ? (
             userPosts.map((post) => (
               <div
                 key={post._id}
-                className={`border p-4 mb-3 rounded w-full transition-colors ${
-                  isDarkMode
-                    ? "border-gray-700 hover:bg-[#2f2f2f]"
-                    : "border-gray-300 hover:bg-gray-100"
-                }`}
+                className="w-full mt-8 cursor-pointer group"
+                onClick={() => router.push(`/blog/${post._id}`)}
               >
-                <h3 className="text-xl font-bold mb-2">{post.title}</h3>
-                <p className={isDarkMode ? "text-gray-400" : "text-gray-600"}>
-                  {post.description}
-                </p>
+                <div
+                  className={`w-full ${
+                    isDarkMode
+                      ? "text-white bg-[#2D2D2D] hover:bg-[#353535]"
+                      : "text-black bg-[#E8EAEC] hover:bg-[#dfe1e4]"
+                  } flex gap-6 p-6 rounded-xl transition-all duration-300 hover:shadow-xl hover:scale-[1.01]`}
+                >
+                  <div
+                    className={`w-52 h-40 rounded-lg group-hover:shadow-md transition-shadow flex-shrink-0 ${getGradientForPost(post._id)}`}
+                  />
+
+                  <div className="flex flex-col gap-4 flex-1">
+                    <div className="flex flex-row justify-between items-start gap-4">
+                      <h1 className="font-bold text-2xl leading-tight">{post.title}</h1>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <img
+                          className="w-8 h-8 rounded-full border-2 border-[#f75555]"
+                          src={getRandomProfileImage(user?.image, user?.username)}
+                          alt={user?.name}
+                        />
+                        <p className="text-sm font-medium">{user?.name}</p>
+                      </div>
+                    </div>
+                    {post.description && (
+                      <p
+                        className={`${
+                          isDarkMode ? "text-gray-300" : "text-gray-700"
+                        } line-clamp-2 text-base`}
+                      >
+                        {post.description}
+                      </p>
+                    )}
+                    <div
+                      className={`${
+                        isDarkMode ? "text-gray-400" : "text-gray-600"
+                      } flex items-center gap-6 text-sm font-medium`}
+                    >
+                      <div className="flex items-center gap-2 hover:text-[#f75555] transition-colors">
+                        <FaRegStar className="text-yellow-500 text-base" />
+                        <p>{post.likesCount || 0} likes</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <FaRegClock className="text-base" />
+                        <p>{new Date(post.createdAt).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             ))
           ) : (
-            <p className={isDarkMode ? "text-gray-400" : "text-gray-600"}>
-              {isOwnProfile
-                ? "You haven't written any posts yet."
-                : "This user hasn't written any posts yet."}
-            </p>
+            <div className={`text-center py-16 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
+              <p className="text-xl">
+                {isOwnProfile
+                  ? "You haven't written any posts yet."
+                  : `${user?.name} hasn't written any posts yet.`}
+              </p>
+            </div>
           )}
         </div>
       </div>
 
-      {/* Followers Modal */}
       <FollowersModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}

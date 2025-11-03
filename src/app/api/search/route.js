@@ -12,6 +12,8 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("q");
 
+    console.log("🔍 Search query received:", query);
+
     if (!query || query.trim() === "") {
       return NextResponse.json({
         posts: [],
@@ -20,7 +22,10 @@ export async function GET(request) {
       });
     }
 
-    const searchRegex = new RegExp(query, "i"); // Case-insensitive search
+    // Case-insensitive search regex
+    const searchRegex = new RegExp(query.trim(), "i");
+
+    console.log("📝 Searching with regex:", searchRegex);
 
     // Search posts by title, description, or content
     const posts = await Post.find({
@@ -32,7 +37,11 @@ export async function GET(request) {
     })
       .populate("author", "name username image")
       .sort({ createdAt: -1 })
-      .limit(10);
+      .limit(10)
+      .lean();
+
+    console.log("📚 Posts found:", posts.length);
+    console.log("📚 First post (if any):", posts[0]?.title);
 
     // Search users by name, username, or bio
     const users = await User.find({
@@ -43,7 +52,10 @@ export async function GET(request) {
       ],
     })
       .select("name username image bio followers")
-      .limit(10);
+      .limit(10)
+      .lean();
+
+    console.log("👥 Users found:", users.length);
 
     return NextResponse.json({
       posts,
@@ -51,9 +63,9 @@ export async function GET(request) {
       query,
     });
   } catch (error) {
-    console.error("Search error:", error);
+    console.error("❌ Search error:", error);
     return NextResponse.json(
-      { error: "Failed to perform search" },
+      { error: "Failed to perform search", details: error.message },
       { status: 500 }
     );
   }

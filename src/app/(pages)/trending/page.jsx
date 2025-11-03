@@ -56,7 +56,7 @@ export default function TrendingPage() {
 
     return posts.map((post) => (
       <div key={post._id} className="w-[1280px] mt-8 cursor-pointer" onClick={() => router.push(`/blog/${post._id}`)}>
-        <div className={`flex gap-6 p-5 rounded-lg transition-colors duration-500 ${isDarkMode ? "bg-[#2D2D2D] text-white" : "bg-[#f6f6f7] text-black"} hover:shadow-lg`}>
+        <div className={`flex gap-6 p-5 rounded-lg transition-colors duration-500 ${isDarkMode ? "bg-[#2D2D2D] text-white" : "bg-[#DFE1E4] text-black"} hover:shadow-lg`}>
           {post.coverImage && (
             <img className="w-52 h-40 object-cover rounded-lg" src={post.coverImage} alt={post.title} onError={(e) => (e.target.style.display = "none")} />
           )}

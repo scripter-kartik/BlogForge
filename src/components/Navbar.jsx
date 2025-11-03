@@ -66,10 +66,17 @@ export default function Navbar({
     try {
       const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
       const data = await response.json();
-      setSearchResults(data);
+      
+      console.log("Search results:", data); // Debug log
+      
+      setSearchResults({
+        posts: data.posts || [],
+        users: data.users || []
+      });
       setShowDropdown(true);
     } catch (error) {
       console.error("Search error:", error);
+      setSearchResults({ posts: [], users: [] });
     } finally {
       setIsSearching(false);
     }
@@ -188,14 +195,22 @@ export default function Navbar({
                       >
                         <div className="flex items-start gap-3">
                           <img
-                            src={getRandomProfileImage(post.author?.image, post.author?.username)}
-                            alt={post.author?.name}
+                            src={getRandomProfileImage(post.author?.image, post.author?.username || post.author?.name)}
+                            alt={post.author?.name || "Author"}
                             className="w-10 h-10 rounded-full object-cover"
+                            onError={(e) => {
+                              e.target.src = "/imageProfile1.png";
+                            }}
                           />
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold truncate">{post.title}</p>
-                            <p className="text-sm text-gray-500">
-                              by {post.author?.name || post.author?.username}
+                            {post.description && (
+                              <p className="text-xs text-gray-500 line-clamp-1 mt-1">
+                                {post.description}
+                              </p>
+                            )}
+                            <p className="text-sm text-gray-500 mt-1">
+                              by {post.author?.name || post.author?.username || "Anonymous"}
                             </p>
                           </div>
                         </div>
@@ -224,6 +239,9 @@ export default function Navbar({
                             src={getRandomProfileImage(user.image, user.username)}
                             alt={user.name}
                             className="w-10 h-10 rounded-full object-cover"
+                            onError={(e) => {
+                              e.target.src = "/imageProfile1.png";
+                            }}
                           />
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold truncate">{user.name}</p>
@@ -246,6 +264,18 @@ export default function Navbar({
                   View all results for "{searchQuery}"
                 </Link>
               </div>
+            </div>
+          )}
+
+          {/* No Results Message */}
+          {showDropdown && !isSearching && searchResults.posts.length === 0 && searchResults.users.length === 0 && searchQuery.trim().length > 0 && (
+            <div
+              className={`absolute top-full mt-2 w-[450px] rounded-lg shadow-2xl z-50 p-6 text-center ${
+                isDarkMode ? "bg-[#2a2b2b] text-white" : "bg-white text-black"
+              }`}
+            >
+              <p className="text-gray-500">No results found for "{searchQuery}"</p>
+              <p className="text-sm text-gray-400 mt-2">Try different keywords</p>
             </div>
           )}
         </div>

@@ -64,7 +64,7 @@ export default function ForYouPage() {
       >
         <div
           className={`flex gap-6 p-5 rounded-lg transition-colors duration-500 ${
-            isDarkMode ? "bg-[#2D2D2D] text-white" : "bg-[#f6f6f7] text-black"
+            isDarkMode ? "bg-[#2D2D2D] text-white" : "bg-[#DFE1E4] text-black"
           } hover:shadow-lg`}
         >
           {post.coverImage && (
