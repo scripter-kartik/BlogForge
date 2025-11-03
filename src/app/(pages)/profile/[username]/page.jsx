@@ -68,7 +68,7 @@ export default function Profile() {
     try {
       setLoading(true);
       const userData = await apiClient.getUserByUsername(username);
-      
+
       if (!userData) {
         setError("User not found");
         setLoading(false);
@@ -211,7 +211,7 @@ export default function Profile() {
       uploadData.append("email", formData.email);
       uploadData.append("name", formData.name);
       uploadData.append("bio", formData.bio);
-      
+
       if (formData.password.trim() !== "") {
         uploadData.append("password", formData.password);
       }
@@ -275,9 +275,8 @@ export default function Profile() {
   if (authLoading || loading) {
     return (
       <div
-        className={`flex items-center justify-center h-screen transition-colors duration-500 ${
-          isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f6f6f7]"
-        }`}
+        className={`flex items-center justify-center h-screen transition-colors duration-500 ${isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f6f6f7]"
+          }`}
       >
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#f75555] mx-auto mb-4"></div>
@@ -292,9 +291,8 @@ export default function Profile() {
   if (error && !user) {
     return (
       <div
-        className={`flex justify-center mt-32 text-lg transition-colors duration-500 ${
-          isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f6f6f7]"
-        }`}
+        className={`flex justify-center mt-32 text-lg transition-colors duration-500 ${isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f6f6f7]"
+          }`}
       >
         <p className="text-red-500">{error}</p>
       </div>
@@ -304,22 +302,19 @@ export default function Profile() {
   const isOwnProfile = authUser?.username === user?.username;
 
   return (
-    <div
-      className={`flex flex-col items-center min-h-screen w-screen transition-colors duration-500 ${
-        isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f6f6f7]"
-      }`}
-    >
+    <div className={`flex flex-col items-center min-h-screen w-screen overflow-x-hidden transition-colors duration-500 ${isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f6f6f7]"
+      }`}>
+
       <Navbar
         isDarkMode={isDarkMode}
         setIsDarkMode={setIsDarkMode}
-        setIsLoginActive={() => {}}
-        setIsSignupActive={() => {}}
+        setIsLoginActive={() => { }}
+        setIsSignupActive={() => { }}
       />
 
       <div
-        className={`mt-32 flex flex-col w-[1280px] transition-colors duration-500 ${
-          isDarkMode ? "text-white" : "text-black"
-        }`}
+        className={`mt-32 flex flex-col w-full max-w-[1280px] px-4 transition-colors duration-500 ${isDarkMode ? "text-white" : "text-black"
+          }`}
       >
         <div className="flex items-start justify-between w-full gap-12">
           {/* Profile Sidebar */}
@@ -394,13 +389,12 @@ export default function Profile() {
               <button
                 onClick={handleFollowClick}
                 disabled={followLoading}
-                className={`px-6 py-2 rounded font-medium transition-colors ${
-                  isFollowing
+                className={`px-6 py-2 rounded font-medium transition-colors ${isFollowing
                     ? isDarkMode
                       ? "bg-gray-600 hover:bg-gray-700 text-white"
                       : "bg-gray-400 hover:bg-gray-500 text-white"
                     : "bg-[#f75555] hover:bg-red-600 text-white"
-                } ${followLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                  } ${followLoading ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 {followLoading ? "..." : isFollowing ? "Following" : "Follow"}
               </button>
@@ -431,9 +425,8 @@ export default function Profile() {
                         onChange={(e) =>
                           handleInputChange("bio", e.target.value)
                         }
-                        className={`w-full px-3 py-2 font-light rounded h-[120px] resize-none outline-none border-none transition-colors duration-500 ${
-                          isDarkMode ? "bg-[#2f2f2f] text-white" : "bg-gray-200 text-black"
-                        }`}
+                        className={`w-full px-3 py-2 font-light rounded h-[120px] resize-none outline-none border-none transition-colors duration-500 ${isDarkMode ? "bg-[#2f2f2f] text-white" : "bg-gray-200 text-black"
+                          }`}
                         placeholder="Tell us something..."
                       />
                     ) : (
@@ -450,15 +443,13 @@ export default function Profile() {
                             ? "Leave blank to keep unchanged"
                             : ""
                         }
-                        className={`w-full h-[35px] border-none outline-none px-3 py-2 font-light rounded transition-colors duration-500 ${
-                          isDarkMode
+                        className={`w-full h-[35px] border-none outline-none px-3 py-2 font-light rounded transition-colors duration-500 ${isDarkMode
                             ? "bg-[#2f2f2f] text-white"
                             : "bg-gray-200 text-black"
-                        } ${
-                          field === "username"
+                          } ${field === "username"
                             ? "opacity-60 cursor-not-allowed"
                             : ""
-                        }`}
+                          }`}
                       />
                     )}
                   </div>
@@ -466,11 +457,10 @@ export default function Profile() {
 
                 <button
                   onClick={handleSave}
-                  className={`px-6 py-2 rounded font-medium transition-all bg-[#f75555] text-white ${
-                    saving
+                  className={`px-6 py-2 rounded font-medium transition-all bg-[#f75555] text-white ${saving
                       ? "opacity-50 cursor-not-allowed"
                       : "hover:bg-red-600"
-                  }`}
+                    }`}
                   disabled={saving}
                 >
                   {saving ? "Saving..." : "Save changes"}
@@ -515,7 +505,7 @@ export default function Profile() {
             </h1>
             <div className={`flex-1 h-1 rounded-full ${isDarkMode ? "bg-gradient-to-r from-[#f75555] to-transparent" : "bg-gradient-to-r from-[#f75555] to-transparent"}`}></div>
           </div>
-          
+
           {userPosts.length > 0 ? (
             userPosts.map((post) => (
               <div
@@ -524,15 +514,29 @@ export default function Profile() {
                 onClick={() => router.push(`/blog/${post._id}`)}
               >
                 <div
-                  className={`w-full ${
-                    isDarkMode
+                  className={`w-full ${isDarkMode
                       ? "text-white bg-[#2D2D2D] hover:bg-[#353535]"
                       : "text-black bg-[#E8EAEC] hover:bg-[#dfe1e4]"
-                  } flex gap-6 p-6 rounded-xl transition-all duration-300 hover:shadow-xl hover:scale-[1.01]`}
+                    } flex gap-6 p-6 rounded-xl transition-all duration-300 hover:shadow-xl hover:scale-[1.01]`}
                 >
-                  <div
-                    className={`w-52 h-40 rounded-lg group-hover:shadow-md transition-shadow flex-shrink-0 ${getGradientForPost(post._id)}`}
-                  />
+                  {post.coverImage ? (
+                    <img
+                      className="w-52 h-40 object-cover rounded-lg group-hover:shadow-md transition-shadow flex-shrink-0"
+                      src={post.coverImage}
+                      alt={post.title}
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                        const parent = e.target.parentElement;
+                        const gradientDiv = document.createElement("div");
+                        gradientDiv.className = `w-52 h-40 rounded-lg group-hover:shadow-md transition-shadow flex-shrink-0 ${getGradientForPost(post._id)}`;
+                        parent.insertBefore(gradientDiv, parent.firstChild);
+                      }}
+                    />
+                  ) : (
+                    <div
+                      className={`w-52 h-40 rounded-lg group-hover:shadow-md transition-shadow flex-shrink-0 ${getGradientForPost(post._id)}`}
+                    />
+                  )}
 
                   <div className="flex flex-col gap-4 flex-1">
                     <div className="flex flex-row justify-between items-start gap-4">
@@ -548,21 +552,19 @@ export default function Profile() {
                     </div>
                     {post.description && (
                       <p
-                        className={`${
-                          isDarkMode ? "text-gray-300" : "text-gray-700"
-                        } line-clamp-2 text-base`}
+                        className={`${isDarkMode ? "text-gray-300" : "text-gray-700"
+                          } line-clamp-2 text-base`}
                       >
                         {post.description}
                       </p>
                     )}
                     <div
-                      className={`${
-                        isDarkMode ? "text-gray-400" : "text-gray-600"
-                      } flex items-center gap-6 text-sm font-medium`}
+                      className={`${isDarkMode ? "text-gray-400" : "text-gray-600"
+                        } flex items-center gap-6 text-sm font-medium`}
                     >
                       <div className="flex items-center gap-2 hover:text-[#f75555] transition-colors">
                         <FaRegStar className="text-yellow-500 text-base" />
-                        <p>{post.likesCount || 0} likes</p>
+                        <p>{post.likesCount || post.starRating || 0} {post.starRating ? "rating" : "likes"}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         <FaRegClock className="text-base" />

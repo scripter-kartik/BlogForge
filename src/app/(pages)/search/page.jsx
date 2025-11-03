@@ -1,19 +1,32 @@
+// ==========================================
+// FILE 1: app/(pages)/search/page.jsx
+// ==========================================
 "use client";
 
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import Navbar from "@/components/Navbar";
 import { IoSearch } from "react-icons/io5";
 import { FaRegStar, FaRegClock } from "react-icons/fa";
+import { IoEyeOutline } from "react-icons/io5";
+import { BiComment } from "react-icons/bi";
 import { getRandomProfileImage } from "@/lib/profileImage.js";
+import Loading from "@/components/Loading";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { loading: authLoading } = useAuth();
+  
   const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
   const [results, setResults] = useState({ posts: [], users: [] });
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [isLoginActive, setIsLoginActive] = useState(false);
+  const [isSignupActive, setIsSignupActive] = useState(false);
 
   const gradients = [
     "bg-gradient-to-r from-purple-500 to-pink-500",
@@ -35,11 +48,23 @@ export default function SearchPage() {
     return gradients[hash % gradients.length];
   };
 
+  // Initialize dark mode
   useEffect(() => {
-    const darkMode = localStorage.getItem("darkMode") === "true";
-    setIsDarkMode(darkMode);
+    const savedDarkMode = localStorage.getItem("darkMode");
+    if (savedDarkMode !== null) {
+      setIsDarkMode(savedDarkMode === "true");
+    }
+    setIsInitialized(true);
   }, []);
 
+  // Save dark mode preference
+  useEffect(() => {
+    if (isInitialized) {
+      localStorage.setItem("darkMode", isDarkMode.toString());
+    }
+  }, [isDarkMode, isInitialized]);
+
+  // Perform search when query changes
   useEffect(() => {
     const query = searchParams.get("q");
     if (query) {
@@ -86,7 +111,7 @@ export default function SearchPage() {
       <div
         key={post._id}
         className="w-full mt-8 cursor-pointer group"
-        onClick={() => router.push(`/post/${post._id}`)}
+        onClick={() => router.push(`/blog/${post._id}`)}
       >
         <div
           className={`w-full ${
@@ -95,9 +120,20 @@ export default function SearchPage() {
               : "text-black bg-[#E8EAEC] hover:bg-[#dfe1e4]"
           } flex gap-6 p-6 rounded-xl transition-all duration-300 hover:shadow-xl hover:scale-[1.01]`}
         >
-          <div
-            className={`w-52 h-40 rounded-lg group-hover:shadow-md transition-shadow flex-shrink-0 ${getGradientForPost(post._id)}`}
-          />
+          {post.coverImage ? (
+            <img
+              className="w-52 h-40 object-cover rounded-lg group-hover:shadow-md transition-shadow flex-shrink-0"
+              src={post.coverImage}
+              alt={post.title}
+              onError={(e) => {
+                e.target.style.display = "none";
+              }}
+            />
+          ) : (
+            <div
+              className={`w-52 h-40 rounded-lg group-hover:shadow-md transition-shadow flex-shrink-0 ${getGradientForPost(post._id)}`}
+            />
+          )}
 
           <div className="flex flex-col gap-4 flex-1">
             <div className="flex flex-row justify-between items-start gap-4">
@@ -123,6 +159,20 @@ export default function SearchPage() {
                 {post.description}
               </p>
             )}
+            <div className="flex items-center gap-2 flex-wrap">
+              {post.tags?.map((tag, idx) => (
+                <div
+                  key={idx}
+                  className={`${
+                    isDarkMode
+                      ? "bg-[#3a3a3a] text-gray-300"
+                      : "bg-gray-200 text-gray-700"
+                  } px-3 py-1 text-xs font-medium rounded-full transition-colors duration-300`}
+                >
+                  #{tag}
+                </div>
+              ))}
+            </div>
             <div
               className={`${
                 isDarkMode ? "text-gray-400" : "text-gray-600"
@@ -130,11 +180,19 @@ export default function SearchPage() {
             >
               <div className="flex items-center gap-2 hover:text-[#f75555] transition-colors">
                 <FaRegStar className="text-yellow-500 text-base" />
-                <p>{post.likesCount || 0} likes</p>
+                <p>{post.starRating || 4}.0</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <IoEyeOutline className="text-base" />
+                <p>{post.views || 0}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <BiComment className="text-base" />
+                <p>{post.commentCount || 0}</p>
               </div>
               <div className="flex items-center gap-2">
                 <FaRegClock className="text-base" />
-                <p>{new Date(post.createdAt).toLocaleDateString()}</p>
+                <p>{post.estimatedRead || 3} min</p>
               </div>
             </div>
           </div>
@@ -190,13 +248,24 @@ export default function SearchPage() {
     );
   };
 
+  if (authLoading || !isInitialized) {
+    return <Loading />;
+  }
+
   return (
     <div
-      className={`min-h-screen transition-colors duration-500 ${
+      className={`min-h-screen flex flex-col items-center transition-colors duration-500 ${
         isDarkMode ? "bg-[#1c1d1d] text-white" : "bg-[#f6f6f7] text-black"
       }`}
     >
-      <div className="max-w-[1280px] mx-auto px-4 py-8 mt-[130px] mb-[70px]">
+      <Navbar
+        setIsLoginActive={setIsLoginActive}
+        setIsSignupActive={setIsSignupActive}
+        isDarkMode={isDarkMode}
+        setIsDarkMode={setIsDarkMode}
+      />
+      
+      <div className="w-[1280px] mt-[165px] mb-[70px]">
         {/* Search Header */}
         <div className="flex items-center gap-4 justify-between mb-10">
           <h1 className={`${isDarkMode ? "text-white" : "text-black"} text-4xl font-bold tracking-tight`}>
@@ -215,7 +284,7 @@ export default function SearchPage() {
             <IoSearch className="text-[#ABB2BF] w-5 h-5" />
             <input
               className={`bg-transparent outline-none border-none text-base w-full ${
-                isDarkMode ? "text-white" : "text-black"
+                isDarkMode ? "text-white placeholder-gray-400" : "text-black placeholder-gray-600"
               }`}
               placeholder="Search posts or users..."
               type="text"

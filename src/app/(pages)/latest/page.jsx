@@ -1,3 +1,6 @@
+// ==========================================
+// FILE 3: app/(pages)/latest/page.jsx
+// ==========================================
 "use client";
 
 import { useEffect, useState } from "react";
@@ -8,13 +11,33 @@ import { IoEyeOutline } from "react-icons/io5";
 import { BiComment } from "react-icons/bi";
 import { apiClient } from "@/lib/api";
 import { getRandomProfileImage } from "@/lib/profileImage";
+import Loading from "@/components/Loading";
 
 export default function LatestPage() {
   const [latestPosts, setLatestPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [isLoginActive, setIsLoginActive] = useState(false);
+  const [isSignupActive, setIsSignupActive] = useState(false);
   const router = useRouter();
+
+  // Initialize dark mode
+  useEffect(() => {
+    const savedDarkMode = localStorage.getItem("darkMode");
+    if (savedDarkMode !== null) {
+      setIsDarkMode(savedDarkMode === "true");
+    }
+    setIsInitialized(true);
+  }, []);
+
+  // Save dark mode preference
+  useEffect(() => {
+    if (isInitialized) {
+      localStorage.setItem("darkMode", isDarkMode.toString());
+    }
+  }, [isDarkMode, isInitialized]);
 
   useEffect(() => {
     async function fetchLatestPosts() {
@@ -55,43 +78,43 @@ export default function LatestPage() {
     }
 
     return posts.map((post) => (
-      <div key={post._id} className="w-[1280px] mt-8 cursor-pointer" onClick={() => router.push(`/blog/${post._id}`)}>
-        <div className={`flex gap-6 p-5 rounded-lg transition-colors duration-500 ${isDarkMode ? "bg-[#2D2D2D] text-white" : "bg-[#DFE1E4] text-black"} hover:shadow-lg`}>
+      <div key={post._id} className="w-full mt-8 cursor-pointer group" onClick={() => router.push(`/blog/${post._id}`)}>
+        <div className={`flex gap-6 p-6 rounded-xl transition-all duration-300 hover:shadow-xl hover:scale-[1.01] ${isDarkMode ? "bg-[#2D2D2D] text-white hover:bg-[#353535]" : "bg-[#E8EAEC] text-black hover:bg-[#dfe1e4]"}`}>
           {post.coverImage && (
-            <img className="w-52 h-40 object-cover rounded-lg" src={post.coverImage} alt={post.title} onError={(e) => (e.target.style.display = "none")} />
+            <img className="w-52 h-40 object-cover rounded-lg group-hover:shadow-md transition-shadow flex-shrink-0" src={post.coverImage} alt={post.title} onError={(e) => (e.target.style.display = "none")} />
           )}
-          <div className="flex flex-col gap-3 flex-1">
-            <div className="flex justify-between items-center">
-              <h1 className={`font-bold text-xl ${isDarkMode ? "text-white" : "text-black"}`}>{post.title}</h1>
-              <div className="flex items-center gap-2 mr-5">
-                <img className="w-6 h-6 rounded-full" src={post.authorImage} alt={post.authorName} onError={(e) => (e.target.src = "/imageProfile1.png")} />
-                <p className={isDarkMode ? "text-white" : "text-black"}>{post.authorName}</p>
+          <div className="flex flex-col gap-4 flex-1">
+            <div className="flex justify-between items-start gap-4">
+              <h1 className={`font-bold text-2xl leading-tight ${isDarkMode ? "text-white" : "text-black"}`}>{post.title}</h1>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <img className="w-8 h-8 rounded-full border-2 border-[#f75555]" src={post.authorImage} alt={post.authorName} onError={(e) => (e.target.src = "/imageProfile1.png")} />
+                <p className={`text-sm font-medium ${isDarkMode ? "text-white" : "text-black"}`}>{post.authorName}</p>
               </div>
             </div>
-            <p className={`text-sm ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}>{post.description}</p>
+            <p className={`text-base ${isDarkMode ? "text-gray-300" : "text-gray-700"} line-clamp-2`}>{post.description}</p>
             <div className="flex items-center gap-2 flex-wrap">
               {post.tags?.map((tag, idx) => (
-                <div key={idx} className={`px-2 py-1 text-xs rounded transition-colors duration-500 ${isDarkMode ? "bg-[#454343] text-white" : "bg-gray-200 text-black"}`}>
+                <div key={idx} className={`px-3 py-1 text-xs font-medium rounded-full transition-colors duration-300 ${isDarkMode ? "bg-[#3a3a3a] text-gray-300" : "bg-gray-200 text-gray-700"}`}>
                   #{tag}
                 </div>
               ))}
             </div>
-            <div className="flex items-center gap-4 text-sm mt-2">
-              <div className="flex items-center gap-1">
-                <FaRegStar className="text-yellow-500" />
+            <div className={`flex items-center gap-6 text-sm font-medium ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
+              <div className="flex items-center gap-2 hover:text-[#f75555] transition-colors">
+                <FaRegStar className="text-yellow-500 text-base" />
                 <p>{post.starRating.toFixed(1)}</p>
               </div>
-              <div className="flex items-center gap-1">
-                <IoEyeOutline />
+              <div className="flex items-center gap-2">
+                <IoEyeOutline className="text-base" />
                 <p>{post.views}</p>
               </div>
-              <div className="flex items-center gap-1">
-                <BiComment />
+              <div className="flex items-center gap-2">
+                <BiComment className="text-base" />
                 <p>{post.commentCount}</p>
               </div>
-              <div className="flex items-center gap-1">
-                <FaRegClock />
-                <p>{post.estimatedRead} min read</p>
+              <div className="flex items-center gap-2">
+                <FaRegClock className="text-base" />
+                <p>{post.estimatedRead} min</p>
               </div>
             </div>
           </div>
@@ -100,22 +123,40 @@ export default function LatestPage() {
     ));
   };
 
-  if (loading) return <div className="w-full min-h-screen flex justify-center items-center"><p className={isDarkMode ? "text-white" : "text-black"}>Loading latest posts...</p></div>;
-  if (error) return <div className="w-full min-h-screen flex justify-center items-center"><p className="text-red-500">{error}</p></div>;
+  if (!isInitialized || loading) {
+    return <Loading />;
+  }
+
+  if (error) {
+    return (
+      <div className={`w-full min-h-screen flex justify-center items-center ${isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f6f6f7]"}`}>
+        <p className="text-red-500">{error}</p>
+      </div>
+    );
+  }
 
   return (
-    <div className={`min-h-screen transition-colors duration-500 ${isDarkMode ? "bg-[#1c1d1d] text-white" : "bg-[#f6f6f7] text-black"}`}>
-      <div className="fixed top-0 w-full ml-6 flex justify-center z-50">
-        <Navbar isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />
-      </div>
+    <div className={`min-h-screen flex flex-col items-center transition-colors duration-500 ${isDarkMode ? "bg-[#1c1d1d] text-white" : "bg-[#f6f6f7] text-black"}`}>
+      <Navbar 
+        isDarkMode={isDarkMode} 
+        setIsDarkMode={setIsDarkMode}
+        setIsLoginActive={setIsLoginActive}
+        setIsSignupActive={setIsSignupActive}
+      />
 
-      <div className="max-w-[1280px] mx-auto pt-28 px-6 pb-16">
+      <div className="w-[1280px] mt-[165px] mb-[70px]">
+        <div className="flex items-center gap-4 justify-between mb-10">
+          <h1 className={`${isDarkMode ? "text-white" : "text-black"} text-4xl font-bold tracking-tight`}>
+            Latest Posts
+          </h1>
+          <div className={`flex-1 h-1 rounded-full ${isDarkMode ? "bg-gradient-to-r from-[#f75555] to-transparent" : "bg-gradient-to-r from-[#f75555] to-transparent"}`}></div>
+        </div>
+
         {renderPosts(latestPosts)}
 
-        {/* End of posts message */}
         {latestPosts.length > 0 && (
           <p className={`text-center mt-12 text-sm ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
-             You’ve reached the end
+            You've reached the end
           </p>
         )}
       </div>
