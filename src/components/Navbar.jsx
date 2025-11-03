@@ -106,7 +106,7 @@ export default function Navbar({
     <>
       {/* Desktop Navbar (hidden on mobile) */}
       <div
-        className={`hidden md:flex fixed top-0 left-0 right-0 z-50 transition-colors duration-500 ${
+        className={`hidden lg:flex fixed top-0 left-0 right-0 z-50 transition-colors duration-500 ${
           isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f6f6f7]"
         } shadow-sm justify-center`}
       >
@@ -576,7 +576,7 @@ export default function Navbar({
               ) : (
                 <div
                   className="hover:text-[#f75555] flex items-center gap-2 cursor-pointer transition-colors"
-                  onClick={() => setIsDarkMode(true)}
+                  onClick={() => setIsDarkMode(true)} 
                 >
                   <MdOutlineDarkMode className="w-5 h-5" />
                   <p>Dark theme</p>

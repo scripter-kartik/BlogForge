@@ -8,7 +8,8 @@ export function useFollow() {
   const [error, setError] = useState(null);
   const [followingState, setFollowingState] = useState({});
 
-  const toggleFollow = async (targetUserId, currentIsFollowing) => {
+  // Removed unused 'currentIsFollowing' parameter
+  const toggleFollow = async (targetUserId) => {
     try {
       setLoading(true);
       setError(null);

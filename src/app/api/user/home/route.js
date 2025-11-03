@@ -2,11 +2,11 @@
 
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route.js";
+import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/database/db.js";
 import { User } from "@/lib/models/User.js";
 
-export async function GET(req) {
+export async function GET() {
   try {
     await connectDB();
 

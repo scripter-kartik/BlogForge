@@ -1,12 +1,12 @@
 // src/app/api/suggested-users/route.js
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route.js";
+import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/database/db.js";
 import { User } from "@/lib/models/User.js";
 import { Blog } from "@/lib/models/Blog.js";
 
-export async function GET(request) {
+export async function GET() {
   try {
     await connectDB();
 
