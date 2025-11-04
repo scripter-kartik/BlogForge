@@ -1,4 +1,4 @@
-// src/lib/auth.js - UPDATED WITH SESSION REFRESH
+// src/lib/auth.js - UPDATED
 import { getToken } from "next-auth/jwt";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -31,6 +31,7 @@ export const authOptions = {
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     }),
+
     CredentialsProvider({
       name: "credentials",
       credentials: {
@@ -45,8 +46,10 @@ export const authOptions = {
           await connectDB();
           const user = await User.findOne({ email: credentials.email }).select("+password");
           if (!user) throw new Error("Invalid credentials");
-          const isValidPassword = await bcrypt.compare(credentials.password, user.password);
-          if (!isValidPassword) throw new Error("Invalid credentials");
+
+          const isValid = await bcrypt.compare(credentials.password, user.password);
+          if (!isValid) throw new Error("Invalid credentials");
+
           return {
             id: user._id.toString(),
             email: user.email,
@@ -60,56 +63,25 @@ export const authOptions = {
       },
     }),
   ],
-  secret: process.env.NEXTAUTH_SECRET,
-  session: { 
-    strategy: "jwt", 
-    maxAge: 7 * 24 * 60 * 60,
-    updateAge: 24 * 60 * 60, // Update session every 24 hours
-  },
-  pages: { signIn: "/" },
-  callbacks: {
-    async jwt({ token, account, profile, user, trigger, session }) {
-      // ✅ Handle session refresh/update trigger - FETCH FRESH DATA FROM DB
-      if (trigger === "update") {
-        console.log("🔄 JWT Callback: Session update triggered");
-        
-        // If session contains new image data, use it immediately
-        if (session?.user?.image) {
-          console.log("📸 JWT: Updating image from session:", session.user.image);
-          token.picture = session.user.image;
-        }
-        
-        // Always fetch latest from database to be sure
-        try {
-          await connectDB();
-          const dbUser = await User.findOne({ 
-            $or: [
-              { _id: token._id },
-              { email: token.email }
-            ]
-          });
-          
-          if (dbUser) {
-            console.log("✅ JWT: Fresh user data loaded from DB");
-            token._id = dbUser._id.toString();
-            token.username = dbUser.username;
-            token.email = dbUser.email;
-            token.name = dbUser.name;
-            token.picture = dbUser.image;
-            
-            console.log("📸 JWT: New image in token:", token.picture);
-          }
-        } catch (error) {
-          console.error("❌ JWT: Error fetching fresh user data:", error);
-        }
-        
-        return token;
-      }
 
-      // ✅ Handle Google OAuth
-      if (account && account.provider === "google" && profile) {
+  secret: process.env.NEXTAUTH_SECRET,
+
+  session: {
+    strategy: "jwt",
+    maxAge: 7 * 24 * 60 * 60,
+    updateAge: 24 * 60 * 60,
+  },
+
+  pages: { signIn: "/" },
+
+  callbacks: {
+    // ✅ JWT callback
+    async jwt({ token, account, profile, user, trigger, session }) {
+      // ✅ Handle Google Provider
+      if (account?.provider === "google" && profile) {
         await connectDB();
         let dbUser = await User.findOne({ email: profile.email });
+
         if (!dbUser) {
           const baseUsername = profile.email.split("@")[0];
           let username = baseUsername;
@@ -125,6 +97,7 @@ export const authOptions = {
             image: profile.picture || null,
           });
         }
+
         token._id = dbUser._id.toString();
         token.username = dbUser.username;
         token.email = dbUser.email;
@@ -132,7 +105,7 @@ export const authOptions = {
         token.picture = dbUser.image || profile.picture || null;
       }
 
-      // ✅ Handle credentials login
+      // ✅ Handle credentials provider
       if (user) {
         token._id = user.id || token._id;
         token.username = user.username || token.username;
@@ -141,16 +114,23 @@ export const authOptions = {
         token.picture = user.image || token.picture;
       }
 
-      if (!token.sub && token._id) token.sub = token._id;
-      
+      // ✅ If token.sub exists but no _id, fallback
+      if (!token._id && token.sub) {
+        token._id = token.sub;
+      }
+
       return token;
     },
-    
+
+    // ✅ SESSION callback (CRITICAL UPDATE)
     async session({ session, token }) {
       if (token) {
         session.user = session.user || {};
-        session.user.id = token._id || token.sub || null;
-        session.user._id = token._id || token.sub || null;
+
+        // ✅ Force Mongo _id only
+        session.user._id = token._id;
+        session.user.id = token._id;
+
         session.user.username = token.username || null;
         session.user.email = token.email || session.user.email || null;
         session.user.name = token.name || session.user.name || null;

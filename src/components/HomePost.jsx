@@ -1,6 +1,5 @@
 "use client";
 
-import { FaRegStar } from "react-icons/fa6";
 import { IoEyeOutline } from "react-icons/io5";
 import { BiComment } from "react-icons/bi";
 import { FaRegClock } from "react-icons/fa";
@@ -12,6 +11,7 @@ import { useFollow } from "@/hooks/useFollow";
 import { apiClient } from "@/lib/api";
 import { getRandomProfileImage } from "@/lib/profileImage";
 import { useRouter } from "next/navigation";
+import StarRating from "@/components/StarRating";
 
 export default function HomePost({ isDarkMode, searchResults }) {
   const { posts, setPosts } = usePosts();
@@ -57,7 +57,9 @@ export default function HomePost({ isDarkMode, searchResults }) {
         const normalized = data.map((post) => ({
           ...post,
           id: post._id,
-          starRating: post.starRating || 4,
+          starRating: post.starRating || 0,
+          averageRating: post.averageRating || 0,
+          ratingCount: post.ratingCount || 0,
           views: post.views || 0,
           commentCount: post.commentCount || 0,
           estimatedRead: post.estimatedRead || 3,
@@ -145,7 +147,7 @@ export default function HomePost({ isDarkMode, searchResults }) {
 
   const getFeaturedPosts = () =>
     [...posts]
-      .sort((a, b) => b.starRating - a.starRating)
+      .sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0))
       .slice(0, 2);
 
   const getTrendingPosts = () =>
@@ -240,10 +242,22 @@ export default function HomePost({ isDarkMode, searchResults }) {
                 isDarkMode ? "text-gray-400" : "text-gray-600"
               } flex items-center gap-4 md:gap-6 text-xs md:text-sm font-medium flex-wrap`}
             >
+              {/* ✅ NEW: Star Rating Display */}
               <div className="flex items-center gap-2 hover:text-[#f75555] transition-colors">
-                <FaRegStar className="text-yellow-500 text-base" />
-                <p>{post.starRating}.0</p>
+                <StarRating
+                  postId={post._id}
+                  initialRating={post.averageRating || 0}
+                  initialCount={post.ratingCount || 0}
+                  readonly={true}
+                  size="sm"
+                  showCount={false}
+                  isDarkMode={isDarkMode}
+                />
+                <p>
+                  {(post.averageRating || 0).toFixed(1)} ({post.ratingCount || 0})
+                </p>
               </div>
+
               <div className="flex items-center gap-2">
                 <IoEyeOutline className="text-base" />
                 <p>{post.views}</p>
@@ -407,7 +421,9 @@ export default function HomePost({ isDarkMode, searchResults }) {
               searchResults.posts.map((post) => ({
                 ...post,
                 id: post._id,
-                starRating: post.starRating || 4,
+                starRating: post.starRating || 0,
+                averageRating: post.averageRating || 0,
+                ratingCount: post.ratingCount || 0,
                 views: post.views || 0,
                 commentCount: post.commentCount || 0,
                 estimatedRead: post.estimatedRead || 3,

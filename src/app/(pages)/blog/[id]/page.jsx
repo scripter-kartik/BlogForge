@@ -7,6 +7,7 @@ import Navbar from "@/components/Navbar";
 import Login from "@/components/LoginForm";
 import Signup from "@/components/SignupForm";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
+import StarRating from "@/components/StarRating";
 import { useAuth } from "@/hooks/useAuth";
 import { apiClient } from "@/lib/api";
 import { FaRegClock, FaEdit, FaTrash } from "react-icons/fa";
@@ -33,7 +34,13 @@ export default function BlogPage() {
   const [replyInputs, setReplyInputs] = useState({});
   const [deletingIds, setDeletingIds] = useState(new Set());
 
-  // Check if current user is the author
+  // ✅ NEW: Rating state
+  const [userRating, setUserRating] = useState(null);
+  const [ratingStats, setRatingStats] = useState({
+    averageRating: 0,
+    ratingCount: 0
+  });
+
   const isAuthor = blog?.author?._id === user?.id || blog?.author?._id === user?._id;
 
   // Fetch blog
@@ -49,6 +56,13 @@ export default function BlogPage() {
         }
         const data = await res.json();
         setBlog(data);
+        
+        // ✅ Set initial rating stats
+        setRatingStats({
+          averageRating: data.averageRating || 0,
+          ratingCount: data.ratingCount || 0
+        });
+        
         setError(null);
       } catch (err) {
         console.error("Fetch blog error:", err);
@@ -59,6 +73,21 @@ export default function BlogPage() {
     }
     fetchBlog();
   }, [params.id]);
+
+  // ✅ Fetch user's rating
+  useEffect(() => {
+    async function fetchUserRating() {
+      if (!params.id || !isAuthenticated) return;
+      
+      try {
+        const data = await apiClient.getUserRating(params.id);
+        setUserRating(data.userRating);
+      } catch (err) {
+        console.error("Error fetching user rating:", err);
+      }
+    }
+    fetchUserRating();
+  }, [params.id, isAuthenticated]);
 
   // Fetch comments
   useEffect(() => {
@@ -77,14 +106,37 @@ export default function BlogPage() {
     fetchComments();
   }, [params.id]);
 
-  // ✅ DELETE POST HANDLER - Updated to use modal
+  // ✅ Handle rating submission
+  const handleRate = async (rating) => {
+    if (!isAuthenticated) {
+      setIsLoginActive(true);
+      return null;
+    }
+
+    try {
+      const result = await apiClient.ratePost(params.id, rating);
+      
+      // Update local state
+      setUserRating(rating);
+      setRatingStats({
+        averageRating: result.averageRating,
+        ratingCount: result.ratingCount
+      });
+      
+      return result;
+    } catch (error) {
+      console.error("Rating error:", error);
+      alert(error.message || "Failed to submit rating");
+      return null;
+    }
+  };
+
   const handleDeletePost = async () => {
     setDeleting(true);
     try {
       await apiClient.deletePost(params.id);
-      // Wait a moment for the animation
       setTimeout(() => {
-        router.push("/"); // Redirect to home after deletion
+        router.push("/");
       }, 500);
     } catch (err) {
       console.error("Delete error:", err);
@@ -94,12 +146,10 @@ export default function BlogPage() {
     }
   };
 
-  // ✅ EDIT POST HANDLER
   const handleEditPost = () => {
     router.push(`/edit/${params.id}`);
   };
 
-  // Add comment
   const handleAddComment = async () => {
     const trimmed = newComment.trim();
     if (!trimmed || !isAuthenticated || !user) {
@@ -140,7 +190,6 @@ export default function BlogPage() {
     }
   };
 
-  // Delete comment
   const handleDeleteComment = async (commentId) => {
     if (!confirm("Are you sure you want to delete this comment?")) return;
     setDeletingIds((prev) => new Set(prev).add(commentId));
@@ -168,7 +217,6 @@ export default function BlogPage() {
     }
   };
 
-  // Reply handling
   const handleReplyChange = (commentId, value) => {
     setReplyInputs({ ...replyInputs, [commentId]: value });
   };
@@ -237,7 +285,6 @@ export default function BlogPage() {
     }
   };
 
-  // Loading
   if (loading) {
     return (
       <div
@@ -250,7 +297,6 @@ export default function BlogPage() {
     );
   }
 
-  // Error
   if (error) {
     return (
       <div
@@ -266,7 +312,6 @@ export default function BlogPage() {
     );
   }
 
-  // Blog not found
   if (!blog) {
     return (
       <div
@@ -310,7 +355,6 @@ export default function BlogPage() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold break-words flex-1">{blog.title}</h1>
             
-            {/* ✅ EDIT & DELETE BUTTONS (Only visible to author) */}
             {isAuthenticated && isAuthor && (
               <div className="flex gap-3">
                 <button
@@ -327,9 +371,7 @@ export default function BlogPage() {
                   onClick={() => setShowDeleteModal(true)}
                   disabled={deleting}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
-                    deleting
-                      ? "opacity-50 cursor-not-allowed"
-                      : ""
+                    deleting ? "opacity-50 cursor-not-allowed" : ""
                   } bg-red-600 hover:bg-red-700 text-white`}
                 >
                   <FaTrash /> Delete
@@ -347,6 +389,22 @@ export default function BlogPage() {
               {blog.description}
             </p>
           )}
+
+          {/* ✅ RATING COMPONENT */}
+          <div className="mb-4">
+            <StarRating
+              postId={params.id}
+              initialRating={ratingStats.averageRating}
+              initialCount={ratingStats.ratingCount}
+              userRating={userRating}
+              onRate={handleRate}
+              isAuthenticated={isAuthenticated}
+              isAuthor={isAuthor}
+              size="lg"
+              showCount={true}
+              isDarkMode={isDarkMode}
+            />
+          </div>
 
           {/* Blog Metadata */}
           <div
@@ -412,7 +470,6 @@ export default function BlogPage() {
         <div className="mt-6 sm:mt-8">
           <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Comments ({comments.length})</h2>
 
-          {/* Comment Input - Show only if authenticated */}
           {isAuthenticated ? (
             <div
               className={`w-full rounded p-3 sm:p-4 mb-4 sm:mb-6 transition-colors ${
@@ -592,7 +649,6 @@ export default function BlogPage() {
                       </div>
                     ))}
 
-                    {/* Reply Input */}
                     {isAuthenticated && (
                       <div className="flex flex-col sm:flex-row gap-2 mt-1">
                         <input
@@ -629,7 +685,6 @@ export default function BlogPage() {
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
       <DeleteConfirmationModal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
@@ -640,7 +695,6 @@ export default function BlogPage() {
         isDeleting={deleting}
       />
 
-      {/* Auth Modals */}
       {isLoginActive && (
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <Login

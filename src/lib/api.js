@@ -1,6 +1,4 @@
-// src/lib/api.js (UPDATED VERSION)
-// ============================================
-// Add these methods to your existing ApiClient class
+// src/lib/api.js - COMPLETE VERSION WITH RATING METHODS
 
 class ApiClient {
   constructor() {
@@ -44,7 +42,6 @@ class ApiClient {
           }
         } catch (parseError) {
           console.error("Error parsing error response:", parseError);
-          // Keep the default error message if parsing fails
         }
         
         const error = new Error(errorMessage || "An unknown error occurred");
@@ -59,7 +56,6 @@ class ApiClient {
       return response.text();
     } catch (error) {
       console.error(`API request failed: ${endpoint}`, error);
-      // Re-throw the error with message guaranteed to exist
       if (error.message) {
         throw error;
       } else {
@@ -127,7 +123,6 @@ class ApiClient {
     });
   }
 
-  // ✅ NEW: Update blog post
   async updatePost(postId, postData) {
     return this.request(`/api/blogs/${postId}`, {
       method: "PATCH",
@@ -135,9 +130,26 @@ class ApiClient {
     });
   }
 
-  // ✅ NEW: Delete blog post
   async deletePost(postId) {
     return this.request(`/api/blogs/${postId}`, {
+      method: "DELETE",
+    });
+  }
+
+  // ===== RATING METHODS =====
+  async ratePost(postId, rating) {
+    return this.request(`/api/blogs/${postId}/rating`, {
+      method: "POST",
+      body: { rating },
+    });
+  }
+
+  async getUserRating(postId) {
+    return this.request(`/api/blogs/${postId}/rating`);
+  }
+
+  async deleteRating(postId) {
+    return this.request(`/api/blogs/${postId}/rating`, {
       method: "DELETE",
     });
   }
