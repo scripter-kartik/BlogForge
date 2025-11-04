@@ -32,6 +32,7 @@ export default function Navbar({
   const pathname = usePathname();
   const router = useRouter();
 
+  /* ✅ Close dropdown by clicking outside */
   useEffect(() => {
     function handleClickOutside(event) {
       if (
@@ -52,8 +53,9 @@ export default function Navbar({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  /* ✅ Debounce search input */
   useEffect(() => {
-    const delay = setTimeout(() => {
+    const timeout = setTimeout(() => {
       if (searchQuery.trim().length > 0) {
         performSearch(searchQuery);
       } else {
@@ -62,9 +64,10 @@ export default function Navbar({
       }
     }, 300);
 
-    return () => clearTimeout(delay);
+    return () => clearTimeout(timeout);
   }, [searchQuery]);
 
+  /* ✅ Search API */
   const performSearch = async (query) => {
     setIsSearching(true);
     try {
@@ -72,8 +75,9 @@ export default function Navbar({
       const data = await response.json();
       setSearchResults(data);
       setShowDropdown(true);
-    } catch (error) {
-      console.error("Search error:", error);
+    } catch (err) {
+      console.error("Search error:", err);
+      setSearchResults({ posts: [], users: [] });
     } finally {
       setIsSearching(false);
     }
@@ -103,32 +107,30 @@ export default function Navbar({
   };
 
   const linkClass = (path) =>
-    `flex items-center gap-2 cursor-pointer px-3 py-2 transition-colors duration-200 ${
-      pathname === path
-        ? "text-[#f75555]"
-        : isDarkMode
+    `flex items-center gap-2 cursor-pointer px-3 py-2 transition-colors duration-200 ${pathname === path
+      ? "text-[#f75555]"
+      : isDarkMode
         ? "text-white hover:text-[#f75555]"
         : "text-black hover:text-[#f75555]"
     }`;
 
   const mobileLinkClass = (path) =>
-    `flex flex-col items-center justify-center gap-1 transition-colors duration-200 ${
-      pathname === path
-        ? "text-[#f75555]"
-        : isDarkMode
+    `flex flex-col items-center justify-center gap-1 transition-colors duration-200 ${pathname === path
+      ? "text-[#f75555]"
+      : isDarkMode
         ? "text-white"
         : "text-black"
     }`;
 
   return (
     <>
-      {/* ✅ Desktop Navbar */}
+      {/* ✅ DESKTOP NAV */}
       <div
-        className={`hidden lg:flex fixed top-0 left-0 right-0 z-50 transition-colors duration-500 ${
-          isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f6f6f7]"
-        } shadow-sm justify-center`}
+        className={`hidden lg:flex fixed top-0 left-0 right-0 z-50 transition-colors duration-500 ${isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f6f6f7]"
+          } shadow-sm justify-center`}
       >
         <div className="w-full max-w-[1280px] flex justify-between items-center px-4 xl:px-8 py-3">
+          {/* LEFT LINKS */}
           <div className="flex items-center gap-4 xl:gap-8">
             <Link href="/" className={linkClass("/")}>
               <RiHome3Line className="text-lg" />
@@ -153,28 +155,116 @@ export default function Navbar({
             )}
           </div>
 
+          {/* RIGHT */}
           <div className="flex items-center gap-3 xl:gap-5">
+            {/* ✅ SEARCH */}
             <div className="relative" ref={searchRef}>
               <div
-                className={`w-[250px] xl:w-[330px] flex items-center gap-2 font-sm border-b-[1px] py-2 px-3 transition-colors ${
-                  isDarkMode ? "border-[#ABB2BF]" : "border-gray-400"
-                }`}
+                className={`w-[250px] xl:w-[330px] flex items-center gap-2 font-sm border-b-[1px] py-2 px-3 transition-colors ${isDarkMode ? "border-[#ABB2BF]" : "border-gray-400"
+                  }`}
               >
                 <IoSearch className="text-[#ABB2BF] text-lg" />
+
                 <input
-                  className={`bg-transparent font-bold outline-none border-none text-sm w-full ${
-                    isDarkMode
-                      ? "text-white placeholder-gray-400"
-                      : "text-black placeholder-gray-600"
-                  }`}
-                  placeholder="Search users..."
+                  className={`bg-transparent font-bold outline-none border-none text-sm w-full ${isDarkMode
+                    ? "text-white placeholder-gray-400"
+                    : "text-black placeholder-gray-600"
+                    }`}
+                  placeholder="Search users or posts..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={handleSearchKeyPress}
                 />
+
+                {isSearching && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#f75555]" />
+                )}
               </div>
+
+              {/* ✅ DROPDOWN */}
+              {showDropdown && (
+                <div
+                  className={`absolute top-full left-0 mt-2 w-[250px] xl:w-[330px] max-h-80 overflow-auto rounded-lg shadow-2xl z-[999] ${isDarkMode ? "bg-[#1c1d1d] border border-gray-700" : "bg-white border border-gray-200"
+                    }`}
+                >
+                  {/* USERS */}
+                  {searchResults?.users?.length > 0 && (
+                    <div className="p-3">
+                      <h3
+                        className={`text-xs font-semibold mb-2 uppercase ${isDarkMode ? "text-gray-400" : "text-gray-500"
+                          }`}
+                      >
+                        Users
+                      </h3>
+                      {searchResults.users.map((u) => (
+                        <Link
+                          key={u._id}
+                          href={`/search?q=${encodeURIComponent(u.username)}`}
+                          onClick={handleResultClick}
+                          className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${isDarkMode ? "hover:bg-gray-800" : "hover:bg-gray-100"
+                            }`}
+                        >
+                          <img
+                            src={getRandomProfileImage(u.image, u.username)}
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                          <div>
+                            <p className="font-medium text-sm">{u.username}</p>
+                            {u.name && (
+                              <p
+                                className={`text-xs ${isDarkMode ? "text-gray-400" : "text-gray-500"
+                                  }`}
+                              >
+                                {u.name}
+                              </p>
+                            )}
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* POSTS */}
+                  {searchResults?.posts?.length > 0 && (
+                    <div
+                      className={`p-3 ${searchResults.users.length > 0 ? "border-t" : ""
+                        } ${isDarkMode ? "border-gray-700" : "border-gray-200"}`}
+                    >
+                      <h3
+                        className={`text-xs font-semibold mb-2 uppercase ${isDarkMode ? "text-gray-400" : "text-gray-500"
+                          }`}
+                      >
+                        Posts
+                      </h3>
+
+                      {searchResults.posts.map((p) => (
+                        <Link
+                          key={p._id}
+                          href={`/search?q=${encodeURIComponent(p.title)}`}
+                          onClick={handleResultClick}
+                          className={`block p-2 rounded-lg transition-colors ${isDarkMode ? "hover:bg-gray-800" : "hover:bg-gray-100"
+                            }`}
+                        >
+                          <p className="font-medium text-sm line-clamp-1">
+                            {p.title}
+                          </p>
+                          {p.description && (
+                            <p
+                              className={`text-xs mt-1 line-clamp-2 ${isDarkMode ? "text-gray-400" : "text-gray-500"
+                                }`}
+                            >
+                              {p.description}
+                            </p>
+                          )}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
+            {/* ✅ THEME TOGGLE */}
             {isDarkMode ? (
               <CiBrightnessDown
                 className="text-white w-5 h-5 xl:w-6 xl:h-6 cursor-pointer"
@@ -187,21 +277,22 @@ export default function Navbar({
               />
             )}
 
+            {/* ✅ AUTH USER MENU */}
             {isAuthenticated ? (
               <div className="flex items-center gap-3 xl:gap-4">
                 <Link
                   href="/write"
-                  className={`flex items-center justify-center gap-2 xl:gap-3 border rounded-full px-3 xl:px-4 h-[36px] xl:h-[40px] text-xs xl:text-sm ${
-                    isDarkMode
+                  className={`flex items-center gap-2 border rounded-full px-3 xl:px-4 h-[36px] xl:h-[40px] text-xs xl:text-sm
+                    ${isDarkMode
                       ? "border-white text-white hover:bg-white hover:text-black"
                       : "border-black text-black hover:bg-black hover:text-white"
-                  }`}
+                    }`}
                 >
                   <LuPencil className="text-base" />
                   <span className="hidden xl:inline">Write a post</span>
-                  <span className="xl:hidden">Write</span>
                 </Link>
 
+                {/* PROFILE MENU */}
                 <div className="relative" ref={divRef}>
                   <img
                     className="w-[32px] h-[32px] xl:w-[38px] xl:h-[38px] rounded-full object-cover cursor-pointer border-2 border-transparent hover:border-[#f75555] transition-all"
@@ -210,29 +301,27 @@ export default function Navbar({
                       user?.username || user?.email
                     )}
                     onClick={() => setAccountInfoActive((prev) => !prev)}
-                    alt="Profile"
                   />
 
                   {accountInfoActive && (
                     <div
-                      className={`absolute top-12 right-0 w-44 p-5 rounded-xl shadow-xl flex flex-col gap-3 ${
-                        isDarkMode ? "bg-[#1c1d1d] text-white" : "bg-white text-black"
-                      } border ${
-                        isDarkMode ? "border-gray-700" : "border-gray-200"
-                      }`}
+                      className={`absolute top-12 right-0 w-44 p-5 rounded-xl shadow-xl flex flex-col gap-3 ${isDarkMode ? "bg-[#1c1d1d] text-white" : "bg-white text-black"
+                        } border ${isDarkMode ? "border-gray-700" : "border-gray-200"
+                        }`}
                     >
                       <h1 className="font-bold truncate">{user?.username}</h1>
 
                       <Link
                         href={`/profile/${user?.username}`}
                         onClick={() => setAccountInfoActive(false)}
-                        className="flex gap-2 items-center hover:text-[#f75555] transition-colors"
+                        className="flex gap-2 items-center hover:text-[#f75555]"
                       >
-                        <MdEmojiEmotions className="text-lg" /> Profile
+                        <MdEmojiEmotions className="text-lg" />
+                        Profile
                       </Link>
 
                       <div
-                        className="flex gap-2 items-center cursor-pointer hover:text-[#f75555] transition-colors"
+                        className="flex gap-2 items-center hover:text-[#f75555] cursor-pointer"
                         onClick={handleThemeToggle}
                       >
                         {isDarkMode ? (
@@ -244,7 +333,7 @@ export default function Navbar({
                       </div>
 
                       <div
-                        className="flex gap-2 items-center cursor-pointer hover:text-[#f75555] transition-colors"
+                        className="flex gap-2 items-center hover:text-[#f75555] cursor-pointer"
                         onClick={handleLogout}
                       >
                         <LuLogOut className="text-lg" /> Logout
@@ -255,18 +344,17 @@ export default function Navbar({
               </div>
             ) : (
               <div
-                className={`flex gap-4 xl:gap-5 text-sm xl:text-base ${
-                  isDarkMode ? "text-white" : "text-black"
-                }`}
+                className={`flex gap-4 text-sm xl:text-base ${isDarkMode ? "text-white" : "text-black"
+                  }`}
               >
                 <p
-                  className="cursor-pointer hover:text-[#f75555] transition-colors"
+                  className="cursor-pointer hover:text-[#f75555]"
                   onClick={() => setIsLoginActive(true)}
                 >
                   Login
                 </p>
                 <p
-                  className="cursor-pointer hover:text-[#f75555] transition-colors"
+                  className="cursor-pointer hover:text-[#f75555]"
                   onClick={() => setIsSignupActive(true)}
                 >
                   Signup
@@ -277,54 +365,125 @@ export default function Navbar({
         </div>
       </div>
 
-      {/* ✅ Mobile/Tablet Top */}
+      {/* ✅ MOBILE TOP */}
       <div
-        className={`lg:hidden fixed top-0 left-0 right-0 z-50 flex items-center gap-3 px-4 py-3 ${
-          isDarkMode ? "bg-[#1c1d1d] text-white" : "bg-[#f6f6f7] text-black"
-        } shadow-md`}
+        className={`lg:hidden fixed top-0 left-0 right-0 z-50 flex items-center gap-3 px-4 py-3 ${isDarkMode ? "bg-[#1c1d1d] text-white" : "bg-[#f6f6f7] text-black"
+          } shadow-md`}
       >
-        <div
-          ref={searchRef}
-          className="flex-1 flex items-center gap-2 border-b-[1px] border-[#f75555] py-2 px-3"
-        >
-          <IoSearch className="text-[#f75555] text-xl flex-shrink-0" />
-          <input
-            placeholder="Search..."
-            className={`bg-transparent outline-none font-bold text-sm w-full ${
-              isDarkMode
-                ? "text-white placeholder-gray-400"
-                : "text-black placeholder-gray-500"
-            }`}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={handleSearchKeyPress}
-            onFocus={() => searchQuery && setShowDropdown(true)}
-          />
-          {isSearching && (
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#f75555] flex-shrink-0"></div>
+        <div ref={searchRef} className="flex-1 relative">
+          <div className="flex items-center gap-2 border-b-[1px] border-[#f75555] py-2 px-3">
+            <IoSearch className="text-[#f75555] text-xl" />
+            <input
+              placeholder="Search..."
+              className={`bg-transparent outline-none font-bold text-sm w-full ${isDarkMode ? "text-white" : "text-black"
+                }`}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleSearchKeyPress}
+              onFocus={() => searchQuery && setShowDropdown(true)}
+            />
+            {isSearching && (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#f75555]" />
+            )}
+          </div>
+
+          {/* ✅ MOBILE DROPDOWN */}
+          {showDropdown && (
+            <div
+              className={`absolute top-full left-0 right-0 mt-2 rounded-lg shadow-2xl max-h-80 overflow-y-auto z-50 ${isDarkMode ? "bg-[#1c1d1d] border border-gray-700" : "bg-white border border-gray-200"
+                }`}
+            >
+              {searchResults.users.length > 0 && (
+                <div className="p-3">
+                  <h3
+                    className={`text-xs font-semibold mb-2 uppercase ${isDarkMode ? "text-gray-400" : "text-gray-500"
+                      }`}
+                  >
+                    Users
+                  </h3>
+                  {searchResults.users.map((u) => (
+                    <Link
+                      key={u._id}
+                      href={`/search?q=${encodeURIComponent(u.username)}`}
+                      onClick={handleResultClick}
+                      className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${isDarkMode ? "hover:bg-gray-800" : "hover:bg-gray-100"
+                        }`}
+                    >
+                      <img
+                        src={getRandomProfileImage(u.image, u.username)}
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                      <div>
+                        <p className="font-medium text-sm">{u.username}</p>
+                        {u.name && (
+                          <p
+                            className={`text-xs ${isDarkMode ? "text-gray-400" : "text-gray-500"
+                              }`}
+                          >
+                            {u.name}
+                          </p>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+
+              {searchResults.posts.length > 0 && (
+                <div
+                  className={`p-3 ${searchResults.users.length > 0 ? "border-t" : ""
+                    } ${isDarkMode ? "border-gray-700" : "border-gray-200"}`}
+                >
+                  <h3
+                    className={`text-xs font-semibold mb-2 uppercase ${isDarkMode ? "text-gray-400" : "text-gray-500"
+                      }`}
+                  >
+                    Posts
+                  </h3>
+                  {searchResults.posts.map((p) => (
+                    <Link
+                      key={p._id}
+                      href={`/search?q=${encodeURIComponent(p.title)}`}
+                      onClick={handleResultClick}
+                      className={`block p-2 rounded-lg transition-colors ${isDarkMode ? "hover:bg-gray-800" : "hover:bg-gray-100"
+                        }`}
+                    >
+                      <p className="font-medium text-sm line-clamp-1">{p.title}</p>
+                      {p.description && (
+                        <p
+                          className={`text-xs mt-1 line-clamp-2 ${isDarkMode ? "text-gray-400" : "text-gray-500"
+                            }`}
+                        >
+                          {p.description}
+                        </p>
+                      )}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
 
         {isDarkMode ? (
           <CiBrightnessDown
-            className="w-7 h-7 cursor-pointer flex-shrink-0"
+            className="w-7 h-7 cursor-pointer"
             onClick={handleThemeToggle}
           />
         ) : (
           <MdOutlineDarkMode
-            className="w-7 h-7 cursor-pointer flex-shrink-0"
+            className="w-7 h-7 cursor-pointer"
             onClick={handleThemeToggle}
           />
         )}
       </div>
 
-      {/* ✅ Mobile Bottom Nav */}
+      {/* ✅ MOBILE BOTTOM NAV */}
       <div
-        className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t py-2 px-2 ${
-          isDarkMode
-            ? "bg-[#1c1d1d] text-white border-gray-800"
-            : "bg-[#f6f6f7] text-black border-gray-200"
-        } shadow-lg`}
+        className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t py-2 px-2 ${isDarkMode
+          ? "bg-[#1c1d1d] text-white border-gray-800"
+          : "bg-[#f6f6f7] text-black border-gray-200"
+          } shadow-lg`}
       >
         {isAuthenticated ? (
           <div className="flex items-center justify-around max-w-md mx-auto">
@@ -338,7 +497,6 @@ export default function Navbar({
               <p className="text-[10px] font-medium">Trending</p>
             </Link>
 
-            {/* ✅ ADDED LATEST HERE */}
             <Link href="/latest" className={mobileLinkClass("/latest")}>
               <FaRegClock className="text-2xl" />
               <p className="text-[10px] font-medium">Latest</p>
@@ -365,18 +523,16 @@ export default function Navbar({
                     user?.username || user?.email
                   )}
                   className="w-7 h-7 rounded-full object-cover border-2 border-transparent"
-                  alt="Profile"
                 />
                 <p className="text-[10px] font-medium">Profile</p>
               </div>
 
               {accountInfoActive && (
                 <div
-                  className={`absolute bottom-16 right-0 w-48 p-4 rounded-xl shadow-2xl flex flex-col gap-3 ${
-                    isDarkMode
-                      ? "bg-[#1c1d1d] text-white border border-gray-700"
-                      : "bg-white text-black border border-gray-200"
-                  }`}
+                  className={`absolute bottom-16 right-0 w-48 p-4 rounded-xl shadow-2xl flex flex-col gap-3 ${isDarkMode
+                    ? "bg-[#1c1d1d] text-white border border-gray-700"
+                    : "bg-white text-black border border-gray-200"
+                    }`}
                 >
                   <h1 className="font-bold text-base truncate">
                     {user?.name || user?.username || ""}
@@ -385,13 +541,13 @@ export default function Navbar({
                   <Link
                     href={`/profile/${user?.username}`}
                     onClick={() => setAccountInfoActive(false)}
-                    className="flex gap-2 items-center hover:text-[#f75555] transition-colors text-sm"
+                    className="flex gap-2 items-center hover:text-[#f75555]"
                   >
                     <MdEmojiEmotions className="text-xl" /> View Profile
                   </Link>
 
                   <div
-                    className="flex gap-2 items-center hover:text-[#f75555] cursor-pointer transition-colors text-sm"
+                    className="flex gap-2 items-center hover:text-[#f75555] cursor-pointer"
                     onClick={handleThemeToggle}
                   >
                     {isDarkMode ? (
@@ -403,7 +559,7 @@ export default function Navbar({
                   </div>
 
                   <div
-                    className="flex gap-2 items-center hover:text-[#f75555] cursor-pointer transition-colors text-sm"
+                    className="flex gap-2 items-center hover:text-[#f75555] cursor-pointer"
                     onClick={handleLogout}
                   >
                     <LuLogOut className="text-xl" /> Logout
