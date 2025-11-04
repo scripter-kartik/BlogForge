@@ -41,7 +41,7 @@ export default function Page() {
 
       {/* Only show Home hero section when not searching */}
       {!searchResults && (
-        <Home isDarkMode={isDarkMode} setIsLoginActive={setIsLoginActive} />
+        <Home isDarkMode={isDarkMode} setIsLoginActive={setIsLoginActive} setIsSignupActive={setIsSignupActive}/>
       )}
 
       {/* HomePost shows either search results or regular posts */}

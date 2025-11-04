@@ -1,4 +1,4 @@
-// src/components/SignupForm.jsx - COMPLETE SIGNUP COMPONENT
+// src/components/SignupForm.jsx - UPDATED RESPONSIVE
 "use client";
 import { ImCross } from "react-icons/im";
 import { useState } from "react";
@@ -64,7 +64,6 @@ export default function Signup({
         setMessage(data.message || "Signup failed");
       }
     } catch (error) {
-      console.error("Signup error:", error);
       setMessage("An unexpected error occurred");
     } finally {
       setLoading(false);
@@ -85,7 +84,7 @@ export default function Signup({
     <div
       className={`${
         isDarkMode ? "bg-[#1c1d1d]" : "bg-white"
-      } w-[450px] p-5 rounded-2xl relative shadow-xl mx-auto`}
+      } w-full max-w-[450px] p-5 sm:p-7 rounded-2xl relative shadow-xl mx-auto`}
     >
       <ImCross
         className={`absolute right-5 top-5 w-3 h-3 ${
@@ -97,13 +96,15 @@ export default function Signup({
       <h1
         className={`${
           isDarkMode ? "text-white" : "text-black"
-        } text-2xl font-bold mb-6`}
+        } text-xl sm:text-2xl font-bold mb-6`}
       >
         Create Account
       </h1>
+
       <hr className="border-t-[1px] border-red-500 mb-8" />
 
       <form onSubmit={handleSignup}>
+        {/* Username */}
         <div className="relative mb-7">
           <input
             type="text"
@@ -118,15 +119,14 @@ export default function Signup({
               isDarkMode
                 ? "text-white border-[#494948]"
                 : "text-black border-gray-300"
-            } w-full h-12 rounded px-4 bg-transparent border-[1px]
+            } w-full h-12 rounded px-4 bg-transparent border 
             focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 
             peer placeholder-transparent disabled:opacity-50`}
             placeholder="Username"
-            id="signup-username"
           />
+
           <label
-            htmlFor="signup-username"
-            className={`absolute left-4 transition-all duration-200 px-1 pointer-events-none ${
+            className={`absolute left-4 text-sm px-1 transition-all duration-200 pointer-events-none ${
               usernameFocused || username
                 ? `text-xs -top-3 text-[#f75555] ${
                     isDarkMode ? "bg-[#1c1d1d]" : "bg-white"
@@ -138,6 +138,7 @@ export default function Signup({
           </label>
         </div>
 
+        {/* Email */}
         <div className="relative mb-7">
           <input
             type="email"
@@ -152,15 +153,14 @@ export default function Signup({
               isDarkMode
                 ? "text-white border-[#494948]"
                 : "text-black border-gray-300"
-            } w-full h-12 rounded px-4 bg-transparent border-[1px]
+            } w-full h-12 rounded px-4 bg-transparent border 
             focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 
             peer placeholder-transparent disabled:opacity-50`}
             placeholder="Email"
-            id="signup-email"
           />
+
           <label
-            htmlFor="signup-email"
-            className={`absolute left-4 transition-all duration-200 px-1 pointer-events-none ${
+            className={`absolute left-4 text-sm px-1 transition-all duration-200 pointer-events-none ${
               emailFocused || email
                 ? `text-xs -top-3 text-[#f75555] ${
                     isDarkMode ? "bg-[#1c1d1d]" : "bg-white"
@@ -172,6 +172,7 @@ export default function Signup({
           </label>
         </div>
 
+        {/* Password */}
         <div className="relative mb-7">
           <input
             type="password"
@@ -186,15 +187,14 @@ export default function Signup({
               isDarkMode
                 ? "text-white border-[#494948]"
                 : "text-black border-gray-300"
-            } w-full h-12 rounded px-4 bg-transparent border-[1px]
+            } w-full h-12 rounded px-4 bg-transparent border 
             focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 
             peer placeholder-transparent disabled:opacity-50`}
             placeholder="Password"
-            id="signup-password"
           />
+
           <label
-            htmlFor="signup-password"
-            className={`absolute left-4 transition-all duration-200 px-1 pointer-events-none ${
+            className={`absolute left-4 text-sm px-1 transition-all duration-200 pointer-events-none ${
               passwordFocused || password
                 ? `text-xs -top-3 text-[#f75555] ${
                     isDarkMode ? "bg-[#1c1d1d]" : "bg-white"
@@ -206,6 +206,7 @@ export default function Signup({
           </label>
         </div>
 
+        {/* Confirm Password */}
         <div className="relative mb-7">
           <input
             type="password"
@@ -220,15 +221,14 @@ export default function Signup({
               isDarkMode
                 ? "text-white border-[#494948]"
                 : "text-black border-gray-300"
-            } w-full h-12 rounded px-4 bg-transparent border-[1px]
+            } w-full h-12 rounded px-4 bg-transparent border 
             focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 
             peer placeholder-transparent disabled:opacity-50`}
             placeholder="Confirm Password"
-            id="signup-confirm"
           />
+
           <label
-            htmlFor="signup-confirm"
-            className={`absolute left-4 transition-all duration-200 px-1 pointer-events-none ${
+            className={`absolute left-4 text-sm px-1 transition-all duration-200 pointer-events-none ${
               confirmFocused || confirm
                 ? `text-xs -top-3 text-[#f75555] ${
                     isDarkMode ? "bg-[#1c1d1d]" : "bg-white"
@@ -240,6 +240,7 @@ export default function Signup({
           </label>
         </div>
 
+        {/* Signup button */}
         <button
           type="submit"
           disabled={loading}
@@ -249,10 +250,11 @@ export default function Signup({
           {loading ? "Creating account..." : "Create Account"}
         </button>
 
+        {/* message */}
         {message && (
           <p
             className={`text-center mb-4 text-sm ${
-              message.includes("successfully")
+              message.includes("success")
                 ? "text-green-500"
                 : "text-red-500"
             }`}
@@ -262,20 +264,22 @@ export default function Signup({
         )}
       </form>
 
+      {/* OR separator */}
       <div className="flex items-center mb-4">
         <span
           className={`flex-grow border-t ${
             isDarkMode ? "border-[#494948]" : "border-gray-300"
           }`}
-        ></span>
+        />
         <span className="px-3 text-gray-400 text-sm">OR</span>
         <span
           className={`flex-grow border-t ${
             isDarkMode ? "border-[#494948]" : "border-gray-300"
           }`}
-        ></span>
+        />
       </div>
 
+      {/* Google signup */}
       <button
         onClick={handleGoogleSignup}
         disabled={loading}
@@ -287,6 +291,7 @@ export default function Signup({
         Continue with Google
       </button>
 
+      {/* bottom */}
       <p
         className={`${
           isDarkMode ? "text-gray-400" : "text-gray-600"

@@ -275,8 +275,9 @@ export default function Profile() {
   if (authLoading || loading) {
     return (
       <div
-        className={`flex items-center justify-center h-screen transition-colors duration-500 ${isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f6f6f7]"
-          }`}
+        className={`flex items-center justify-center h-screen transition-colors duration-500 ${
+          isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f6f6f7]"
+        }`}
       >
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#f75555] mx-auto mb-4"></div>
@@ -291,8 +292,9 @@ export default function Profile() {
   if (error && !user) {
     return (
       <div
-        className={`flex justify-center mt-32 text-lg transition-colors duration-500 ${isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f6f6f7]"
-          }`}
+        className={`flex justify-center mt-32 text-lg transition-colors duration-500 px-4 ${
+          isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f6f6f7]"
+        }`}
       >
         <p className="text-red-500">{error}</p>
       </div>
@@ -302,8 +304,9 @@ export default function Profile() {
   const isOwnProfile = authUser?.username === user?.username;
 
   return (
-    <div className={`flex flex-col items-center min-h-screen w-screen overflow-x-hidden transition-colors duration-500 ${isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f6f6f7]"
-      }`}>
+    <div className={`flex flex-col items-center min-h-screen w-full overflow-x-hidden transition-colors duration-500 ${
+      isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f6f6f7]"
+    }`}>
 
       <Navbar
         isDarkMode={isDarkMode}
@@ -313,13 +316,14 @@ export default function Profile() {
       />
 
       <div
-        className={`mt-32 flex flex-col w-full max-w-[1280px] px-4 transition-colors duration-500 ${isDarkMode ? "text-white" : "text-black"
-          }`}
+        className={`mt-20 sm:mt-24 md:mt-32 flex flex-col w-full max-w-[1280px] px-4 sm:px-6 lg:px-8 transition-colors duration-500 ${
+          isDarkMode ? "text-white" : "text-black"
+        }`}
       >
-        <div className="flex items-start justify-between w-full gap-12">
+        <div className="flex flex-col lg:flex-row items-start justify-between w-full gap-6 sm:gap-8 lg:gap-12">
           {/* Profile Sidebar */}
-          <div className="flex flex-col items-center gap-6 w-80 flex-shrink-0">
-            <div className="relative w-64 h-64 rounded-full overflow-hidden border-4 border-[#f75555] group">
+          <div className="flex flex-col items-center gap-4 sm:gap-6 w-full lg:w-80 flex-shrink-0">
+            <div className="relative w-40 h-40 sm:w-48 sm:h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 rounded-full overflow-hidden border-4 border-[#f75555] group">
               <img
                 key={user?.image}
                 src={getRandomProfileImage(user?.image, user?.username)}
@@ -330,7 +334,7 @@ export default function Profile() {
                 <>
                   <label
                     htmlFor="profileImageInput"
-                    className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-sm font-semibold transition-opacity cursor-pointer"
+                    className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs sm:text-sm font-semibold transition-opacity cursor-pointer"
                   >
                     {saving ? "Uploading..." : "Change Picture"}
                   </label>
@@ -346,7 +350,7 @@ export default function Profile() {
               )}
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex gap-3 sm:gap-4 text-sm sm:text-base">
               <button
                 onClick={() => {
                   setModalType("followers");
@@ -367,13 +371,15 @@ export default function Profile() {
               </button>
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex gap-3 sm:gap-4 text-sm sm:text-base">
               <p>{userStats?.totalPosts || 0} posts</p>
               <p>Avg Rating: {userStats?.avgRating?.toFixed(2) || "0.00"}</p>
             </div>
 
             <p
-              className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}
+              className={`text-xs sm:text-sm text-center ${
+                isDarkMode ? "text-gray-400" : "text-gray-600"
+              }`}
             >
               Member since {user?.createdAt ? formatDate(user.createdAt) : "N/A"}
             </p>
@@ -381,7 +387,7 @@ export default function Profile() {
             {isOwnProfile ? (
               <button
                 onClick={handleLogout}
-                className="border-[1px] border-[#f75555] text-[#f75555] px-4 py-1 rounded hover:text-red-600 hover:border-red-600 transition-colors"
+                className="border-[1px] border-[#f75555] text-[#f75555] px-4 sm:px-6 py-2 rounded hover:text-red-600 hover:border-red-600 transition-colors text-sm sm:text-base"
               >
                 Logout
               </button>
@@ -389,12 +395,13 @@ export default function Profile() {
               <button
                 onClick={handleFollowClick}
                 disabled={followLoading}
-                className={`px-6 py-2 rounded font-medium transition-colors ${isFollowing
+                className={`px-6 sm:px-8 py-2 rounded font-medium transition-colors text-sm sm:text-base ${
+                  isFollowing
                     ? isDarkMode
                       ? "bg-gray-600 hover:bg-gray-700 text-white"
                       : "bg-gray-400 hover:bg-gray-500 text-white"
                     : "bg-[#f75555] hover:bg-red-600 text-white"
-                  } ${followLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                } ${followLoading ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 {followLoading ? "..." : isFollowing ? "Following" : "Follow"}
               </button>
@@ -402,8 +409,8 @@ export default function Profile() {
           </div>
 
           {/* Profile Details */}
-          <div className="flex flex-col gap-4 items-start flex-1">
-            <h1 className="text-4xl font-bold mb-4">
+          <div className="flex flex-col gap-4 items-start flex-1 w-full">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 sm:mb-4">
               {isOwnProfile ? `Welcome, ${user?.name || "User"}` : user?.name}
             </h1>
 
@@ -414,7 +421,7 @@ export default function Profile() {
                   <div className="flex flex-col w-full" key={field}>
                     <label
                       htmlFor={field}
-                      className="text-sm font-light mb-1 capitalize"
+                      className="text-xs sm:text-sm font-light mb-1 capitalize"
                     >
                       {field}
                     </label>
@@ -425,8 +432,9 @@ export default function Profile() {
                         onChange={(e) =>
                           handleInputChange("bio", e.target.value)
                         }
-                        className={`w-full px-3 py-2 font-light rounded h-[120px] resize-none outline-none border-none transition-colors duration-500 ${isDarkMode ? "bg-[#2f2f2f] text-white" : "bg-gray-200 text-black"
-                          }`}
+                        className={`w-full px-3 py-2 text-sm sm:text-base font-light rounded h-[100px] sm:h-[120px] resize-none outline-none border-none transition-colors duration-500 ${
+                          isDarkMode ? "bg-[#2f2f2f] text-white" : "bg-gray-200 text-black"
+                        }`}
                         placeholder="Tell us something..."
                       />
                     ) : (
@@ -443,13 +451,15 @@ export default function Profile() {
                             ? "Leave blank to keep unchanged"
                             : ""
                         }
-                        className={`w-full h-[35px] border-none outline-none px-3 py-2 font-light rounded transition-colors duration-500 ${isDarkMode
+                        className={`w-full h-[35px] sm:h-[40px] border-none outline-none px-3 py-2 text-sm sm:text-base font-light rounded transition-colors duration-500 ${
+                          isDarkMode
                             ? "bg-[#2f2f2f] text-white"
                             : "bg-gray-200 text-black"
-                          } ${field === "username"
+                        } ${
+                          field === "username"
                             ? "opacity-60 cursor-not-allowed"
                             : ""
-                          }`}
+                        }`}
                       />
                     )}
                   </div>
@@ -457,38 +467,49 @@ export default function Profile() {
 
                 <button
                   onClick={handleSave}
-                  className={`px-6 py-2 rounded font-medium transition-all bg-[#f75555] text-white ${saving
+                  className={`px-4 sm:px-6 py-2 rounded font-medium transition-all bg-[#f75555] text-white text-sm sm:text-base ${
+                    saving
                       ? "opacity-50 cursor-not-allowed"
                       : "hover:bg-red-600"
-                    }`}
+                  }`}
                   disabled={saving}
                 >
                   {saving ? "Saving..." : "Save changes"}
                 </button>
 
                 {error && (
-                  <div className="w-full p-3 bg-red-500 bg-opacity-20 border border-red-500 rounded">
+                  <div className="w-full p-3 bg-red-500 bg-opacity-20 border border-red-500 rounded text-sm sm:text-base">
                     <p className="text-red-400">{error}</p>
                   </div>
                 )}
                 {success && (
-                  <div className="w-full p-3 bg-green-500 bg-opacity-20 border border-green-500 rounded">
+                  <div className="w-full p-3 bg-green-500 bg-opacity-20 border border-green-500 rounded text-sm sm:text-base">
                     <p className="text-green-400">{success}</p>
                   </div>
                 )}
               </>
             ) : (
-              // Viewing someone else's profile - IMPROVED UI
-              <div className={`w-full p-6 rounded-xl ${isDarkMode ? "bg-[#2D2D2D]" : "bg-white"} shadow-lg`}>
-                <h3 className="text-xl font-bold mb-3">About</h3>
-                <p className={`text-base leading-relaxed ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}>
+              // Viewing someone else's profile
+              <div className={`w-full p-4 sm:p-6 rounded-xl ${
+                isDarkMode ? "bg-[#2D2D2D]" : "bg-white"
+              } shadow-lg`}>
+                <h3 className="text-lg sm:text-xl font-bold mb-3">About</h3>
+                <p className={`text-sm sm:text-base leading-relaxed ${
+                  isDarkMode ? "text-gray-300" : "text-gray-700"
+                }`}>
                   {user?.bio || "No bio yet"}
                 </p>
-                <div className={`mt-4 pt-4 border-t ${isDarkMode ? "border-gray-700" : "border-gray-200"}`}>
-                  <p className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
+                <div className={`mt-4 pt-4 border-t ${
+                  isDarkMode ? "border-gray-700" : "border-gray-200"
+                }`}>
+                  <p className={`text-xs sm:text-sm ${
+                    isDarkMode ? "text-gray-400" : "text-gray-600"
+                  }`}>
                     <span className="font-semibold">Email:</span> {user?.email}
                   </p>
-                  <p className={`text-sm mt-2 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
+                  <p className={`text-xs sm:text-sm mt-2 ${
+                    isDarkMode ? "text-gray-400" : "text-gray-600"
+                  }`}>
                     <span className="font-semibold">Username:</span> @{user?.username}
                   </p>
                 </div>
@@ -498,76 +519,85 @@ export default function Profile() {
         </div>
 
         {/* User posts */}
-        <div className="mt-16 w-full mb-12">
-          <div className="flex items-center gap-4 justify-between mb-10">
-            <h1 className={`${isDarkMode ? "text-white" : "text-black"} text-3xl font-bold tracking-tight`}>
+        <div className="mt-8 sm:mt-12 lg:mt-16 w-full mb-24 sm:mb-28">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 justify-between mb-6 sm:mb-10">
+            <h1 className={`${
+              isDarkMode ? "text-white" : "text-black"
+            } text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight`}>
               {isOwnProfile ? "Your Posts" : `Posts by ${user?.name}`}
             </h1>
-            <div className={`flex-1 h-1 rounded-full ${isDarkMode ? "bg-gradient-to-r from-[#f75555] to-transparent" : "bg-gradient-to-r from-[#f75555] to-transparent"}`}></div>
+            <div className={`hidden sm:block flex-1 h-1 rounded-full ${
+              isDarkMode ? "bg-gradient-to-r from-[#f75555] to-transparent" : "bg-gradient-to-r from-[#f75555] to-transparent"
+            }`}></div>
           </div>
 
           {userPosts.length > 0 ? (
             userPosts.map((post) => (
               <div
                 key={post._id}
-                className="w-full mt-8 cursor-pointer group"
+                className="w-full mt-4 sm:mt-6 lg:mt-8 cursor-pointer group"
                 onClick={() => router.push(`/blog/${post._id}`)}
               >
                 <div
-                  className={`w-full ${isDarkMode
+                  className={`w-full ${
+                    isDarkMode
                       ? "text-white bg-[#2D2D2D] hover:bg-[#353535]"
                       : "text-black bg-[#E8EAEC] hover:bg-[#dfe1e4]"
-                    } flex gap-6 p-6 rounded-xl transition-all duration-300 hover:shadow-xl hover:scale-[1.01]`}
+                  } flex flex-col sm:flex-row gap-4 sm:gap-6 p-4 sm:p-6 rounded-xl transition-all duration-300 hover:shadow-xl hover:scale-[1.01]`}
                 >
                   {post.coverImage ? (
                     <img
-                      className="w-52 h-40 object-cover rounded-lg group-hover:shadow-md transition-shadow flex-shrink-0"
+                      className="w-full sm:w-40 md:w-48 lg:w-52 h-40 sm:h-32 md:h-36 lg:h-40 object-cover rounded-lg group-hover:shadow-md transition-shadow flex-shrink-0"
                       src={post.coverImage}
                       alt={post.title}
                       onError={(e) => {
                         e.target.style.display = "none";
                         const parent = e.target.parentElement;
                         const gradientDiv = document.createElement("div");
-                        gradientDiv.className = `w-52 h-40 rounded-lg group-hover:shadow-md transition-shadow flex-shrink-0 ${getGradientForPost(post._id)}`;
+                        gradientDiv.className = `w-full sm:w-40 md:w-48 lg:w-52 h-40 sm:h-32 md:h-36 lg:h-40 rounded-lg group-hover:shadow-md transition-shadow flex-shrink-0 ${getGradientForPost(post._id)}`;
                         parent.insertBefore(gradientDiv, parent.firstChild);
                       }}
                     />
                   ) : (
                     <div
-                      className={`w-52 h-40 rounded-lg group-hover:shadow-md transition-shadow flex-shrink-0 ${getGradientForPost(post._id)}`}
+                      className={`w-full sm:w-40 md:w-48 lg:w-52 h-40 sm:h-32 md:h-36 lg:h-40 rounded-lg group-hover:shadow-md transition-shadow flex-shrink-0 ${getGradientForPost(post._id)}`}
                     />
                   )}
 
-                  <div className="flex flex-col gap-4 flex-1">
-                    <div className="flex flex-row justify-between items-start gap-4">
-                      <h1 className="font-bold text-2xl leading-tight">{post.title}</h1>
+                  <div className="flex flex-col gap-3 sm:gap-4 flex-1">
+                    <div className="flex flex-col sm:flex-row justify-between items-start gap-3 sm:gap-4">
+                      <h1 className="font-bold text-lg sm:text-xl lg:text-2xl leading-tight">
+                        {post.title}
+                      </h1>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <img
-                          className="w-8 h-8 rounded-full border-2 border-[#f75555]"
+                          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-[#f75555]"
                           src={getRandomProfileImage(user?.image, user?.username)}
                           alt={user?.name}
                         />
-                        <p className="text-sm font-medium">{user?.name}</p>
+                        <p className="text-xs sm:text-sm font-medium">{user?.name}</p>
                       </div>
                     </div>
                     {post.description && (
                       <p
-                        className={`${isDarkMode ? "text-gray-300" : "text-gray-700"
-                          } line-clamp-2 text-base`}
+                        className={`${
+                          isDarkMode ? "text-gray-300" : "text-gray-700"
+                        } line-clamp-2 text-sm sm:text-base`}
                       >
                         {post.description}
                       </p>
                     )}
                     <div
-                      className={`${isDarkMode ? "text-gray-400" : "text-gray-600"
-                        } flex items-center gap-6 text-sm font-medium`}
+                      className={`${
+                        isDarkMode ? "text-gray-400" : "text-gray-600"
+                      } flex flex-wrap items-center gap-4 sm:gap-6 text-xs sm:text-sm font-medium`}
                     >
                       <div className="flex items-center gap-2 hover:text-[#f75555] transition-colors">
-                        <FaRegStar className="text-yellow-500 text-base" />
+                        <FaRegStar className="text-yellow-500 text-sm sm:text-base" />
                         <p>{post.likesCount || post.starRating || 0} {post.starRating ? "rating" : "likes"}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <FaRegClock className="text-base" />
+                        <FaRegClock className="text-sm sm:text-base" />
                         <p>{new Date(post.createdAt).toLocaleDateString()}</p>
                       </div>
                     </div>
@@ -576,8 +606,10 @@ export default function Profile() {
               </div>
             ))
           ) : (
-            <div className={`text-center py-16 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
-              <p className="text-xl">
+            <div className={`text-center py-12 sm:py-16 ${
+              isDarkMode ? "text-gray-400" : "text-gray-600"
+            }`}>
+              <p className="text-base sm:text-lg lg:text-xl px-4">
                 {isOwnProfile
                   ? "You haven't written any posts yet."
                   : `${user?.name} hasn't written any posts yet.`}
