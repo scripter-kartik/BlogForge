@@ -1,4 +1,7 @@
-// lib/api.js (Updated)
+// src/lib/api.js (UPDATED VERSION)
+// ============================================
+// Add these methods to your existing ApiClient class
+
 class ApiClient {
   constructor() {
     this.baseURL = process.env.NEXT_PUBLIC_API_URL || "";
@@ -28,18 +31,26 @@ class ApiClient {
       const contentType = response.headers.get("content-type") || "";
 
       if (!response.ok) {
-        let errorMessage = `HTTP ${response.status}`;
+        let errorMessage = `Request failed with status ${response.status}`;
+        let errorData = null;
+        
         try {
           if (contentType.includes("application/json")) {
-            const errData = await response.json();
-            errorMessage =
-              errData.error || errData.message || JSON.stringify(errData);
+            errorData = await response.json();
+            errorMessage = errorData.error || errorData.message || errorMessage;
           } else {
             const text = await response.text();
             errorMessage = text || errorMessage;
           }
-        } catch {}
-        throw new Error(errorMessage);
+        } catch (parseError) {
+          console.error("Error parsing error response:", parseError);
+          // Keep the default error message if parsing fails
+        }
+        
+        const error = new Error(errorMessage || "An unknown error occurred");
+        error.status = response.status;
+        error.data = errorData;
+        throw error;
       }
 
       if (response.status === 204) return null;
@@ -48,11 +59,18 @@ class ApiClient {
       return response.text();
     } catch (error) {
       console.error(`API request failed: ${endpoint}`, error);
-      throw error;
+      // Re-throw the error with message guaranteed to exist
+      if (error.message) {
+        throw error;
+      } else {
+        const newError = new Error("Network request failed");
+        newError.status = error.status || 500;
+        throw newError;
+      }
     }
   }
 
-  // ✅ User-related methods
+  // ===== USER METHODS =====
   async getUserInfo() {
     return this.request("/api/user/home");
   }
@@ -80,7 +98,7 @@ class ApiClient {
     });
   }
 
-  // ✅ Follow methods (NEW)
+  // ===== FOLLOW METHODS =====
   async toggleFollow(targetUserId) {
     return this.request("/api/follow", {
       method: "POST",
@@ -88,14 +106,14 @@ class ApiClient {
     });
   }
 
-  // ✅ Blog methods
+  // ===== BLOG METHODS =====
   async getAllPosts() {
     return this.request("/api/blogposts");
   }
 
   async getBlogById(id) {
     try {
-      return await this.request(`/api/blogposts/${id}`);
+      return await this.request(`/api/blogs/${id}`);
     } catch (err) {
       console.error("Failed to fetch blog:", err.message);
       return null;
@@ -109,17 +127,30 @@ class ApiClient {
     });
   }
 
-  // ✅ Trending
+  // ✅ NEW: Update blog post
+  async updatePost(postId, postData) {
+    return this.request(`/api/blogs/${postId}`, {
+      method: "PATCH",
+      body: postData,
+    });
+  }
+
+  // ✅ NEW: Delete blog post
+  async deletePost(postId) {
+    return this.request(`/api/blogs/${postId}`, {
+      method: "DELETE",
+    });
+  }
+
+  // ===== TRENDING/LATEST =====
   async getTrendingBlogs() {
     return this.request("/api/blogposts/trending");
   }
 
-  // ✅ Latest
   async getLatestBlogs() {
     return this.request("/api/blogposts/latest");
   }
 
-  // ✅ For You
   async getForYouBlogs() {
     return this.request("/api/blogposts/for-you");
   }

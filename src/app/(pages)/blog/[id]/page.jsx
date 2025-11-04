@@ -1,18 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Login from "@/components/LoginForm";
 import Signup from "@/components/SignupForm";
+import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 import { useAuth } from "@/hooks/useAuth";
-import { FaRegClock } from "react-icons/fa";
+import { apiClient } from "@/lib/api";
+import { FaRegClock, FaEdit, FaTrash } from "react-icons/fa";
 import { IoEyeOutline } from "react-icons/io5";
 import { BiComment } from "react-icons/bi";
+import { getRandomProfileImage } from "@/lib/profileImage";
 
 export default function BlogPage() {
   const params = useParams();
+  const router = useRouter();
   const { user, isAuthenticated } = useAuth();
   const [blog, setBlog] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -20,6 +24,8 @@ export default function BlogPage() {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isLoginActive, setIsLoginActive] = useState(false);
   const [isSignupActive, setIsSignupActive] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
@@ -27,19 +33,8 @@ export default function BlogPage() {
   const [replyInputs, setReplyInputs] = useState({});
   const [deletingIds, setDeletingIds] = useState(new Set());
 
-  // ✅ DEBUG: Log user object
-  useEffect(() => {
-    if (user) {
-      console.log("👤 Current User Object:", user);
-      console.log("📝 User Fields:", {
-        id: user?.id,
-        _id: user?._id,
-        name: user?.name,
-        email: user?.email,
-        image: user?.image,
-      });
-    }
-  }, [user]);
+  // Check if current user is the author
+  const isAuthor = blog?.author?._id === user?.id || blog?.author?._id === user?._id;
 
   // Fetch blog
   useEffect(() => {
@@ -73,7 +68,6 @@ export default function BlogPage() {
         const res = await fetch(`/api/comments?postId=${params.id}`);
         if (!res.ok) throw new Error("Failed to fetch comments");
         const data = await res.json();
-        console.log("📝 Fetched comments:", data);
         setComments(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error(err);
@@ -82,6 +76,28 @@ export default function BlogPage() {
     }
     fetchComments();
   }, [params.id]);
+
+  // ✅ DELETE POST HANDLER - Updated to use modal
+  const handleDeletePost = async () => {
+    setDeleting(true);
+    try {
+      await apiClient.deletePost(params.id);
+      // Wait a moment for the animation
+      setTimeout(() => {
+        router.push("/"); // Redirect to home after deletion
+      }, 500);
+    } catch (err) {
+      console.error("Delete error:", err);
+      alert(`Failed to delete post: ${err.message}`);
+      setDeleting(false);
+      setShowDeleteModal(false);
+    }
+  };
+
+  // ✅ EDIT POST HANDLER
+  const handleEditPost = () => {
+    router.push(`/edit/${params.id}`);
+  };
 
   // Add comment
   const handleAddComment = async () => {
@@ -92,7 +108,6 @@ export default function BlogPage() {
     }
 
     const userId = user.id || user._id;
-    console.log("💬 Posting comment with userId:", userId, "User object:", user);
 
     setSubmitting(true);
     try {
@@ -107,7 +122,6 @@ export default function BlogPage() {
       });
 
       const responseData = await res.json();
-      console.log("📝 Comment response:", responseData);
 
       if (!res.ok) throw new Error(responseData.error || "Failed to post comment");
 
@@ -167,7 +181,6 @@ export default function BlogPage() {
     }
 
     const userId = user.id || user._id;
-    console.log("💬 Posting reply with userId:", userId);
 
     try {
       const res = await fetch(`/api/comments/${commentId}/replies`, {
@@ -179,7 +192,6 @@ export default function BlogPage() {
         }),
       });
       const data = await res.json();
-      console.log("📝 Reply response:", data);
 
       if (!res.ok) throw new Error(data.error || "Failed to post reply");
 
@@ -295,7 +307,37 @@ export default function BlogPage() {
             ← Back to Blogs
           </Link>
 
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 sm:mb-3 break-words">{blog.title}</h1>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold break-words flex-1">{blog.title}</h1>
+            
+            {/* ✅ EDIT & DELETE BUTTONS (Only visible to author) */}
+            {isAuthenticated && isAuthor && (
+              <div className="flex gap-3">
+                <button
+                  onClick={handleEditPost}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
+                    isDarkMode
+                      ? "bg-blue-600 hover:bg-blue-700 text-white"
+                      : "bg-blue-500 hover:bg-blue-600 text-white"
+                  }`}
+                >
+                  <FaEdit /> Edit
+                </button>
+                <button
+                  onClick={() => setShowDeleteModal(true)}
+                  disabled={deleting}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
+                    deleting
+                      ? "opacity-50 cursor-not-allowed"
+                      : ""
+                  } bg-red-600 hover:bg-red-700 text-white`}
+                >
+                  <FaTrash /> Delete
+                </button>
+              </div>
+            )}
+          </div>
+
           {blog.description && (
             <p
               className={`text-base sm:text-lg mb-3 sm:mb-4 ${
@@ -315,7 +357,10 @@ export default function BlogPage() {
             {blog.author && (
               <div className="flex items-center gap-2">
                 <img
-                  src={blog.author.image || "/imageProfile1.png"}
+                  src={getRandomProfileImage(
+                    blog.author.image,
+                    blog.author.username || blog.author.email
+                  )}
                   alt={blog.author.name}
                   className="w-7 h-7 sm:w-8 sm:h-8 rounded-full"
                 />
@@ -431,7 +476,10 @@ export default function BlogPage() {
                 >
                   <div className="flex gap-2 sm:gap-3">
                     <img
-                      src={comment.author?.image || "/imageProfile1.png"}
+                      src={getRandomProfileImage(
+                        comment.author?.image,
+                        comment.author?.username || comment.author?.email
+                      )}
                       alt={comment.author?.name || "User"}
                       className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-[#f75555] flex-shrink-0"
                     />
@@ -485,7 +533,10 @@ export default function BlogPage() {
                     {(comment.replies || []).map((reply) => (
                       <div key={reply._id} className="flex gap-2 sm:gap-3">
                         <img
-                          src={reply.author?.image || "/imageProfile1.png"}
+                          src={getRandomProfileImage(
+                            reply.author?.image,
+                            reply.author?.username || reply.author?.email
+                          )}
                           alt={reply.author?.name || "User"}
                           className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 border-[#f75555] flex-shrink-0"
                         />
@@ -577,6 +628,17 @@ export default function BlogPage() {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDeletePost}
+        isDarkMode={isDarkMode}
+        title="Delete Post"
+        message="Are you sure you want to delete this post? This action cannot be undone."
+        isDeleting={deleting}
+      />
 
       {/* Auth Modals */}
       {isLoginActive && (

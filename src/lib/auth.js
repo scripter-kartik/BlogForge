@@ -1,5 +1,4 @@
-// FILE: src/lib/auth.js (UPDATE YOUR EXISTING FILE)
-
+// src/lib/auth.js - UPDATED WITH SESSION REFRESH
 import { getToken } from "next-auth/jwt";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -7,7 +6,6 @@ import connectDB from "@/lib/database/db.js";
 import { User } from "@/lib/models/User.js";
 import bcrypt from "bcryptjs";
 
-// Existing function - keep this as is
 export async function getAuthenticatedUser(req) {
   const token = await getToken({
     req,
@@ -15,7 +13,7 @@ export async function getAuthenticatedUser(req) {
   });
 
   if (!token || !token.email) {
-    throw new ApiError("Unauthorized", 401);
+    throw new Error("Unauthorized");
   }
 
   return {
@@ -23,10 +21,10 @@ export async function getAuthenticatedUser(req) {
     email: token.email,
     username: token.username,
     name: token.name,
+    image: token.picture,
   };
 }
 
-// Add this authOptions export
 export const authOptions = {
   providers: [
     GoogleProvider({
@@ -63,10 +61,52 @@ export const authOptions = {
     }),
   ],
   secret: process.env.NEXTAUTH_SECRET,
-  session: { strategy: "jwt", maxAge: 7 * 24 * 60 * 60 },
+  session: { 
+    strategy: "jwt", 
+    maxAge: 7 * 24 * 60 * 60,
+    updateAge: 24 * 60 * 60, // Update session every 24 hours
+  },
   pages: { signIn: "/" },
   callbacks: {
-    async jwt({ token, account, profile, user }) {
+    async jwt({ token, account, profile, user, trigger, session }) {
+      // ✅ Handle session refresh/update trigger - FETCH FRESH DATA FROM DB
+      if (trigger === "update") {
+        console.log("🔄 JWT Callback: Session update triggered");
+        
+        // If session contains new image data, use it immediately
+        if (session?.user?.image) {
+          console.log("📸 JWT: Updating image from session:", session.user.image);
+          token.picture = session.user.image;
+        }
+        
+        // Always fetch latest from database to be sure
+        try {
+          await connectDB();
+          const dbUser = await User.findOne({ 
+            $or: [
+              { _id: token._id },
+              { email: token.email }
+            ]
+          });
+          
+          if (dbUser) {
+            console.log("✅ JWT: Fresh user data loaded from DB");
+            token._id = dbUser._id.toString();
+            token.username = dbUser.username;
+            token.email = dbUser.email;
+            token.name = dbUser.name;
+            token.picture = dbUser.image;
+            
+            console.log("📸 JWT: New image in token:", token.picture);
+          }
+        } catch (error) {
+          console.error("❌ JWT: Error fetching fresh user data:", error);
+        }
+        
+        return token;
+      }
+
+      // ✅ Handle Google OAuth
       if (account && account.provider === "google" && profile) {
         await connectDB();
         let dbUser = await User.findOne({ email: profile.email });
@@ -91,6 +131,8 @@ export const authOptions = {
         token.name = dbUser.name;
         token.picture = dbUser.image || profile.picture || null;
       }
+
+      // ✅ Handle credentials login
       if (user) {
         token._id = user.id || token._id;
         token.username = user.username || token.username;
@@ -98,9 +140,12 @@ export const authOptions = {
         token.name = user.name || token.name;
         token.picture = user.image || token.picture;
       }
+
       if (!token.sub && token._id) token.sub = token._id;
+      
       return token;
     },
+    
     async session({ session, token }) {
       if (token) {
         session.user = session.user || {};
