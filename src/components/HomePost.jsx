@@ -462,13 +462,13 @@ export default function HomePost({ isDarkMode, searchResults }) {
   const latest = getLatestPosts();
 
   return (
-    <div className="w-full max-w-7xl px-4 sm:px-6 lg:px-8 mt-20 sm:mt-28 lg:mt-32 mb-20 md:mb-[70px]">
+    <div className="w-full max-w-7xl px-4 sm:px-6 lg:px-8 md:mt-20 lg:mt-32 mb-20 md:mb-[70px]">
       {/* Featured Posts Section */}
-      <div className="flex flex-col md:flex-row items-start md:items-center gap-4 justify-between mb-10">
+      <div className="flex flex-col md:flex-row items-center sm:items-start md:items-center gap-4 justify-between mb-10">
         <h1
           className={`${
-            isDarkMode ? "text-white" : "text-black"
-          } text-2xl md:text-4xl font-bold tracking-tight`}
+            isDarkMode ? "text-[#f75555]" : "text-black"
+          } sm:text-white text-4xl md:text-4xl font-bold sm:tracking-tight`}
         >
           Featured Posts
         </h1>
@@ -485,11 +485,11 @@ export default function HomePost({ isDarkMode, searchResults }) {
       {/* Suggested Users Section */}
       {isAuthenticated && suggestedUsers.length > 0 && (
         <div className="mt-24 md:mt-32">
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-4 justify-between mb-8">
+          <div className="flex flex-col md:flex-row items-center sm:items-start md:items-center gap-4 justify-between mb-8">
             <h1
               className={`${
-                isDarkMode ? "text-white" : "text-black"
-              } text-2xl md:text-4xl font-bold tracking-tight`}
+                isDarkMode ? "text-[#f75555]" : "text-black"
+              } sm:text-white text-4xl md:text-4xl font-bold sm:tracking-tight`}
             >
               Suggested For You
             </h1>
@@ -597,11 +597,11 @@ export default function HomePost({ isDarkMode, searchResults }) {
       )}
 
       {/* Trending Posts Section */}
-      <div className="flex flex-col md:flex-row items-start md:items-center gap-4 justify-between mb-10 mt-24 md:mt-32">
+      <div className="flex flex-col md:flex-row items-center sm:items-start md:items-center gap-4 justify-between mb-10 mt-24 md:mt-32">
         <h1
           className={`${
-            isDarkMode ? "text-white" : "text-black"
-          } text-2xl md:text-4xl font-bold tracking-tight`}
+            isDarkMode ? "text-[#f75555]" : "text-black"
+          } sm:text-white text-4xl md:text-4xl font-bold sm:tracking-tight`}
         >
           Trending Posts
         </h1>
@@ -616,11 +616,11 @@ export default function HomePost({ isDarkMode, searchResults }) {
       {renderPosts(trending)}
 
       {/* Latest Posts Section */}
-      <div className="flex flex-col md:flex-row items-start md:items-center gap-4 justify-between mb-10 mt-24 md:mt-32">
+      <div className="flex flex-col md:flex-row items-center sm:items-start md:items-center gap-4 justify-between mb-10 mt-24 md:mt-32">
         <h1
           className={`${
-            isDarkMode ? "text-white" : "text-black"
-          } text-2xl md:text-4xl font-bold tracking-tight`}
+            isDarkMode ? "text-[#f75555]" : "text-black"
+          } sm:text-white text-4xl md:text-4xl font-bold sm:tracking-tight`}
         >
           Latest Posts
         </h1>

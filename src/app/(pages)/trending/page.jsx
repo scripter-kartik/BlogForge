@@ -168,7 +168,7 @@ export default function TrendingPage() {
         setIsSignupActive={setIsSignupActive}
       />
 
-      <div className="w-full max-w-[1280px] mt-24 sm:mt-32 md:mt-[165px] mb-12 sm:mb-16 md:mb-[70px] px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-[1280px] mt-20 sm:mt-20 md:mt-20 mb-12 sm:mb-16 md:mb-[70px] px-4 sm:px-6 lg:px-8">
 
         {renderPosts(trendingPosts)}
 

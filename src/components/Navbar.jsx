@@ -32,7 +32,6 @@ export default function Navbar({
   const pathname = usePathname();
   const router = useRouter();
 
-  /* ✅ Close dropdowns when clicking outside */
   useEffect(() => {
     function handleClickOutside(event) {
       if (
@@ -53,7 +52,6 @@ export default function Navbar({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  /* ✅ Debounced search */
   useEffect(() => {
     const delay = setTimeout(() => {
       if (searchQuery.trim().length > 0) {
@@ -156,7 +154,6 @@ export default function Navbar({
           </div>
 
           <div className="flex items-center gap-3 xl:gap-5">
-            {/* ✅ Desktop Search */}
             <div className="relative" ref={searchRef}>
               <div
                 className={`w-[250px] xl:w-[330px] flex items-center gap-2 font-sm border-b-[1px] py-2 px-3 transition-colors ${
@@ -178,7 +175,6 @@ export default function Navbar({
               </div>
             </div>
 
-            {/* Desktop Theme */}
             {isDarkMode ? (
               <CiBrightnessDown
                 className="text-white w-5 h-5 xl:w-6 xl:h-6 cursor-pointer"
@@ -191,7 +187,6 @@ export default function Navbar({
               />
             )}
 
-            {/* Desktop Auth */}
             {isAuthenticated ? (
               <div className="flex items-center gap-3 xl:gap-4">
                 <Link
@@ -222,7 +217,9 @@ export default function Navbar({
                     <div
                       className={`absolute top-12 right-0 w-44 p-5 rounded-xl shadow-xl flex flex-col gap-3 ${
                         isDarkMode ? "bg-[#1c1d1d] text-white" : "bg-white text-black"
-                      } border ${isDarkMode ? "border-gray-700" : "border-gray-200"}`}
+                      } border ${
+                        isDarkMode ? "border-gray-700" : "border-gray-200"
+                      }`}
                     >
                       <h1 className="font-bold truncate">{user?.username}</h1>
 
@@ -238,7 +235,11 @@ export default function Navbar({
                         className="flex gap-2 items-center cursor-pointer hover:text-[#f75555] transition-colors"
                         onClick={handleThemeToggle}
                       >
-                        {isDarkMode ? <CiBrightnessDown className="text-lg" /> : <MdOutlineDarkMode className="text-lg" />}
+                        {isDarkMode ? (
+                          <CiBrightnessDown className="text-lg" />
+                        ) : (
+                          <MdOutlineDarkMode className="text-lg" />
+                        )}
                         <p>{isDarkMode ? "Light theme" : "Dark theme"}</p>
                       </div>
 
@@ -258,26 +259,41 @@ export default function Navbar({
                   isDarkMode ? "text-white" : "text-black"
                 }`}
               >
-                <p className="cursor-pointer hover:text-[#f75555] transition-colors" onClick={() => setIsLoginActive(true)}>Login</p>
-                <p className="cursor-pointer hover:text-[#f75555] transition-colors" onClick={() => setIsSignupActive(true)}>Signup</p>
+                <p
+                  className="cursor-pointer hover:text-[#f75555] transition-colors"
+                  onClick={() => setIsLoginActive(true)}
+                >
+                  Login
+                </p>
+                <p
+                  className="cursor-pointer hover:text-[#f75555] transition-colors"
+                  onClick={() => setIsSignupActive(true)}
+                >
+                  Signup
+                </p>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* ✅ Mobile/Tablet Top Bar — Search + Theme */}
+      {/* ✅ Mobile/Tablet Top */}
       <div
         className={`lg:hidden fixed top-0 left-0 right-0 z-50 flex items-center gap-3 px-4 py-3 ${
           isDarkMode ? "bg-[#1c1d1d] text-white" : "bg-[#f6f6f7] text-black"
         } shadow-md`}
       >
-        <div ref={searchRef} className="flex-1 flex items-center gap-2 border-b-[1px] border-[#f75555] py-2 px-3">
+        <div
+          ref={searchRef}
+          className="flex-1 flex items-center gap-2 border-b-[1px] border-[#f75555] py-2 px-3"
+        >
           <IoSearch className="text-[#f75555] text-xl flex-shrink-0" />
           <input
             placeholder="Search..."
             className={`bg-transparent outline-none font-bold text-sm w-full ${
-              isDarkMode ? "text-white placeholder-gray-400" : "text-black placeholder-gray-500"
+              isDarkMode
+                ? "text-white placeholder-gray-400"
+                : "text-black placeholder-gray-500"
             }`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -302,14 +318,15 @@ export default function Navbar({
         )}
       </div>
 
-      {/* ✅ Mobile/Tablet Bottom Navigation - FIXED LAYOUT */}
+      {/* ✅ Mobile Bottom Nav */}
       <div
         className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t py-2 px-2 ${
-          isDarkMode ? "bg-[#1c1d1d] text-white border-gray-800" : "bg-[#f6f6f7] text-black border-gray-200"
+          isDarkMode
+            ? "bg-[#1c1d1d] text-white border-gray-800"
+            : "bg-[#f6f6f7] text-black border-gray-200"
         } shadow-lg`}
       >
         {isAuthenticated ? (
-          /* Authenticated: 5 items - Home, Trending, For You, Write, Profile */
           <div className="flex items-center justify-around max-w-md mx-auto">
             <Link href="/" className={mobileLinkClass("/")}>
               <RiHome3Line className="text-2xl" />
@@ -319,6 +336,12 @@ export default function Navbar({
             <Link href="/trending" className={mobileLinkClass("/trending")}>
               <FaFire className="text-2xl" />
               <p className="text-[10px] font-medium">Trending</p>
+            </Link>
+
+            {/* ✅ ADDED LATEST HERE */}
+            <Link href="/latest" className={mobileLinkClass("/latest")}>
+              <FaRegClock className="text-2xl" />
+              <p className="text-[10px] font-medium">Latest</p>
             </Link>
 
             <Link href="/for-you" className={mobileLinkClass("/for-you")}>
@@ -332,7 +355,7 @@ export default function Navbar({
             </Link>
 
             <div ref={mobileRef} className="relative">
-              <div 
+              <div
                 className={mobileLinkClass("/profile")}
                 onClick={() => setAccountInfoActive((prev) => !prev)}
               >
@@ -350,7 +373,9 @@ export default function Navbar({
               {accountInfoActive && (
                 <div
                   className={`absolute bottom-16 right-0 w-48 p-4 rounded-xl shadow-2xl flex flex-col gap-3 ${
-                    isDarkMode ? "bg-[#1c1d1d] text-white border border-gray-700" : "bg-white text-black border border-gray-200"
+                    isDarkMode
+                      ? "bg-[#1c1d1d] text-white border border-gray-700"
+                      : "bg-white text-black border border-gray-200"
                   }`}
                 >
                   <h1 className="font-bold text-base truncate">
@@ -369,7 +394,11 @@ export default function Navbar({
                     className="flex gap-2 items-center hover:text-[#f75555] cursor-pointer transition-colors text-sm"
                     onClick={handleThemeToggle}
                   >
-                    {isDarkMode ? <CiBrightnessDown className="text-xl" /> : <MdOutlineDarkMode className="text-xl" />}
+                    {isDarkMode ? (
+                      <CiBrightnessDown className="text-xl" />
+                    ) : (
+                      <MdOutlineDarkMode className="text-xl" />
+                    )}
                     <p>{isDarkMode ? "Light theme" : "Dark theme"}</p>
                   </div>
 
@@ -384,7 +413,6 @@ export default function Navbar({
             </div>
           </div>
         ) : (
-          /* Not Authenticated: 3 items - Home, Trending, Latest */
           <div className="flex items-center justify-around max-w-sm mx-auto">
             <Link href="/" className={mobileLinkClass("/")}>
               <RiHome3Line className="text-2xl" />
