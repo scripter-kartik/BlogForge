@@ -1,4 +1,4 @@
-// src/app/(pages)/write/page.jsx - FIXED
+// src/app/(pages)/write/page.jsx - RESPONSIVE
 "use client";
 
 import Navbar from "../../../components/Navbar.jsx";
@@ -19,7 +19,7 @@ const WritePage = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [tag, setTag] = useState("");
-  const [content, setContent] = useState(""); // ✅ NEW: State for blog content
+  const [content, setContent] = useState("");
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState("");
   const fileInputRef = useRef(null);
@@ -87,7 +87,7 @@ const WritePage = () => {
         .map((t) => t.trim())
         .filter(Boolean),
       coverImage,
-      content: content, // ✅ Include content here
+      content: content,
       category: "Latest",
       starRating: 0,
       views: 0,
@@ -106,7 +106,7 @@ const WritePage = () => {
       setTitle("");
       setDescription("");
       setTag("");
-      setContent(""); // ✅ Reset content
+      setContent("");
       setCoverImage(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -161,7 +161,6 @@ const WritePage = () => {
     }
   };
 
-  // ✅ NEW: Callback to receive content from BlogEditor
   const handleContentChange = (newContent) => {
     setContent(newContent);
   };
@@ -179,7 +178,7 @@ const WritePage = () => {
 
   if (!isAuthenticated) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-screen px-4">
         <div className="text-center">
           <p className="text-red-500 mb-4">Please login to write a post.</p>
           <button
@@ -206,16 +205,17 @@ const WritePage = () => {
         isDarkMode={isDarkMode}
       />
 
-      <div className="flex mt-44 w-[1280px] justify-between">
+      <div className="flex flex-col lg:flex-row mt-20 sm:mt-24 md:mt-32 lg:mt-44 w-full max-w-[1280px] px-4 sm:px-6 lg:px-8 gap-6 lg:gap-8 xl:gap-12 justify-between">
+        {/* Left Column - Form Inputs */}
         <div
-          className={`flex flex-col gap-6 items-start ${
+          className={`flex flex-col gap-4 sm:gap-6 items-start w-full lg:w-80 xl:w-96 ${
             isDarkMode ? "text-white" : "text-black"
           } transition-colors duration-500`}
         >
           {/* Title Input */}
-          <div className="relative">
+          <div className="relative w-full">
             <input
-              className={`w-72 h-10 px-3 py-2 border rounded ${
+              className={`w-full h-10 sm:h-12 px-3 py-2 border rounded text-sm sm:text-base ${
                 isDarkMode
                   ? "bg-[#27272A] border-[#3f3f46] text-white"
                   : "bg-[#FFFFFF] border-gray-300 text-black"
@@ -227,15 +227,15 @@ const WritePage = () => {
               disabled={publishing}
               maxLength={100}
             />
-            <span className="absolute right-2 top-11 text-xs text-gray-500">
+            <span className="absolute right-2 top-11 sm:top-[52px] text-xs text-gray-500">
               {title.length}/100
             </span>
           </div>
 
           {/* Description Input */}
-          <div className="relative">
+          <div className="relative w-full">
             <textarea
-              className={`w-72 h-20 px-3 py-2 border rounded resize-none ${
+              className={`w-full h-20 sm:h-24 px-3 py-2 border rounded resize-none text-sm sm:text-base ${
                 isDarkMode
                   ? "bg-[#27272A] border-[#3f3f46] text-white"
                   : "bg-[#FFFFFF] border-gray-300 text-black"
@@ -246,14 +246,14 @@ const WritePage = () => {
               maxLength={250}
               disabled={publishing}
             />
-            <span className="absolute right-2 top-[85px] text-xs text-gray-500">
+            <span className="absolute right-2 top-[85px] sm:top-[102px] text-xs text-gray-500">
               {description.length}/250
             </span>
           </div>
 
           {/* Tags Input */}
           <input
-            className={`w-72 h-10 px-3 py-2 border rounded ${
+            className={`w-full h-10 sm:h-12 px-3 py-2 border rounded text-sm sm:text-base ${
               isDarkMode
                 ? "bg-[#27272A] border-[#3f3f46] text-white"
                 : "bg-[#FFFFFF] border-gray-300 text-black"
@@ -266,8 +266,8 @@ const WritePage = () => {
           />
 
           {/* Upload Cover Button */}
-          <div className="flex items-center gap-2 font-semibold">
-            <GrGallery />
+          <div className="flex items-center gap-2 font-semibold text-sm sm:text-base">
+            <GrGallery className="text-base sm:text-lg" />
             <button
               onClick={handleUploadClick}
               disabled={publishing}
@@ -290,7 +290,7 @@ const WritePage = () => {
 
           {/* Cover Image Preview */}
           <div
-            className={`w-72 h-40 rounded-lg relative overflow-hidden border-2 border-dashed ${
+            className={`w-full h-40 sm:h-48 rounded-lg relative overflow-hidden border-2 border-dashed ${
               coverImage
                 ? "border-transparent"
                 : isDarkMode
@@ -312,24 +312,24 @@ const WritePage = () => {
                 />
                 <button
                   onClick={handleRemoveImage}
-                  className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm transition-colors z-10"
+                  className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center text-lg sm:text-xl transition-colors z-10"
                   title="Remove image"
                   disabled={publishing}
                 >
                   ×
                 </button>
                 <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                  <span className="text-white text-sm">
+                  <span className="text-white text-xs sm:text-sm px-4 text-center">
                     Click to change image
                   </span>
                 </div>
               </>
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <div className="text-center text-white">
-                  <GrGallery className="mx-auto mb-2 text-2xl" />
-                  <p className="text-sm">Click to upload cover image</p>
-                  <p className="text-xs opacity-75 mt-1">
+                <div className="text-center text-white px-4">
+                  <GrGallery className="mx-auto mb-2 text-xl sm:text-2xl" />
+                  <p className="text-xs sm:text-sm">Click to upload cover image</p>
+                  <p className="text-[10px] sm:text-xs opacity-75 mt-1">
                     Max 5MB (JPG, PNG, GIF)
                   </p>
                 </div>
@@ -339,7 +339,7 @@ const WritePage = () => {
 
           {/* Error Display */}
           {error && (
-            <div className="w-72 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            <div className="w-full p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
               {error}
             </div>
           )}
@@ -348,7 +348,7 @@ const WritePage = () => {
           <button
             onClick={handlePublish}
             disabled={publishing || !title.trim() || !description.trim() || !content.trim()}
-            className={`w-72 border p-3 rounded-full transition-colors duration-300 font-medium ${
+            className={`w-full border p-3 rounded-full transition-colors duration-300 font-medium text-sm sm:text-base ${
               publishing || !title.trim() || !description.trim() || !content.trim()
                 ? "opacity-50 cursor-not-allowed border-gray-400"
                 : isDarkMode
@@ -367,13 +367,15 @@ const WritePage = () => {
           </button>
 
           {/* User Info */}
-          <div className="text-sm text-gray-500 mt-4">
+          <div className="text-xs sm:text-sm text-gray-500 mt-2 sm:mt-4">
             Publishing as: <span className="font-medium">{user?.name}</span>
           </div>
         </div>
 
-        {/* Blog Editor - ✅ Pass the callback */}
-        <BlogEditor isDarkMode={isDarkMode} onContentChange={handleContentChange} />
+        {/* Right Column - Blog Editor */}
+        <div className="w-full lg:flex-1 min-h-[400px] sm:min-h-[500px] lg:min-h-[600px] mb-24 lg:mb-0">
+          <BlogEditor isDarkMode={isDarkMode} onContentChange={handleContentChange} />
+        </div>
       </div>
     </div>
   );
