@@ -6,7 +6,7 @@ import { User } from "@/lib/models/User.js";
 export async function GET(req, { params }) {
   try {
     await connectDB();
-    const { username } = params;
+    const { username } = await params;
 
     if (!username) {
       return NextResponse.json(
