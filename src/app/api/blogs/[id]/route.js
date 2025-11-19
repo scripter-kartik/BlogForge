@@ -1,9 +1,9 @@
+// src/app/api/blogs/[id]/route.js - OPTIMIZED
 import connectDB from "@/lib/database/db.js";
 import { Blog } from "@/lib/models/Blog.js";
 import { User } from "@/lib/models/User.js";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import mongoose from "mongoose";
 
 async function getMongoUserId(session) {
   if (!session?.user) return null;
@@ -15,8 +15,9 @@ async function getMongoUserId(session) {
   }
 
   if (session.user.email) {
-    console.log("Invalid ObjectId in session, looking up by email:", session.user.email);
-    const dbUser = await User.findOne({ email: session.user.email });
+    const dbUser = await User.findOne({ email: session.user.email })
+      .select('_id')
+      .lean();
     return dbUser ? dbUser._id.toString() : null;
   }
 
@@ -24,19 +25,30 @@ async function getMongoUserId(session) {
 }
 
 export async function GET(req, { params }) {
-  await connectDB();
   try {
+    await connectDB();
     const { id } = await params;
 
-    const blog = await Blog.findById(id).populate("author", "username name image");
+    // ✅ OPTIMIZED: Use lean() and only select needed fields
+    const blog = await Blog.findById(id)
+      .select('title description content coverImage author tags category averageRating ratingCount views commentCount estimatedRead ratings createdAt updatedAt')
+      .populate("author", "username name image")
+      .lean();
 
     if (!blog) {
       return Response.json({ error: "Blog not found" }, { status: 404 });
     }
 
-    await Blog.findByIdAndUpdate(id, { $inc: { views: 1 } });
+    // ✅ OPTIMIZED: Increment views asynchronously (don't wait)
+    // This makes the response faster
+    Blog.findByIdAndUpdate(id, { $inc: { views: 1 } }).exec();
 
-    return Response.json(blog, { status: 200 });
+    return Response.json(blog, { 
+      status: 200,
+      headers: {
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+      }
+    });
   } catch (err) {
     console.error("Error fetching blog:", err);
     return Response.json({ error: "Failed to fetch blog" }, { status: 500 });
@@ -44,9 +56,9 @@ export async function GET(req, { params }) {
 }
 
 export async function PATCH(req, { params }) {
-  await connectDB();
-
   try {
+    await connectDB();
+
     const session = await getServerSession(authOptions);
 
     if (!session || !session.user) {
@@ -56,7 +68,8 @@ export async function PATCH(req, { params }) {
     const { id } = await params;
     const body = await req.json();
 
-    const blog = await Blog.findById(id);
+    // ✅ OPTIMIZED: Use lean() for faster query
+    const blog = await Blog.findById(id).select('author').lean();
 
     if (!blog) {
       return Response.json({ error: "Blog not found" }, { status: 404 });
@@ -65,21 +78,9 @@ export async function PATCH(req, { params }) {
     const sessionUserId = await getMongoUserId(session);
     const blogAuthorId = blog.author.toString();
 
-    console.log("=== UPDATE DEBUG ===");
-    console.log("Session User ID:", sessionUserId);
-    console.log("Blog Author ID:", blogAuthorId);
-    console.log("Match:", sessionUserId === blogAuthorId);
-
     if (!sessionUserId || sessionUserId !== blogAuthorId) {
       return Response.json(
-        {
-          error: "You can only edit your own posts",
-          debug: process.env.NODE_ENV === 'development' ? {
-            sessionUserId,
-            blogAuthorId,
-            sessionUser: session.user
-          } : undefined
-        },
+        { error: "You can only edit your own posts" },
         { status: 403 }
       );
     }
@@ -97,7 +98,9 @@ export async function PATCH(req, { params }) {
       id,
       { $set: updateData },
       { new: true, runValidators: true }
-    ).populate("author", "username name image");
+    )
+    .populate("author", "username name image")
+    .lean();
 
     return Response.json(updatedBlog, { status: 200 });
 
@@ -111,9 +114,9 @@ export async function PATCH(req, { params }) {
 }
 
 export async function DELETE(req, { params }) {
-  await connectDB();
-
   try {
+    await connectDB();
+
     const session = await getServerSession(authOptions);
 
     if (!session || !session.user) {
@@ -122,7 +125,8 @@ export async function DELETE(req, { params }) {
 
     const { id } = await params;
 
-    const blog = await Blog.findById(id);
+    // ✅ OPTIMIZED: Use lean() for faster query
+    const blog = await Blog.findById(id).select('author').lean();
 
     if (!blog) {
       return Response.json({ error: "Blog not found" }, { status: 404 });
@@ -131,21 +135,9 @@ export async function DELETE(req, { params }) {
     const sessionUserId = await getMongoUserId(session);
     const blogAuthorId = blog.author.toString();
 
-    console.log("=== DELETE DEBUG ===");
-    console.log("Session User ID:", sessionUserId);
-    console.log("Blog Author ID:", blogAuthorId);
-    console.log("Match:", sessionUserId === blogAuthorId);
-
     if (!sessionUserId || sessionUserId !== blogAuthorId) {
       return Response.json(
-        {
-          error: "You can only delete your own posts",
-          debug: process.env.NODE_ENV === 'development' ? {
-            sessionUserId,
-            blogAuthorId,
-            sessionUser: session.user
-          } : undefined
-        },
+        { error: "You can only delete your own posts" },
         { status: 403 }
       );
     }

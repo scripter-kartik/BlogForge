@@ -1,10 +1,11 @@
+// src/components/HomePost.jsx - OPTIMIZED WITH REACT.MEMO
 "use client";
 
 import { IoEyeOutline } from "react-icons/io5";
 import { BiComment } from "react-icons/bi";
 import { FaRegClock } from "react-icons/fa";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback, memo } from "react";
 import { usePosts } from "@/context/PostsContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useFollow } from "@/hooks/useFollow";
@@ -12,6 +13,194 @@ import { apiClient } from "@/lib/api";
 import { getRandomProfileImage } from "@/lib/profileImage";
 import { useRouter } from "next/navigation";
 import StarRating from "@/components/StarRating";
+
+// ✅ Memoize gradient generation
+const GRADIENTS = [
+  "bg-gradient-to-r from-purple-500 to-pink-500",
+  "bg-gradient-to-r from-blue-500 to-cyan-500",
+  "bg-gradient-to-r from-green-500 to-teal-500",
+  "bg-gradient-to-r from-orange-500 to-red-500",
+  "bg-gradient-to-r from-indigo-500 to-purple-500",
+  "bg-gradient-to-r from-pink-500 to-rose-500",
+  "bg-gradient-to-r from-yellow-500 to-orange-500",
+  "bg-gradient-to-r from-emerald-500 to-blue-500",
+  "bg-gradient-to-r from-violet-500 to-fuchsia-500",
+  "bg-gradient-to-r from-cyan-500 to-blue-500",
+  "bg-gradient-to-r from-red-500 to-pink-500",
+  "bg-gradient-to-r from-lime-500 to-green-500",
+];
+
+const getGradientForPost = (postId) => {
+  const hash = postId.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return GRADIENTS[hash % GRADIENTS.length];
+};
+
+// ✅ OPTIMIZED: Memoized Post Card Component
+const PostCard = memo(({ post, isDarkMode, onClick }) => {
+  return (
+    <div
+      className="w-full mt-8 cursor-pointer group"
+      onClick={onClick}
+    >
+      <div
+        className={`w-full ${
+          isDarkMode
+            ? "text-white bg-[#2D2D2D] hover:bg-[#353535]"
+            : "text-black bg-[#E8EAEC] hover:bg-[#dfe1e4]"
+        } flex flex-col md:flex-row gap-4 md:gap-6 p-4 md:p-6 rounded-xl transition-all duration-300 hover:shadow-xl hover:scale-[1.01]`}
+      >
+        {post.coverImage ? (
+          <img
+            className="w-full md:w-52 h-40 object-cover rounded-lg group-hover:shadow-md transition-shadow flex-shrink-0"
+            src={post.coverImage}
+            alt={post.title}
+            loading="lazy"
+            onError={(e) => { e.target.style.display = "none"; }}
+          />
+        ) : (
+          <div
+            className={`w-full md:w-52 h-40 rounded-lg group-hover:shadow-md transition-shadow flex-shrink-0 ${post.gradientColor}`}
+          />
+        )}
+
+        <div className="flex flex-col gap-3 md:gap-4 flex-1">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2 md:gap-4">
+            <h1 className="font-bold text-xl md:text-2xl leading-tight">{post.title}</h1>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <img
+                className="w-8 h-8 rounded-full border-2 border-[#f75555]"
+                src={post.authorImage}
+                alt={post.authorName}
+                loading="lazy"
+                onError={(e) => { e.target.src = "/imageProfile1.png"; }}
+              />
+              <p className="text-sm font-medium">{post.authorName}</p>
+            </div>
+          </div>
+          
+          {post.description && (
+            <p
+              className={`${
+                isDarkMode ? "text-gray-300" : "text-gray-700"
+              } line-clamp-2 text-sm md:text-base`}
+            >
+              {post.description}
+            </p>
+          )}
+          
+          <div className="flex items-center gap-2 flex-wrap">
+            {post.tags?.slice(0, 3).map((tag, idx) => (
+              <div
+                key={idx}
+                className={`${
+                  isDarkMode
+                    ? "bg-[#3a3a3a] text-gray-300"
+                    : "bg-gray-200 text-gray-700"
+                } px-3 py-1 text-xs font-medium rounded-full transition-colors duration-300`}
+              >
+                #{tag}
+              </div>
+            ))}
+          </div>
+          
+          <div
+            className={`${
+              isDarkMode ? "text-gray-400" : "text-gray-600"
+            } flex items-center gap-4 md:gap-6 text-xs md:text-sm font-medium flex-wrap`}
+          >
+            <div className="flex items-center gap-2 hover:text-[#f75555] transition-colors">
+              <StarRating
+                postId={post._id}
+                initialRating={post.averageRating || 0}
+                initialCount={post.ratingCount || 0}
+                readonly={true}
+                size="sm"
+                showCount={false}
+                isDarkMode={isDarkMode}
+              />
+              <p>
+                {(post.averageRating || 0).toFixed(1)} ({post.ratingCount || 0})
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <IoEyeOutline className="text-base" />
+              <p>{post.views}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <BiComment className="text-base" />
+              <p>{post.commentCount}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <FaRegClock className="text-base" />
+              <p>{post.estimatedRead} min</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+PostCard.displayName = 'PostCard';
+
+// ✅ OPTIMIZED: Memoized User Card Component
+const UserCard = memo(({ user, isDarkMode, onFollowClick, followStates, followLoading, onClick }) => {
+  return (
+    <div
+      onClick={onClick}
+      className={`flex flex-col items-center justify-around gap-4 px-4 py-6 rounded-2xl ${
+        isDarkMode
+          ? "bg-[#2D2D2D] hover:bg-[#353535]"
+          : "bg-white hover:bg-gray-50"
+      } text-center shadow-lg hover:shadow-2xl cursor-pointer transition-all duration-300 hover:scale-105 border ${
+        isDarkMode ? "border-[#454545]" : "border-gray-200"
+      }`}
+    >
+      <img
+        className="rounded-full object-cover w-20 h-20 border-4 border-[#f75555] hover:border-[#ff6666] transition-colors"
+        src={getRandomProfileImage(user.image, user.name)}
+        alt={user.name}
+        loading="lazy"
+        onError={(e) => { e.target.src = "/imageProfile1.png"; }}
+      />
+      <div className="min-w-0 w-full">
+        <h1
+          className={`font-bold text-lg ${
+            isDarkMode ? "text-white" : "text-black"
+          } truncate`}
+        >
+          {user.name}
+        </h1>
+        <p
+          className={`text-sm ${
+            isDarkMode ? "text-gray-400" : "text-gray-600"
+          } mb-2`}
+        >
+          @{user.username}
+        </p>
+        {user.bio && (
+          <p
+            className={`text-sm ${
+              isDarkMode ? "text-gray-400" : "text-gray-600"
+            } line-clamp-2`}
+          >
+            {user.bio}
+          </p>
+        )}
+        <p
+          className={`text-sm ${
+            isDarkMode ? "text-gray-500" : "text-gray-500"
+          } mt-2`}
+        >
+          {user.followers?.length || 0} followers
+        </p>
+      </div>
+    </div>
+  );
+});
+
+UserCard.displayName = 'UserCard';
 
 export default function HomePost({ isDarkMode, searchResults }) {
   const { posts, setPosts } = usePosts();
@@ -24,118 +213,65 @@ export default function HomePost({ isDarkMode, searchResults }) {
   const scrollContainerRef = useRef(null);
   const router = useRouter();
 
-  // Gradient colors for fallback
-  const gradients = [
-    "bg-gradient-to-r from-purple-500 to-pink-500",
-    "bg-gradient-to-r from-blue-500 to-cyan-500",
-    "bg-gradient-to-r from-green-500 to-teal-500",
-    "bg-gradient-to-r from-orange-500 to-red-500",
-    "bg-gradient-to-r from-indigo-500 to-purple-500",
-    "bg-gradient-to-r from-pink-500 to-rose-500",
-    "bg-gradient-to-r from-yellow-500 to-orange-500",
-    "bg-gradient-to-r from-emerald-500 to-blue-500",
-    "bg-gradient-to-r from-violet-500 to-fuchsia-500",
-    "bg-gradient-to-r from-cyan-500 to-blue-500",
-    "bg-gradient-to-r from-red-500 to-pink-500",
-    "bg-gradient-to-r from-lime-500 to-green-500",
-  ];
+  // ✅ OPTIMIZED: Memoize normalized posts
+  const normalizedPosts = useMemo(() => {
+    return posts.map((post) => ({
+      ...post,
+      id: post._id,
+      starRating: post.starRating || 0,
+      averageRating: post.averageRating || 0,
+      ratingCount: post.ratingCount || 0,
+      views: post.views || 0,
+      commentCount: post.commentCount || 0,
+      estimatedRead: post.estimatedRead || 3,
+      authorName: post.author?.name || post.authorName || "Anonymous",
+      authorImage: getRandomProfileImage(
+        post.author?.image || post.authorImage,
+        post.author?.name || post.authorName || "Anonymous"
+      ),
+      gradientColor: getGradientForPost(post._id),
+    }));
+  }, [posts]);
 
-  // Function to get gradient for post
-  const getGradientForPost = (postId) => {
-    const hash = postId.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return gradients[hash % gradients.length];
-  };
+  // ✅ OPTIMIZED: Memoize sorted posts
+  const { featured, trending, latest } = useMemo(() => ({
+    featured: [...normalizedPosts]
+      .sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0))
+      .slice(0, 2),
+    trending: [...normalizedPosts]
+      .sort((a, b) => b.views - a.views)
+      .slice(0, 6),
+    latest: [...normalizedPosts]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 6),
+  }), [normalizedPosts]);
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        setLoading(true);
-        setError(null);
+  // ✅ OPTIMIZED: Memoize callbacks
+  const handlePostClick = useCallback((postId) => {
+    router.push(`/blog/${postId}`);
+  }, [router]);
 
-        const data = await apiClient.getAllPosts();
+  const handleUserClick = useCallback((username) => {
+    router.push(`/profile/${username}`);
+  }, [router]);
 
-        const normalized = data.map((post) => ({
-          ...post,
-          id: post._id,
-          starRating: post.starRating || 0,
-          averageRating: post.averageRating || 0,
-          ratingCount: post.ratingCount || 0,
-          views: post.views || 0,
-          commentCount: post.commentCount || 0,
-          estimatedRead: post.estimatedRead || 3,
-          authorName: post.author?.name || post.authorName || "Anonymous",
-          authorImage: getRandomProfileImage(
-            post.author?.image || post.authorImage,
-            post.author?.name || post.authorName || "Anonymous"
-          ),
-          gradientColor: getGradientForPost(post._id),
-        }));
-
-        setPosts(normalized);
-      } catch (error) {
-        console.error("Error in HomePost:", error);
-        setError("Failed to load posts. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
-  }, [setPosts]);
-
-  useEffect(() => {
-    async function fetchSuggestedUsers() {
-      try {
-        const res = await fetch("/api/suggested-users");
-        const data = await res.json();
-
-        if (!Array.isArray(data)) {
-          setSuggestedUsers([]);
-          return;
-        }
-
-        setSuggestedUsers(data);
-
-        const userRes = await fetch("/api/user/home");
-        const userData = await userRes.json();
-        const followingIds = userData.following || [];
-
-        const states = {};
-        data.forEach((suggestedUser) => {
-          states[suggestedUser._id] = followingIds.some(id => id.toString() === suggestedUser._id);
-        });
-        setFollowStates(states);
-      } catch (error) {
-        console.error("Failed to load suggested users", error);
-        setSuggestedUsers([]);
-      }
-    }
-
-    if (isAuthenticated) {
-      fetchSuggestedUsers();
-    }
-  }, [isAuthenticated, user]);
-
-  const handleFollowClick = async (e, userId) => {
+  const handleFollowClick = useCallback(async (e, userId) => {
     e.stopPropagation();
-
     if (!isAuthenticated) {
       router.push("/auth/signin");
       return;
     }
-
     const currentState = followStates[userId] || false;
     const result = await toggleFollow(userId, currentState);
-
     if (result) {
       setFollowStates((prev) => ({
         ...prev,
         [userId]: result.isFollowing,
       }));
     }
-  };
+  }, [isAuthenticated, followStates, toggleFollow, router]);
 
-  const scroll = (direction) => {
+  const scroll = useCallback((direction) => {
     if (scrollContainerRef.current) {
       const scrollAmount = 250;
       scrollContainerRef.current.scrollBy({
@@ -143,213 +279,92 @@ export default function HomePost({ isDarkMode, searchResults }) {
         behavior: "smooth",
       });
     }
-  };
+  }, []);
 
-  const getFeaturedPosts = () =>
-    [...posts]
-      .sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0))
-      .slice(0, 2);
+  // ✅ Fetch posts (runs once)
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await apiClient.getAllPosts();
+        setPosts(data);
+      } catch (error) {
+        console.error("Error fetching posts:", error);
+        setError("Failed to load posts. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    }
 
-  const getTrendingPosts = () =>
-    [...posts]
-      .sort((a, b) => b.views - a.views)
-      .slice(0, 6);
+    if (posts.length === 0) {
+      fetchData();
+    } else {
+      setLoading(false);
+    }
+  }, []); // Only run once
 
-  const getLatestPosts = () =>
-    [...posts]
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .slice(0, 6);
+  // ✅ Fetch suggested users
+  useEffect(() => {
+    async function fetchSuggestedUsers() {
+      if (!isAuthenticated) return;
+      
+      try {
+        const [suggestedRes, userRes] = await Promise.all([
+          fetch("/api/suggested-users"),
+          fetch("/api/user/home")
+        ]);
 
-  const renderPosts = (postList) => {
+        const data = await suggestedRes.json();
+        const userData = await userRes.json();
+
+        if (Array.isArray(data)) {
+          setSuggestedUsers(data);
+          const followingIds = userData.following || [];
+          const states = {};
+          data.forEach((suggestedUser) => {
+            states[suggestedUser._id] = followingIds.some(
+              id => id.toString() === suggestedUser._id
+            );
+          });
+          setFollowStates(states);
+        }
+      } catch (error) {
+        console.error("Failed to load suggested users", error);
+      }
+    }
+
+    fetchSuggestedUsers();
+  }, [isAuthenticated, user]);
+
+  // ✅ Render functions with memoization
+  const renderPosts = useCallback((postList) => {
     if (postList.length === 0) {
       return (
-        <div
-          className={`w-full mt-8 text-center py-8 ${
-            isDarkMode ? "text-gray-400" : "text-gray-600"
-          }`}
-        >
+        <div className={`w-full mt-8 text-center py-8 ${
+          isDarkMode ? "text-gray-400" : "text-gray-600"
+        }`}>
           <p className="text-lg">No posts found.</p>
         </div>
       );
     }
 
     return postList.map((post) => (
-      <div
+      <PostCard
         key={post._id}
-        className="w-full mt-8 cursor-pointer group"
-        onClick={() => router.push(`/blog/${post._id}`)}
-      >
-        <div
-          className={`w-full ${
-            isDarkMode
-              ? "text-white bg-[#2D2D2D] hover:bg-[#353535]"
-              : "text-black bg-[#E8EAEC] hover:bg-[#dfe1e4]"
-          } flex flex-col md:flex-row gap-4 md:gap-6 p-4 md:p-6 rounded-xl transition-all duration-300 hover:shadow-xl hover:scale-[1.01]`}
-        >
-          {post.coverImage ? (
-            <img
-              className="w-full md:w-52 h-40 object-cover rounded-lg group-hover:shadow-md transition-shadow flex-shrink-0"
-              src={post.coverImage}
-              alt={post.title}
-              onError={(e) => {
-                e.target.style.display = "none";
-              }}
-            />
-          ) : (
-            <div
-              className={`w-full md:w-52 h-40 rounded-lg group-hover:shadow-md transition-shadow flex-shrink-0 ${post.gradientColor}`}
-            />
-          )}
-
-          <div className="flex flex-col gap-3 md:gap-4 flex-1">
-            <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2 md:gap-4">
-              <h1 className="font-bold text-xl md:text-2xl leading-tight">{post.title}</h1>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <img
-                  className="w-8 h-8 rounded-full border-2 border-[#f75555]"
-                  src={post.authorImage}
-                  alt={post.authorName}
-                  onError={(e) => {
-                    e.target.src = "/imageProfile1.png";
-                  }}
-                />
-                <p className="text-sm font-medium">{post.authorName}</p>
-              </div>
-            </div>
-            <p
-              className={`${
-                isDarkMode ? "text-gray-300" : "text-gray-700"
-              } line-clamp-2 text-sm md:text-base`}
-            >
-              {post.description}
-            </p>
-            <div className="flex items-center gap-2 flex-wrap">
-              {post.tags?.map((tag, idx) => (
-                <div
-                  key={idx}
-                  className={`${
-                    isDarkMode
-                      ? "bg-[#3a3a3a] text-gray-300"
-                      : "bg-gray-200 text-gray-700"
-                  } px-3 py-1 text-xs font-medium rounded-full transition-colors duration-300`}
-                >
-                  #{tag}
-                </div>
-              ))}
-            </div>
-            <div
-              className={`${
-                isDarkMode ? "text-gray-400" : "text-gray-600"
-              } flex items-center gap-4 md:gap-6 text-xs md:text-sm font-medium flex-wrap`}
-            >
-              {/* ✅ NEW: Star Rating Display */}
-              <div className="flex items-center gap-2 hover:text-[#f75555] transition-colors">
-                <StarRating
-                  postId={post._id}
-                  initialRating={post.averageRating || 0}
-                  initialCount={post.ratingCount || 0}
-                  readonly={true}
-                  size="sm"
-                  showCount={false}
-                  isDarkMode={isDarkMode}
-                />
-                <p>
-                  {(post.averageRating || 0).toFixed(1)} ({post.ratingCount || 0})
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <IoEyeOutline className="text-base" />
-                <p>{post.views}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <BiComment className="text-base" />
-                <p>{post.commentCount}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <FaRegClock className="text-base" />
-                <p>{post.estimatedRead} min</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+        post={post}
+        isDarkMode={isDarkMode}
+        onClick={() => handlePostClick(post._id)}
+      />
     ));
-  };
-
-  const renderUsers = (userList) => {
-    if (userList.length === 0) return null;
-
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-        {userList.map((user) => (
-          <div
-            key={user._id}
-            onClick={() => router.push(`/profile/${user.username}`)}
-            className={`flex flex-col items-center justify-around gap-4 px-4 py-6 rounded-2xl ${
-              isDarkMode
-                ? "bg-[#2D2D2D] hover:bg-[#353535]"
-                : "bg-white hover:bg-gray-50"
-            } text-center shadow-lg hover:shadow-2xl cursor-pointer transition-all duration-300 hover:scale-105 border ${
-              isDarkMode ? "border-[#454545]" : "border-gray-200"
-            }`}
-          >
-            <img
-              className="rounded-full object-cover w-20 h-20 border-4 border-[#f75555] hover:border-[#ff6666] transition-colors"
-              src={getRandomProfileImage(user.image, user.name)}
-              alt={user.name}
-              onError={(e) => {
-                e.target.src = "/imageProfile1.png";
-              }}
-            />
-            <div className="min-w-0 w-full">
-              <h1
-                className={`font-bold text-lg ${
-                  isDarkMode ? "text-white" : "text-black"
-                } truncate`}
-              >
-                {user.name}
-              </h1>
-              <p
-                className={`text-sm ${
-                  isDarkMode ? "text-gray-400" : "text-gray-600"
-                } mb-2`}
-              >
-                @{user.username}
-              </p>
-              {user.bio && (
-                <p
-                  className={`text-sm ${
-                    isDarkMode ? "text-gray-400" : "text-gray-600"
-                  } line-clamp-2`}
-                >
-                  {user.bio}
-                </p>
-              )}
-              <p
-                className={`text-sm ${
-                  isDarkMode ? "text-gray-500" : "text-gray-500"
-                } mt-2`}
-              >
-                {user.followers?.length || 0} followers
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  };
+  }, [isDarkMode, handlePostClick]);
 
   if (loading) {
     return (
       <div className="w-full max-w-7xl px-4 sm:px-6 lg:px-8 mt-20 sm:mt-28 lg:mt-32 mb-20 md:mb-[70px] flex justify-center items-center min-h-[400px]">
         <div className="flex flex-col items-center gap-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#f75555]"></div>
-          <p
-            className={`${
-              isDarkMode ? "text-gray-400" : "text-gray-600"
-            } text-lg`}
-          >
+          <p className={`${isDarkMode ? "text-gray-400" : "text-gray-600"} text-lg`}>
             Loading posts...
           </p>
         </div>
@@ -375,147 +390,84 @@ export default function HomePost({ isDarkMode, searchResults }) {
     );
   }
 
-  // If search is active, show search results
+  // Search results view
   if (searchResults) {
     return (
       <div className="w-full max-w-7xl px-4 sm:px-6 lg:px-8 mt-20 sm:mt-28 lg:mt-32 mb-20 md:mb-[70px]">
-        {/* Search Results Header */}
         <div className="flex flex-col md:flex-row items-start md:items-center gap-4 justify-between mb-10">
-          <h1
-            className={`${
-              isDarkMode ? "text-white" : "text-black"
-            } text-2xl md:text-4xl font-bold tracking-tight`}
-          >
+          <h1 className={`${isDarkMode ? "text-white" : "text-black"} text-2xl md:text-4xl font-bold tracking-tight`}>
             Search Results for "{searchResults.query}"
           </h1>
-          <div
-            className={`hidden md:block flex-1 h-1 rounded-full ${
-              isDarkMode
-                ? "bg-gradient-to-r from-[#f75555] to-transparent"
-                : "bg-gradient-to-r from-[#f75555] to-transparent"
-            }`}
-          ></div>
         </div>
 
-        {/* Search Results Summary */}
-        <div className={`mb-8 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
-          <p className="text-base md:text-lg">
-            Found {searchResults.posts.length} post
-            {searchResults.posts.length !== 1 ? "s" : ""} and{" "}
-            {searchResults.users.length} user
-            {searchResults.users.length !== 1 ? "s" : ""}
-          </p>
-        </div>
-
-        {/* Posts Section */}
         {searchResults.posts.length > 0 && (
           <div className="mb-16">
-            <h2
-              className={`${
-                isDarkMode ? "text-white" : "text-black"
-              } text-xl md:text-2xl font-bold mb-6`}
-            >
+            <h2 className={`${isDarkMode ? "text-white" : "text-black"} text-xl md:text-2xl font-bold mb-6`}>
               Posts ({searchResults.posts.length})
             </h2>
             {renderPosts(
               searchResults.posts.map((post) => ({
                 ...post,
-                id: post._id,
-                starRating: post.starRating || 0,
-                averageRating: post.averageRating || 0,
-                ratingCount: post.ratingCount || 0,
-                views: post.views || 0,
-                commentCount: post.commentCount || 0,
-                estimatedRead: post.estimatedRead || 3,
-                authorName: post.author?.name || post.authorName || "Anonymous",
-                authorImage: getRandomProfileImage(
-                  post.author?.image || post.authorImage,
-                  post.author?.name || post.authorName || "Anonymous"
-                ),
+                authorImage: getRandomProfileImage(post.author?.image, post.author?.name),
+                authorName: post.author?.name || "Anonymous",
                 gradientColor: getGradientForPost(post._id),
               }))
             )}
           </div>
         )}
 
-        {/* Users Section */}
         {searchResults.users.length > 0 && (
           <div>
-            <h2
-              className={`${
-                isDarkMode ? "text-white" : "text-black"
-              } text-xl md:text-2xl font-bold mb-6`}
-            >
+            <h2 className={`${isDarkMode ? "text-white" : "text-black"} text-xl md:text-2xl font-bold mb-6`}>
               Users ({searchResults.users.length})
             </h2>
-            {renderUsers(searchResults.users)}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+              {searchResults.users.map((user) => (
+                <UserCard
+                  key={user._id}
+                  user={user}
+                  isDarkMode={isDarkMode}
+                  followStates={followStates}
+                  followLoading={followLoading}
+                  onFollowClick={handleFollowClick}
+                  onClick={() => handleUserClick(user.username)}
+                />
+              ))}
+            </div>
           </div>
         )}
 
-        {/* No Results */}
-        {searchResults.posts.length === 0 &&
-          searchResults.users.length === 0 && (
-            <div
-              className={`text-center py-16 ${
-                isDarkMode ? "text-gray-400" : "text-gray-600"
-              }`}
-            >
-              <p className="text-xl md:text-2xl mb-4">
-                No results found for "{searchResults.query}"
-              </p>
-              <p className="text-base md:text-lg">
-                Try searching with different keywords
-              </p>
-            </div>
-          )}
+        {searchResults.posts.length === 0 && searchResults.users.length === 0 && (
+          <div className={`text-center py-16 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
+            <p className="text-xl md:text-2xl mb-4">
+              No results found for "{searchResults.query}"
+            </p>
+          </div>
+        )}
       </div>
     );
   }
 
-  // Regular home page content
-  const featured = getFeaturedPosts();
-  const trending = getTrendingPosts();
-  const latest = getLatestPosts();
-
+  // Regular home view
   return (
     <div className="w-full max-w-7xl px-4 sm:px-6 lg:px-8 md:mt-20 lg:mt-32 mb-20 md:mb-[70px]">
-      {/* Featured Posts Section */}
+      {/* Featured Posts */}
       <div className="flex flex-col md:flex-row items-center sm:items-start md:items-center gap-4 justify-between mb-10">
-        <h1
-          className={`${
-            isDarkMode ? "text-[#f75555]" : "text-black"
-          } sm:text-white text-4xl md:text-4xl font-bold sm:tracking-tight`}
-        >
+        <h1 className={`${isDarkMode ? "text-[#f75555]" : "text-black"} sm:text-white text-4xl md:text-4xl font-bold sm:tracking-tight`}>
           Featured Posts
         </h1>
-        <div
-          className={`hidden md:block flex-1 h-1 rounded-full ${
-            isDarkMode
-              ? "bg-gradient-to-r from-[#f75555] to-transparent"
-              : "bg-gradient-to-r from-[#f75555] to-transparent"
-          }`}
-        ></div>
+        <div className={`hidden md:block flex-1 h-1 rounded-full ${isDarkMode ? "bg-gradient-to-r from-[#f75555] to-transparent" : "bg-gradient-to-r from-[#f75555] to-transparent"}`}></div>
       </div>
       {renderPosts(featured)}
 
-      {/* Suggested Users Section */}
+      {/* Suggested Users */}
       {isAuthenticated && suggestedUsers.length > 0 && (
         <div className="mt-24 md:mt-32">
           <div className="flex flex-col md:flex-row items-center sm:items-start md:items-center gap-4 justify-between mb-8">
-            <h1
-              className={`${
-                isDarkMode ? "text-[#f75555]" : "text-black"
-              } sm:text-white text-4xl md:text-4xl font-bold sm:tracking-tight`}
-            >
+            <h1 className={`${isDarkMode ? "text-[#f75555]" : "text-black"} sm:text-white text-4xl md:text-4xl font-bold sm:tracking-tight`}>
               Suggested For You
             </h1>
-            <div
-              className={`hidden md:block flex-1 h-1 rounded-full ${
-                isDarkMode
-                  ? "bg-gradient-to-r from-[#f75555] to-transparent"
-                  : "bg-gradient-to-r from-[#f75555] to-transparent"
-              }`}
-            ></div>
+            <div className={`hidden md:block flex-1 h-1 rounded-full ${isDarkMode ? "bg-gradient-to-r from-[#f75555] to-transparent" : "bg-gradient-to-r from-[#f75555] to-transparent"}`}></div>
           </div>
 
           <div className="relative group">
@@ -541,7 +493,7 @@ export default function HomePost({ isDarkMode, searchResults }) {
               {suggestedUsers.map((user) => (
                 <div key={user._id} className="flex-shrink-0">
                   <div
-                    onClick={() => router.push(`/profile/${user.username}`)}
+                    onClick={() => handleUserClick(user.username)}
                     className={`flex flex-col items-center justify-around gap-4 px-4 py-6 w-[200px] md:w-[240px] h-[280px] md:h-[300px] rounded-2xl ${
                       isDarkMode
                         ? "bg-[#353535] hover:bg-[#3f3f3f]"
@@ -554,23 +506,14 @@ export default function HomePost({ isDarkMode, searchResults }) {
                       className="rounded-full object-cover w-20 h-20 md:w-24 md:h-24 border-4 border-[#f75555] hover:border-[#ff6666] transition-colors"
                       src={getRandomProfileImage(user.image, user.name)}
                       alt={user.name}
-                      onError={(e) => {
-                        e.target.src = "/imageProfile1.png";
-                      }}
+                      loading="lazy"
+                      onError={(e) => { e.target.src = "/imageProfile1.png"; }}
                     />
                     <div className="min-w-0">
-                      <h1
-                        className={`font-bold text-base md:text-lg ${
-                          isDarkMode ? "text-white" : "text-black"
-                        } truncate`}
-                      >
+                      <h1 className={`font-bold text-base md:text-lg ${isDarkMode ? "text-white" : "text-black"} truncate`}>
                         {user.name}
                       </h1>
-                      <p
-                        className={`text-xs md:text-sm ${
-                          isDarkMode ? "text-gray-400" : "text-gray-600"
-                        } line-clamp-2 mt-1`}
-                      >
+                      <p className={`text-xs md:text-sm ${isDarkMode ? "text-gray-400" : "text-gray-600"} line-clamp-2 mt-1`}>
                         {user.bio}
                       </p>
                     </div>
@@ -583,15 +526,9 @@ export default function HomePost({ isDarkMode, searchResults }) {
                             ? "bg-gray-600 hover:bg-gray-700"
                             : "bg-gray-400 hover:bg-gray-500"
                           : "bg-[#f75555] hover:bg-[#ff6666] hover:shadow-lg"
-                      } ${
-                        followLoading ? "opacity-50 cursor-not-allowed" : ""
-                      } active:scale-95`}
+                      } ${followLoading ? "opacity-50 cursor-not-allowed" : ""} active:scale-95`}
                     >
-                      {followLoading
-                        ? "..."
-                        : followStates[user._id]
-                        ? "Following"
-                        : "Follow"}
+                      {followLoading ? "..." : followStates[user._id] ? "Following" : "Follow"}
                     </button>
                   </div>
                 </div>
@@ -612,41 +549,21 @@ export default function HomePost({ isDarkMode, searchResults }) {
         </div>
       )}
 
-      {/* Trending Posts Section */}
+      {/* Trending Posts */}
       <div className="flex flex-col md:flex-row items-center sm:items-start md:items-center gap-4 justify-between mb-10 mt-24 md:mt-32">
-        <h1
-          className={`${
-            isDarkMode ? "text-[#f75555]" : "text-black"
-          } sm:text-white text-4xl md:text-4xl font-bold sm:tracking-tight`}
-        >
+        <h1 className={`${isDarkMode ? "text-[#f75555]" : "text-black"} sm:text-white text-4xl md:text-4xl font-bold sm:tracking-tight`}>
           Trending Posts
         </h1>
-        <div
-          className={`hidden md:block flex-1 h-1 rounded-full ${
-            isDarkMode
-              ? "bg-gradient-to-r from-[#f75555] to-transparent"
-              : "bg-gradient-to-r from-[#f75555] to-transparent"
-          }`}
-        ></div>
+        <div className={`hidden md:block flex-1 h-1 rounded-full ${isDarkMode ? "bg-gradient-to-r from-[#f75555] to-transparent" : "bg-gradient-to-r from-[#f75555] to-transparent"}`}></div>
       </div>
       {renderPosts(trending)}
 
-      {/* Latest Posts Section */}
+      {/* Latest Posts */}
       <div className="flex flex-col md:flex-row items-center sm:items-start md:items-center gap-4 justify-between mb-10 mt-24 md:mt-32">
-        <h1
-          className={`${
-            isDarkMode ? "text-[#f75555]" : "text-black"
-          } sm:text-white text-4xl md:text-4xl font-bold sm:tracking-tight`}
-        >
+        <h1 className={`${isDarkMode ? "text-[#f75555]" : "text-black"} sm:text-white text-4xl md:text-4xl font-bold sm:tracking-tight`}>
           Latest Posts
         </h1>
-        <div
-          className={`hidden md:block flex-1 h-1 rounded-full ${
-            isDarkMode
-              ? "bg-gradient-to-r from-[#f75555] to-transparent"
-              : "bg-gradient-to-r from-[#f75555] to-transparent"
-          }`}
-        ></div>
+        <div className={`hidden md:block flex-1 h-1 rounded-full ${isDarkMode ? "bg-gradient-to-r from-[#f75555] to-transparent" : "bg-gradient-to-r from-[#f75555] to-transparent"}`}></div>
       </div>
       {renderPosts(latest)}
     </div>

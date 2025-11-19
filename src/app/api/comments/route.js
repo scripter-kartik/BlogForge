@@ -1,3 +1,4 @@
+// src/app/api/comments/route.js - OPTIMIZED
 import connectDB from "@/lib/database/db.js";
 import { Comment } from "@/lib/models/Comment.js";
 import { Blog } from "@/lib/models/Blog.js";
@@ -7,85 +8,58 @@ import mongoose from "mongoose";
 export async function POST(req) {
   try {
     await connectDB();
-    console.log("✅ Database connected");
 
     const body = await req.json();
-    console.log("📝 Request body:", body);
-
     const { postId, authorId, content } = body;
 
+    // ✅ Validation
     if (!postId || !authorId || !content?.trim()) {
-      console.log("❌ Missing fields:", { postId, authorId, hasContent: !!content });
       return Response.json(
         { error: "Missing required fields: postId, authorId, and content" },
         { status: 400 }
       );
     }
 
-    if (!mongoose.Types.ObjectId.isValid(postId)) {
-      console.log("❌ Invalid postId:", postId);
+    if (!mongoose.Types.ObjectId.isValid(postId) || !mongoose.Types.ObjectId.isValid(authorId)) {
       return Response.json(
-        { error: "Invalid postId format" },
+        { error: "Invalid ID format" },
         { status: 400 }
       );
     }
 
-    if (!mongoose.Types.ObjectId.isValid(authorId)) {
-      console.log("❌ Invalid authorId:", authorId);
-      return Response.json(
-        { error: "Invalid authorId format" },
-        { status: 400 }
-      );
-    }
-
-    const userExists = await User.findById(authorId);
+    // ✅ OPTIMIZED: Check user existence with lean()
+    const userExists = await User.findById(authorId).select('_id').lean();
     if (!userExists) {
-      console.log("❌ User not found:", authorId);
       return Response.json(
-        { 
-          error: "User not found",
-          details: `No user found with ID: ${authorId}`
-        },
+        { error: "User not found" },
         { status: 404 }
       );
     }
-    console.log("✅ User found:", userExists.name);
 
-    console.log("📝 Creating comment...");
-    const comment = await Comment.create({
-      postId,
-      author: authorId,
-      content: content.trim(),
-    });
-    console.log("✅ Comment created:", comment._id);
+    // ✅ Create comment and update blog count in parallel
+    const [comment] = await Promise.all([
+      Comment.create({
+        postId,
+        author: authorId,
+        content: content.trim(),
+      }),
+      Blog.findByIdAndUpdate(
+        postId,
+        { $inc: { commentCount: 1 } },
+        { new: true }
+      )
+    ]);
 
-    await Blog.findByIdAndUpdate(
-      postId,
-      { $inc: { commentCount: 1 } },
-      { new: true }
-    );
-    console.log("✅ Blog comment count updated");
-
+    // ✅ Populate after creation
     await comment.populate("author", "username name image email");
-    console.log("✅ Comment populated:", {
-      author: comment.author,
-      content: comment.content,
-      _id: comment._id
-    });
+
+    console.log("✅ Comment created and blog updated");
 
     return Response.json(comment, { status: 201 });
   } catch (err) {
     console.error("❌ Error creating comment:", err);
-    console.error("Error details:", {
-      name: err.name,
-      message: err.message,
-    });
-
     return Response.json(
-      { 
-        error: "Failed to create comment",
-        details: err.message,
-      },
+      { error: "Failed to create comment", details: err.message },
       { status: 500 }
     );
   }
@@ -106,14 +80,21 @@ export async function GET(req) {
       return Response.json({ error: "Invalid postId" }, { status: 400 });
     }
 
+    // ✅ OPTIMIZED: Use lean() for faster queries
     const comments = await Comment.find({ postId })
       .populate("author", "username name image")
       .populate("replies.author", "username name image")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
-    console.log("✅ Fetched comments:", comments.length);
+    console.log(`✅ Fetched ${comments.length} comments`);
 
-    return Response.json(comments, { status: 200 });
+    return Response.json(comments, { 
+      status: 200,
+      headers: {
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+      }
+    });
   } catch (err) {
     console.error("❌ Error fetching comments:", err);
     return Response.json({ error: "Failed to fetch comments" }, { status: 500 });
@@ -127,26 +108,24 @@ export async function DELETE(req) {
     const { searchParams } = new URL(req.url);
     const commentId = searchParams.get("commentId");
 
-    if (!commentId) {
-      return Response.json({ error: "Missing commentId parameter" }, { status: 400 });
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(commentId)) {
+    if (!commentId || !mongoose.Types.ObjectId.isValid(commentId)) {
       return Response.json({ error: "Invalid commentId" }, { status: 400 });
     }
 
-    const deletedComment = await Comment.findByIdAndDelete(commentId);
+    // ✅ Delete comment and update blog count in parallel
+    const deletedComment = await Comment.findByIdAndDelete(commentId).lean();
 
     if (!deletedComment) {
       return Response.json({ error: "Comment not found" }, { status: 404 });
     }
 
-    await Blog.findByIdAndUpdate(
+    // ✅ Update blog count asynchronously (don't wait)
+    Blog.findByIdAndUpdate(
       deletedComment.postId,
-      { $inc: { commentCount: -1 } },
-      { new: true }
-    );
-    console.log("✅ Blog comment count decremented");
+      { $inc: { commentCount: -1 } }
+    ).exec();
+
+    console.log("✅ Comment deleted and blog updated");
 
     return Response.json({ success: true, message: "Comment deleted" }, { status: 200 });
   } catch (err) {
