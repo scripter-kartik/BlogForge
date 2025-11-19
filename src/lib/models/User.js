@@ -1,4 +1,3 @@
-// src/lib/models/User.js - FIXED VERSION
 import mongoose from "mongoose";
 
 const UserSchema = new mongoose.Schema(
@@ -13,21 +12,20 @@ const UserSchema = new mongoose.Schema(
       unique: true, 
       required: true,
       trim: true,
-      lowercase: true 
+      lowercase: true
     },
     email: { 
       type: String, 
       unique: true, 
       required: true,
       trim: true,
-      lowercase: true 
+      lowercase: true
     },
-    // ✅ CRITICAL FIX: Password is optional (for Google users) and hidden by default
     password: { 
       type: String, 
       required: false,
       minlength: 8,
-      select: false // Hide password by default in queries
+      select: false
     },
     image: { 
       type: String, 
@@ -46,38 +44,38 @@ const UserSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId, 
       ref: "User" 
     }],
-    // ✅ Optional: Track which provider was used
     provider: {
       type: String,
       enum: ["credentials", "google"],
       default: "credentials"
     },
-    // ✅ Optional: Store Google ID separately
     googleId: {
       type: String,
-      sparse: true, // Allows null values while maintaining uniqueness
+      sparse: true,
       unique: true
     }
   },
   { 
-    timestamps: true,
-    // ✅ Add indexes for better query performance
-    indexes: [
-      { email: 1 },
-      { username: 1 },
-      { googleId: 1 }
-    ]
+    timestamps: true
   }
 );
 
-// ✅ Add a pre-save hook to set provider
+// ✅ ONLY ONE TEXT INDEX - No field-level indexes
+UserSchema.index({ 
+  username: 'text', 
+  name: 'text',
+  bio: 'text'
+}, {
+  weights: {
+    username: 10,
+    name: 5,
+    bio: 1
+  }
+});
+
 UserSchema.pre('save', function(next) {
-  if (this.isNew) {
-    if (!this.password && this.googleId) {
-      this.provider = 'google';
-    } else {
-      this.provider = 'credentials';
-    }
+  if (this.isNew && !this.password && this.googleId) {
+    this.provider = 'google';
   }
   next();
 });

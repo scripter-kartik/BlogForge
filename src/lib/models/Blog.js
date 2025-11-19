@@ -1,26 +1,23 @@
-// src/lib/models/Blog.js - OPTIMIZED WITH INDEXES
 import mongoose from "mongoose";
 
 const BlogSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true, index: true }, // ✅ Indexed for search
-    description: { type: String, index: true }, // ✅ Indexed for search
+    title: { type: String, required: true },
+    description: { type: String },
     coverImage: { type: String },
     author: { 
       type: mongoose.Schema.Types.ObjectId, 
       ref: "User",
-      index: true // ✅ Critical: Index for fast author queries
+      required: true
     },
     content: { type: String },
-    tags: [{ type: String, index: true }], // ✅ Indexed for filtering
+    tags: [{ type: String }],
     category: { 
       type: String, 
       enum: ["Featured","Trending","Latest"], 
-      default: "Latest",
-      index: true // ✅ Indexed for category filtering
+      default: "Latest"
     },
     
-    // Rating System
     ratings: {
       type: [{
         userId: { 
@@ -45,41 +42,27 @@ const BlogSchema = new mongoose.Schema(
       type: Number, 
       default: 0, 
       min: 0, 
-      max: 5,
-      index: true // ✅ Index for sorting by rating
+      max: 5
     },
     ratingCount: { 
       type: Number, 
       default: 0 
     },
     
-    // Engagement metrics
     starRating: { type: Number, default: 0 },
     commentCount: { type: Number, default: 0 },
     views: { 
       type: Number, 
-      default: 0,
-      index: true // ✅ Index for sorting by views (trending)
+      default: 0
     },
     estimatedRead: { type: Number, default: 0 },
   },
   { 
-    timestamps: true,
-    // ✅ CRITICAL: Compound indexes for common queries
-    indexes: [
-      // For trending posts (sorted by views)
-      { views: -1, createdAt: -1 },
-      // For featured posts (sorted by rating)
-      { averageRating: -1, views: -1 },
-      // For user's posts
-      { author: 1, createdAt: -1 },
-      // For search
-      { title: 'text', description: 'text', content: 'text' },
-    ]
+    timestamps: true
   }
 );
 
-// ✅ Text search index for better search performance
+// ✅ Text search index
 BlogSchema.index({ 
   title: 'text', 
   description: 'text', 
@@ -92,7 +75,6 @@ BlogSchema.index({
   }
 });
 
-// Method to calculate average rating
 BlogSchema.methods.calculateAverageRating = function() {
   if (!this.ratings || this.ratings.length === 0) {
     this.averageRating = 0;
@@ -106,16 +88,11 @@ BlogSchema.methods.calculateAverageRating = function() {
   this.starRating = Math.round(this.averageRating);
 };
 
-// Pre-save hook
 BlogSchema.pre('save', function(next) {
   if (this.isModified('ratings')) {
     this.calculateAverageRating();
   }
   next();
 });
-
-// ✅ Add lean option support for faster queries
-BlogSchema.set('toJSON', { virtuals: true });
-BlogSchema.set('toObject', { virtuals: true });
 
 export const Blog = mongoose.models.Blog || mongoose.model("Blog", BlogSchema);

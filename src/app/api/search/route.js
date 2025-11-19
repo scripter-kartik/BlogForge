@@ -1,40 +1,19 @@
-// src/app/api/search/route.js - OPTIMIZED
+// src/app/api/search/route.js - BETTER VERSION
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/database/db.js";
 import { Blog } from "@/lib/models/Blog.js";
 import { User } from "@/lib/models/User";
 
-// ✅ Cache for search results
-let searchCache = new Map();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const searchCache = new Map();
+const CACHE_DURATION = 5 * 60 * 1000;
 const MAX_CACHE_SIZE = 100;
-
-function getCachedSearch(query) {
-  const cached = searchCache.get(query);
-  if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
-    return cached.data;
-  }
-  return null;
-}
-
-function setCachedSearch(query, data) {
-  // Prevent cache from growing too large
-  if (searchCache.size >= MAX_CACHE_SIZE) {
-    const firstKey = searchCache.keys().next().value;
-    searchCache.delete(firstKey);
-  }
-  searchCache.set(query, {
-    data,
-    timestamp: Date.now()
-  });
-}
 
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const query = searchParams.get("q");
+    const query = searchParams.get("q")?.trim();
 
-    if (!query || query.trim() === "") {
+    if (!query) {
       return NextResponse.json({
         posts: [],
         users: [],
@@ -42,65 +21,100 @@ export async function GET(request) {
       });
     }
 
-    const normalizedQuery = query.trim().toLowerCase();
-
-    // ✅ Check cache first
-    const cached = getCachedSearch(normalizedQuery);
-    if (cached) {
-      console.log("📦 Returning cached search results for:", normalizedQuery);
-      return NextResponse.json(cached);
+    const cacheKey = query.toLowerCase();
+    const cached = searchCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      console.log("📦 Cache hit for:", query);
+      return NextResponse.json(cached.data);
     }
 
     await dbConnect();
 
-    // ✅ OPTIMIZED: Use text search index (much faster than regex)
-    // This requires the text index we created in the Blog model
+    // Search in parallel
     const [posts, users] = await Promise.all([
-      // Search posts using text index
-      Blog.find(
-        { $text: { $search: query } },
-        { score: { $meta: "textScore" } }
-      )
-        .select('title description coverImage author tags views commentCount averageRating ratingCount createdAt')
-        .populate("author", "name username image")
-        .sort({ score: { $meta: "textScore" } })
-        .limit(10)
-        .lean(),
-
-      // Search users
-      User.find({
-        $or: [
-          { name: { $regex: query, $options: 'i' } },
-          { username: { $regex: query, $options: 'i' } },
-          { bio: { $regex: query, $options: 'i' } },
-        ],
-      })
-        .select("name username image bio followers")
-        .limit(10)
-        .lean()
+      searchPosts(query),
+      searchUsers(query)
     ]);
 
-    const result = {
-      posts,
-      users,
-      query,
-    };
+    console.log(`✅ Found ${posts.length} posts and ${users.length} users for: "${query}"`);
 
-    // ✅ Cache the results
-    setCachedSearch(normalizedQuery, result);
+    const result = { posts, users, query };
 
-    console.log(`✅ Search completed: ${posts.length} posts, ${users.length} users`);
+    // Update cache
+    if (searchCache.size >= MAX_CACHE_SIZE) {
+      const firstKey = searchCache.keys().next().value;
+      searchCache.delete(firstKey);
+    }
+    searchCache.set(cacheKey, { data: result, timestamp: Date.now() });
 
-    return NextResponse.json(result, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=60',
-      }
-    });
+    return NextResponse.json(result);
   } catch (error) {
     console.error("❌ Search error:", error);
     return NextResponse.json(
-      { error: "Failed to perform search", details: error.message },
+      { error: "Search failed", posts: [], users: [], details: error.message },
       { status: 500 }
     );
+  }
+}
+
+async function searchPosts(query) {
+  try {
+    // Try text search
+    const results = await Blog.find(
+      { $text: { $search: query } },
+      { score: { $meta: "textScore" } }
+    )
+      .select('title description coverImage author createdAt views')
+      .populate("author", "name username image")
+      .sort({ score: { $meta: "textScore" } })
+      .limit(10)
+      .lean();
+    
+    console.log(`📝 Text search found ${results.length} posts`);
+    return results;
+  } catch (error) {
+    console.warn("⚠️ Text search failed, using regex");
+    // Fallback to regex
+    return await Blog.find({
+      $or: [
+        { title: { $regex: query, $options: 'i' } },
+        { description: { $regex: query, $options: 'i' } }
+      ]
+    })
+      .select('title description coverImage author createdAt views')
+      .populate("author", "name username image")
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .lean();
+  }
+}
+
+async function searchUsers(query) {
+  try {
+    // Try text search
+    const results = await User.find(
+      { $text: { $search: query } },
+      { score: { $meta: "textScore" } }
+    )
+      .select("name username image bio")
+      .sort({ score: { $meta: "textScore" } })
+      .limit(10)
+      .lean();
+    
+    console.log(`👤 Text search found ${results.length} users`);
+    return results;
+  } catch (error) {
+    console.warn("⚠️ User text search failed, using regex");
+    // Fallback to regex
+    return await User.find({
+      $or: [
+        { name: { $regex: query, $options: 'i' } },
+        { username: { $regex: query, $options: 'i' } },
+        { bio: { $regex: query, $options: 'i' } }
+      ]
+    })
+      .select("name username image bio")
+      .limit(10)
+      .lean();
   }
 }
