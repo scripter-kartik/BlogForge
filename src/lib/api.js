@@ -1,11 +1,22 @@
-// src/lib/api.js - COMPLETE FIXED VERSION FOR NEXT.JS 15
+// src/lib/api.js - FIXED FOR PRODUCTION (Vercel)
 
 class ApiClient {
   constructor() {
-    this.baseURL = process.env.NEXT_PUBLIC_API_URL || "";
+    // ✅ FIX: Use relative URLs in production, absolute in development
+    // This ensures it works on both localhost AND Vercel
+    if (typeof window !== 'undefined') {
+      // Client-side: use relative URLs (works on any domain)
+      this.baseURL = '';
+    } else {
+      // Server-side: use environment variable or empty string
+      this.baseURL = process.env.NEXTAUTH_URL || '';
+    }
+    
+    console.log('🔧 ApiClient initialized with baseURL:', this.baseURL || '(relative)');
   }
 
   async request(endpoint, options = {}) {
+    // ✅ Always use relative URLs for API routes
     const url = `${this.baseURL}${endpoint}`;
     const headers = options.headers ? { ...options.headers } : {};
     const body = options.body;
@@ -25,6 +36,7 @@ class ApiClient {
     };
 
     try {
+      console.log(`📡 API Request: ${options.method || 'GET'} ${url}`);
       const response = await fetch(url, config);
       const contentType = response.headers.get("content-type") || "";
 
@@ -44,6 +56,7 @@ class ApiClient {
           console.error("Error parsing error response:", parseError);
         }
         
+        console.error(`❌ API Error: ${url}`, errorMessage);
         const error = new Error(errorMessage || "An unknown error occurred");
         error.status = response.status;
         error.data = errorData;
@@ -52,10 +65,14 @@ class ApiClient {
 
       if (response.status === 204) return null;
 
-      if (contentType.includes("application/json")) return response.json();
+      if (contentType.includes("application/json")) {
+        const data = await response.json();
+        console.log(`✅ API Success: ${url}`);
+        return data;
+      }
       return response.text();
     } catch (error) {
-      console.error(`API request failed: ${endpoint}`, error);
+      console.error(`❌ API request failed: ${endpoint}`, error);
       if (error.message) {
         throw error;
       } else {
@@ -128,7 +145,8 @@ class ApiClient {
     }
     
     try {
-      return await this.request(`/api/user/posts/${encodeURIComponent(username)}`);
+      // ✅ FIX: Use the correct API endpoint
+      return await this.request(`/api/protected/user/posts/${encodeURIComponent(username)}`);
     } catch (error) {
       console.error(`Failed to fetch posts for ${username}:`, error);
       // Return empty posts array instead of throwing
@@ -249,7 +267,7 @@ class ApiClient {
     }
   }
 
-  // ===== RATING METHODS (ENHANCED) =====
+  // ===== RATING METHODS =====
   async ratePost(postId, rating) {
     if (!postId) {
       throw new Error("Post ID is required");
@@ -270,7 +288,6 @@ class ApiClient {
     } catch (error) {
       console.error("Rating submission failed:", error);
       
-      // ✅ Provide user-friendly error messages
       if (error.status === 401) {
         throw new Error("Please log in to rate this post");
       } else if (error.status === 403) {
@@ -294,7 +311,6 @@ class ApiClient {
       return await this.request(`/api/blogs/${postId}/rating`);
     } catch (error) {
       console.error("Failed to fetch user rating:", error);
-      // Don't throw error, just return null rating
       return { userRating: null, averageRating: 0, ratingCount: 0 };
     }
   }
@@ -320,7 +336,7 @@ class ApiClient {
       return await this.request("/api/blogposts/trending");
     } catch (error) {
       console.error("Failed to fetch trending blogs:", error);
-      return { posts: [] };
+      return [];
     }
   }
 
@@ -329,7 +345,7 @@ class ApiClient {
       return await this.request("/api/blogposts/latest");
     } catch (error) {
       console.error("Failed to fetch latest blogs:", error);
-      return { posts: [] };
+      return [];
     }
   }
 
@@ -338,31 +354,27 @@ class ApiClient {
       return await this.request("/api/blogposts/for-you");
     } catch (error) {
       console.error("Failed to fetch for you blogs:", error);
-      return { posts: [] };
+      return [];
     }
   }
 
-  // ===== COMMENT METHODS (IF NEEDED) =====
+  // ===== COMMENT METHODS =====
   async getComments(postId) {
     if (!postId) {
       return [];
     }
     
     try {
-      return await this.request(`/api/blogs/${postId}/comments`);
+      return await this.request(`/api/comments?postId=${postId}`);
     } catch (error) {
       console.error("Failed to fetch comments:", error);
       return [];
     }
   }
 
-  async addComment(postId, commentData) {
-    if (!postId) {
-      throw new Error("Post ID is required");
-    }
-    
+  async addComment(commentData) {
     try {
-      return await this.request(`/api/blogs/${postId}/comments`, {
+      return await this.request("/api/comments", {
         method: "POST",
         body: commentData,
       });
@@ -372,33 +384,17 @@ class ApiClient {
     }
   }
 
-  async deleteComment(postId, commentId) {
-    if (!postId || !commentId) {
-      throw new Error("Post ID and Comment ID are required");
+  async deleteComment(commentId) {
+    if (!commentId) {
+      throw new Error("Comment ID is required");
     }
     
     try {
-      return await this.request(`/api/blogs/${postId}/comments/${commentId}`, {
+      return await this.request(`/api/comments?commentId=${commentId}`, {
         method: "DELETE",
       });
     } catch (error) {
       console.error("Failed to delete comment:", error);
-      throw error;
-    }
-  }
-
-  // ===== LIKE METHODS (IF NEEDED) =====
-  async toggleLike(postId) {
-    if (!postId) {
-      throw new Error("Post ID is required");
-    }
-    
-    try {
-      return await this.request(`/api/blogs/${postId}/like`, {
-        method: "POST",
-      });
-    } catch (error) {
-      console.error("Failed to toggle like:", error);
       throw error;
     }
   }

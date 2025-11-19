@@ -1,13 +1,9 @@
-// ============================================
-// COMPLETE: src/app/api/comments/route.js
-// ============================================
 import connectDB from "@/lib/database/db.js";
 import { Comment } from "@/lib/models/Comment.js";
 import { Blog } from "@/lib/models/Blog.js";
 import { User } from "@/lib/models/User.js";
 import mongoose from "mongoose";
 
-// POST new comment
 export async function POST(req) {
   try {
     await connectDB();
@@ -18,7 +14,6 @@ export async function POST(req) {
 
     const { postId, authorId, content } = body;
 
-    // Validation
     if (!postId || !authorId || !content?.trim()) {
       console.log("❌ Missing fields:", { postId, authorId, hasContent: !!content });
       return Response.json(
@@ -27,7 +22,6 @@ export async function POST(req) {
       );
     }
 
-    // Validate MongoDB ObjectIds
     if (!mongoose.Types.ObjectId.isValid(postId)) {
       console.log("❌ Invalid postId:", postId);
       return Response.json(
@@ -44,7 +38,6 @@ export async function POST(req) {
       );
     }
 
-    // Check if user exists
     const userExists = await User.findById(authorId);
     if (!userExists) {
       console.log("❌ User not found:", authorId);
@@ -58,7 +51,6 @@ export async function POST(req) {
     }
     console.log("✅ User found:", userExists.name);
 
-    // Create comment
     console.log("📝 Creating comment...");
     const comment = await Comment.create({
       postId,
@@ -67,7 +59,6 @@ export async function POST(req) {
     });
     console.log("✅ Comment created:", comment._id);
 
-    // ✅ UPDATE BLOG'S COMMENT COUNT
     await Blog.findByIdAndUpdate(
       postId,
       { $inc: { commentCount: 1 } },
@@ -75,7 +66,6 @@ export async function POST(req) {
     );
     console.log("✅ Blog comment count updated");
 
-    // Populate author details
     await comment.populate("author", "username name image email");
     console.log("✅ Comment populated:", {
       author: comment.author,
@@ -101,7 +91,6 @@ export async function POST(req) {
   }
 }
 
-// GET all comments for a post
 export async function GET(req) {
   try {
     await connectDB();
@@ -131,7 +120,6 @@ export async function GET(req) {
   }
 }
 
-// DELETE comment
 export async function DELETE(req) {
   try {
     await connectDB();
@@ -153,7 +141,6 @@ export async function DELETE(req) {
       return Response.json({ error: "Comment not found" }, { status: 404 });
     }
 
-    // ✅ DECREMENT BLOG'S COMMENT COUNT
     await Blog.findByIdAndUpdate(
       deletedComment.postId,
       { $inc: { commentCount: -1 } },

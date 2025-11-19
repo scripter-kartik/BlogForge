@@ -1,8 +1,6 @@
-// src/app/api/blogposts/[id]/route.js
-
 import { NextResponse } from "next/server";
-import dbConnect from "@/lib/database/db.js"; // your DB connection helper
-import { Blog } from "@/lib/models/Blog.js"; // your Blog Mongoose model
+import dbConnect from "@/lib/database/db.js"; 
+import { Blog } from "@/lib/models/Blog.js"; 
 
 export async function GET(req, { params }) {
     try {

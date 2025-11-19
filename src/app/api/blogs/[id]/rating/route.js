@@ -11,7 +11,6 @@ function toObjectId(id) {
   try {
     if (!id) return null;
     if (id instanceof mongoose.Types.ObjectId) return id;
-    // Check if it's a valid 24-char hex string
     if (typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id)) {
       return new mongoose.Types.ObjectId(id);
     }
@@ -22,11 +21,9 @@ function toObjectId(id) {
   }
 }
 
-// Helper function to get MongoDB user ID
 async function getMongoUserId(session) {
   if (!session?.user?.email) return null;
   
-  // Try to get valid ObjectId from session
   const sessionId = session.user._id || session.user.id || session.user.sub;
   const validId = toObjectId(sessionId);
   
@@ -34,13 +31,11 @@ async function getMongoUserId(session) {
     return validId;
   }
   
-  // Fallback: Look up by email
   console.log("Invalid ObjectId in session, looking up by email:", session.user.email);
   const dbUser = await User.findOne({ email: session.user.email });
   return dbUser ? dbUser._id : null;
 }
 
-// ✅ POST → Add/Update Rating
 export async function POST(req, { params }) {
   await connectDB();
   try {
@@ -53,7 +48,6 @@ export async function POST(req, { params }) {
       );
     }
 
-    // ✅ FIX: Await params
     const { id } = await params;
     const { rating } = await req.json();
 
@@ -69,7 +63,6 @@ export async function POST(req, { params }) {
       return NextResponse.json({ error: "Blog not found" }, { status: 404 });
     }
 
-    // ✅ Get valid MongoDB user ID
     const userId = await getMongoUserId(session);
 
     if (!userId) {
@@ -92,7 +85,6 @@ export async function POST(req, { params }) {
 
     console.log("✅ Valid userId extracted:", userId.toString());
 
-    // ✅ Check if user is author
     if (blog.author.equals(userId)) {
       return NextResponse.json(
         { error: "You cannot rate your own post" },
@@ -100,14 +92,11 @@ export async function POST(req, { params }) {
       );
     }
 
-    // ✅ Initialize ratings array if it doesn't exist
     if (!blog.ratings) blog.ratings = [];
 
-    // ✅ Find existing rating
     const index = blog.ratings.findIndex(r => r.userId?.equals(userId));
 
     if (index !== -1) {
-      // Update existing rating
       blog.ratings[index].rating = rating;
       blog.ratings[index].createdAt = new Date();
       console.log("✅ Updated existing rating");
@@ -144,13 +133,11 @@ export async function POST(req, { params }) {
   }
 }
 
-// ✅ GET - Fetch rating info
 export async function GET(req, { params }) {
   await connectDB();
   try {
     const session = await getServerSession(authOptions);
     
-    // ✅ FIX: Await params
     const { id } = await params;
 
     const blog = await Blog.findById(id);
@@ -187,7 +174,6 @@ export async function GET(req, { params }) {
   }
 }
 
-// ✅ DELETE - Remove user's rating
 export async function DELETE(req, { params }) {
   await connectDB();
   try {
@@ -199,7 +185,6 @@ export async function DELETE(req, { params }) {
       );
     }
 
-    // ✅ FIX: Await params
     const { id } = await params;
     const blog = await Blog.findById(id);
 

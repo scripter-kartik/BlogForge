@@ -11,7 +11,7 @@ export async function GET() {
 
         console.log("Fetching latest posts...");
         const latestPosts = await Blog.find({})
-            .sort({ createdAt: -1 }) // Sort by newest first
+            .sort({ createdAt: -1 }) 
             .limit(21)
             .populate("author", "name image");
 
