@@ -69,7 +69,6 @@ const nextConfig: NextConfig = {
   // ✅ Generate ETags for caching
   generateEtags: true,
 
-  // ✅ HTTP headers for caching
   async headers() {
     return [
       {
