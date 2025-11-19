@@ -10,15 +10,33 @@ import bcrypt from "bcryptjs";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-// Configure Cloudinary
-cloudinary.config({
+// Configure Cloudinary with validation
+const cloudinaryConfig = {
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+};
+
+// Validate Cloudinary config
+const isCloudinaryConfigured = () => {
+  return cloudinaryConfig.cloud_name && 
+         cloudinaryConfig.api_key && 
+         cloudinaryConfig.api_secret;
+};
+
+if (isCloudinaryConfigured()) {
+  cloudinary.config(cloudinaryConfig);
+  console.log("✅ Cloudinary configured:", cloudinaryConfig.cloud_name);
+} else {
+  console.warn("⚠️ Cloudinary not configured. Image uploads will fail.");
+}
 
 // Helper function to upload image to Cloudinary
 async function uploadToCloudinary(file) {
+  if (!isCloudinaryConfigured()) {
+    throw new Error("Cloudinary is not configured. Please check your environment variables.");
+  }
+
   try {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
@@ -34,23 +52,31 @@ async function uploadToCloudinary(file) {
           ]
         },
         (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
+          if (error) {
+            console.error("❌ Cloudinary upload error:", error);
+            reject(error);
+          } else {
+            console.log("✅ Cloudinary upload success:", result.secure_url);
+            resolve(result);
+          }
         }
       );
       
       uploadStream.end(buffer);
     });
   } catch (error) {
-    console.error("Cloudinary upload error:", error);
-    throw new Error("Failed to upload image to Cloudinary");
+    console.error("❌ Cloudinary upload error:", error);
+    throw new Error(`Failed to upload image: ${error.message}`);
   }
 }
 
 // Helper function to delete image from Cloudinary
 async function deleteFromCloudinary(imageUrl) {
+  if (!imageUrl || !imageUrl.includes("cloudinary.com")) {
+    return; // Skip if not a Cloudinary URL
+  }
+
   try {
-    // Extract public_id from Cloudinary URL
     const matches = imageUrl.match(/\/profile-images\/([^/.]+)/);
     if (matches && matches[1]) {
       const publicId = `profile-images/${matches[1]}`;
@@ -64,28 +90,21 @@ async function deleteFromCloudinary(imageUrl) {
 
 export async function POST(req) {
   try {
-    // ✅ FIRST: Connect to database
+    // Connect to database
     await connectDB();
 
-    // ✅ SECOND: Get session
+    // Get session
     const session = await getServerSession(authOptions);
-    console.log("📌 Session:", session);
+    console.log("📌 Session exists:", !!session);
 
-    if (!session) {
+    if (!session || !session.user) {
       return NextResponse.json(
-        { success: false, error: "Unauthorized - No session" },
+        { success: false, error: "Unauthorized" },
         { status: 401 }
       );
     }
 
-    if (!session.user) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized - No user in session" },
-        { status: 401 }
-      );
-    }
-
-    // ✅ THIRD: Get user ID from session
+    // Get user ID from session
     const userId = session.user.id || session.user._id;
     console.log("👤 User ID from session:", userId);
 
@@ -96,7 +115,7 @@ export async function POST(req) {
       );
     }
 
-    // ✅ FOURTH: Find user by ID
+    // Find user by ID
     const user = await User.findById(userId);
     console.log("🔍 Found user:", user ? "Yes" : "No");
 
@@ -108,15 +127,34 @@ export async function POST(req) {
       );
     }
 
-    // ✅ FIFTH: Parse form data
+    // Parse form data
     const formData = await req.formData();
     let imageUrl = user.image;
 
-    // ✅ Handle profile image upload to Cloudinary
+    // Handle profile image upload
     const profileImage = formData.get("profileImage");
     if (profileImage && profileImage.size > 0) {
       try {
         console.log("📤 Uploading image to Cloudinary...");
+        console.log("📦 File size:", profileImage.size, "bytes");
+        console.log("📦 File type:", profileImage.type);
+        
+        // Validate file size (5MB max)
+        if (profileImage.size > 5 * 1024 * 1024) {
+          return NextResponse.json(
+            { success: false, error: "Image must be less than 5MB" },
+            { status: 400 }
+          );
+        }
+        
+        // Validate file type
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowedTypes.includes(profileImage.type)) {
+          return NextResponse.json(
+            { success: false, error: "Invalid file type. Use JPG, PNG, GIF, or WebP" },
+            { status: 400 }
+          );
+        }
         
         // Upload new image to Cloudinary
         const uploadResult = await uploadToCloudinary(profileImage);
@@ -124,26 +162,29 @@ export async function POST(req) {
         
         console.log("✅ Image uploaded successfully:", imageUrl);
 
-        // Delete old image from Cloudinary (if it exists and is from Cloudinary)
+        // Delete old image from Cloudinary (if it exists)
         if (user.image && user.image.includes("cloudinary.com")) {
           await deleteFromCloudinary(user.image);
         }
       } catch (uploadError) {
         console.error("❌ Image upload error:", uploadError);
         return NextResponse.json(
-          { success: false, error: "Failed to upload image" },
+          { 
+            success: false, 
+            error: uploadError.message || "Failed to upload image. Please check your Cloudinary configuration." 
+          },
           { status: 400 }
         );
       }
     }
 
-    // ✅ Get form fields
+    // Get form fields
     const name = formData.get("name")?.trim();
     const bio = formData.get("bio")?.trim() || "";
     const password = formData.get("password")?.trim();
     const email = formData.get("email")?.trim();
 
-    // ✅ Validation
+    // Validation
     if (name && name.length === 0) {
       return NextResponse.json(
         { success: false, error: "Name cannot be empty" },
@@ -165,7 +206,7 @@ export async function POST(req) {
       );
     }
 
-    // ✅ Check if email is already taken (by another user)
+    // Check if email is already taken
     if (email && email !== user.email) {
       const existingUser = await User.findOne({ email });
       if (existingUser) {
@@ -177,21 +218,21 @@ export async function POST(req) {
       user.email = email;
     }
 
-    // ✅ Update fields
+    // Update fields
     if (name) user.name = name;
     user.bio = bio;
     user.image = imageUrl;
 
-    // ✅ Update password only if provided
+    // Update password only if provided
     if (password) {
       user.password = await bcrypt.hash(password, 10);
     }
 
-    // ✅ Save user
+    // Save user
     const updatedUser = await user.save();
     console.log("✅ User updated successfully");
 
-    // ✅ Return updated user data (no password)
+    // Return updated user data
     return NextResponse.json(
       {
         success: true,
