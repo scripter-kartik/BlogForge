@@ -52,7 +52,7 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '2mb',
     },
     // Optimize CSS
-    optimizeCss: true,
+    optimizeCss: false,
     // Optimize package imports
     optimizePackageImports: ['lucide-react', 'react-icons'],
   },
