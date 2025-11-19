@@ -76,7 +76,7 @@ export default function Navbar({
       console.log("Search results:", data); // Debug log
       setSearchResults({
         posts: data.posts || [],
-        users: data.users || []
+        users: data.users || [],
       });
       setShowDropdown(true);
     } catch (err) {
@@ -95,9 +95,12 @@ export default function Navbar({
     }
   };
 
+  // SMALL DELAY before closing so Link click can fire reliably
   const handleResultClick = () => {
-    setShowDropdown(false);
-    setSearchQuery("");
+    setTimeout(() => {
+      setShowDropdown(false);
+      setSearchQuery("");
+    }, 10);
   };
 
   const handleLogout = async () => {
@@ -111,19 +114,17 @@ export default function Navbar({
   };
 
   const linkClass = (path) =>
-    `flex items-center gap-2 cursor-pointer px-3 py-2 transition-colors duration-200 ${
-      pathname === path
-        ? "text-[#f75555]"
-        : isDarkMode
+    `flex items-center gap-2 cursor-pointer px-3 py-2 transition-colors duration-200 ${pathname === path
+      ? "text-[#f75555]"
+      : isDarkMode
         ? "text-white hover:text-[#f75555]"
         : "text-black hover:text-[#f75555]"
     }`;
 
   const mobileLinkClass = (path) =>
-    `flex flex-col items-center justify-center gap-1 transition-colors duration-200 ${
-      pathname === path
-        ? "text-[#f75555]"
-        : isDarkMode
+    `flex flex-col items-center justify-center gap-1 transition-colors duration-200 ${pathname === path
+      ? "text-[#f75555]"
+      : isDarkMode
         ? "text-white"
         : "text-black"
     }`;
@@ -132,9 +133,8 @@ export default function Navbar({
     <>
       {/* DESKTOP NAV */}
       <div
-        className={`hidden lg:flex fixed top-0 left-0 right-0 z-50 transition-colors duration-500 ${
-          isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f6f6f7]"
-        } shadow-sm justify-center`}
+        className={`hidden lg:flex fixed top-0 left-0 right-0 z-50 transition-colors duration-500 ${isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f6f6f7]"
+          } shadow-sm justify-center`}
       >
         <div className="w-full max-w-[1280px] flex justify-between items-center px-4 xl:px-8 py-3">
           {/* LEFT LINKS */}
@@ -165,20 +165,18 @@ export default function Navbar({
           {/* RIGHT */}
           <div className="flex items-center gap-3 xl:gap-5">
             {/* SEARCH */}
-            <div className="relative" ref={searchRef}>
+            <div className="relative z-[99999]" ref={searchRef}>
               <div
-                className={`w-[250px] xl:w-[330px] flex items-center gap-2 font-sm border-b-[1px] py-2 px-3 transition-colors ${
-                  isDarkMode ? "border-[#ABB2BF]" : "border-gray-400"
-                }`}
+                className={`w-[250px] xl:w-[330px] flex items-center gap-2 font-sm border-b-[1px] py-2 px-3 transition-colors ${isDarkMode ? "border-[#ABB2BF]" : "border-gray-400"
+                  }`}
               >
                 <IoSearch className="text-[#ABB2BF] text-lg" />
 
                 <input
-                  className={`bg-transparent font-bold outline-none border-none text-sm w-full ${
-                    isDarkMode
-                      ? "text-white placeholder-gray-400"
-                      : "text-black placeholder-gray-600"
-                  }`}
+                  className={`bg-transparent font-bold outline-none border-none text-sm w-full ${isDarkMode
+                    ? "text-white placeholder-gray-400"
+                    : "text-black placeholder-gray-600"
+                    }`}
                   placeholder="Search users or posts..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -193,33 +191,34 @@ export default function Navbar({
               {/* IMPROVED DROPDOWN */}
               {showDropdown && (searchQuery.trim().length > 0) && (
                 <div
-                  className={`absolute top-full left-0 mt-2 w-[250px] xl:w-[330px] max-h-[500px] overflow-auto rounded-lg shadow-2xl z-[999] ${
-                    isDarkMode
-                      ? "bg-[#1c1d1d] border border-gray-700"
-                      : "bg-white border border-gray-200"
-                  }`}
+                  className={`absolute top-full left-0 mt-2 w-[250px] xl:w-[330px] max-h-[500px] overflow-auto rounded-lg shadow-2xl z-[200000] pointer-events-auto ${isDarkMode
+                    ? "bg-[#1c1d1d] border border-gray-700"
+                    : "bg-white border border-gray-200"
+                    }`}
                 >
                   {/* USERS SECTION */}
                   {searchResults?.users?.length > 0 && (
                     <div className="p-3 border-b border-gray-700">
                       <h3
-                        className={`text-xs font-bold mb-2 uppercase tracking-wide ${
-                          isDarkMode ? "text-gray-400" : "text-gray-500"
-                        }`}
+                        className={`text-xs font-bold mb-2 uppercase tracking-wide ${isDarkMode ? "text-gray-400" : "text-gray-500"
+                          }`}
                       >
                         👤 Users ({searchResults.users.length})
                       </h3>
                       <div className="space-y-1">
                         {searchResults.users.map((u) => (
-                          <Link
+                          <div
                             key={u._id}
-                            href={`/profile/${u.username}`}
-                            onClick={handleResultClick}
-                            className={`flex items-center gap-3 p-2 rounded-lg transition-all hover:scale-[1.02] ${
-                              isDarkMode 
-                                ? "hover:bg-gray-800" 
-                                : "hover:bg-gray-100"
-                            }`}
+                            // Use onMouseDown so navigation happens before any blur/close
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              router.push(`/profile/${u.username}`);
+                              handleResultClick();
+                            }}
+                            className={`flex items-center gap-3 p-2 rounded-lg transition-all hover:scale-[1.02] ${isDarkMode
+                              ? "hover:bg-gray-800"
+                              : "hover:bg-gray-100"
+                              }`}
                           >
                             <img
                               src={getRandomProfileImage(u.image, u.username)}
@@ -227,22 +226,20 @@ export default function Navbar({
                               alt={u.username}
                             />
                             <div className="flex-1 min-w-0">
-                              <p className={`font-semibold text-sm truncate ${
-                                isDarkMode ? "text-white" : "text-black"
-                              }`}>
+                              <p className={`font-semibold text-sm truncate ${isDarkMode ? "text-white" : "text-black"
+                                }`}>
                                 @{u.username}
                               </p>
                               {u.name && (
                                 <p
-                                  className={`text-xs truncate ${
-                                    isDarkMode ? "text-gray-400" : "text-gray-500"
-                                  }`}
+                                  className={`text-xs truncate ${isDarkMode ? "text-gray-400" : "text-gray-500"
+                                    }`}
                                 >
                                   {u.name}
                                 </p>
                               )}
                             </div>
-                          </Link>
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -252,34 +249,33 @@ export default function Navbar({
                   {searchResults?.posts?.length > 0 && (
                     <div className="p-3">
                       <h3
-                        className={`text-xs font-bold mb-2 uppercase tracking-wide ${
-                          isDarkMode ? "text-gray-400" : "text-gray-500"
-                        }`}
+                        className={`text-xs font-bold mb-2 uppercase tracking-wide ${isDarkMode ? "text-gray-400" : "text-gray-500"
+                          }`}
                       >
                         📝 Posts ({searchResults.posts.length})
                       </h3>
                       <div className="space-y-1">
                         {searchResults.posts.map((p) => (
-                          <Link
+                          <div
                             key={p._id}
-                            href={`/blog/${p._id}`}
-                            onClick={handleResultClick}
-                            className={`block p-2 rounded-lg transition-all hover:scale-[1.01] ${
-                              isDarkMode 
-                                ? "hover:bg-gray-800" 
-                                : "hover:bg-gray-100"
-                            }`}
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              router.push(`/blog/${p._id}`);
+                              handleResultClick();
+                            }}
+                            className={`block p-2 rounded-lg transition-all hover:scale-[1.01] ${isDarkMode
+                              ? "hover:bg-gray-800"
+                              : "hover:bg-gray-100"
+                              }`}
                           >
-                            <p className={`font-semibold text-sm line-clamp-1 ${
-                              isDarkMode ? "text-white" : "text-black"
-                            }`}>
+                            <p className={`font-semibold text-sm line-clamp-1 ${isDarkMode ? "text-white" : "text-black"
+                              }`}>
                               {p.title}
                             </p>
                             {p.description && (
                               <p
-                                className={`text-xs mt-1 line-clamp-2 ${
-                                  isDarkMode ? "text-gray-400" : "text-gray-500"
-                                }`}
+                                className={`text-xs mt-1 line-clamp-2 ${isDarkMode ? "text-gray-400" : "text-gray-500"
+                                  }`}
                               >
                                 {p.description}
                               </p>
@@ -289,7 +285,7 @@ export default function Navbar({
                                 by @{p.author.username}
                               </p>
                             )}
-                          </Link>
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -301,14 +297,12 @@ export default function Navbar({
                     !isSearching && (
                       <div className="p-8 text-center">
                         <p className="text-4xl mb-2">🔍</p>
-                        <p className={`text-sm font-medium ${
-                          isDarkMode ? "text-gray-400" : "text-gray-500"
-                        }`}>
+                        <p className={`text-sm font-medium ${isDarkMode ? "text-gray-400" : "text-gray-500"
+                          }`}>
                           No results found for "{searchQuery}"
                         </p>
-                        <p className={`text-xs mt-1 ${
-                          isDarkMode ? "text-gray-500" : "text-gray-400"
-                        }`}>
+                        <p className={`text-xs mt-1 ${isDarkMode ? "text-gray-500" : "text-gray-400"
+                          }`}>
                           Try a different search term
                         </p>
                       </div>
@@ -318,9 +312,8 @@ export default function Navbar({
                   {isSearching && (
                     <div className="p-8 text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#f75555] mx-auto" />
-                      <p className={`text-sm mt-3 ${
-                        isDarkMode ? "text-gray-400" : "text-gray-500"
-                      }`}>
+                      <p className={`text-sm mt-3 ${isDarkMode ? "text-gray-400" : "text-gray-500"
+                        }`}>
                         Searching...
                       </p>
                     </div>
@@ -328,25 +321,26 @@ export default function Navbar({
 
                   {/* FOOTER - VIEW ALL */}
                   {(searchResults?.users?.length > 0 || searchResults?.posts?.length > 0) && (
-                    <div className={`p-3 border-t ${
-                      isDarkMode ? "border-gray-700" : "border-gray-200"
-                    }`}>
+                    <div className={`p-3 border-t ${isDarkMode ? "border-gray-700" : "border-gray-200"
+                      }`}>
                       <button
-                        onClick={() => {
+                        onMouseDown={(e) => {
+                          e.preventDefault();
                           router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
                           handleResultClick();
                         }}
-                        className={`w-full py-2 text-sm font-semibold rounded-lg transition-all ${
-                          isDarkMode
-                            ? "text-[#f75555] hover:bg-gray-800"
-                            : "text-[#f75555] hover:bg-gray-100"
-                        }`}
+                        className={`w-full py-2 text-sm font-semibold rounded-lg transition-all ${isDarkMode
+                          ? "text-[#f75555] hover:bg-gray-800"
+                          : "text-[#f75555] hover:bg-gray-100"
+                          }`}
                       >
                         View all results →
                       </button>
+
                     </div>
                   )}
                 </div>
+
               )}
             </div>
 
@@ -369,10 +363,9 @@ export default function Navbar({
                 <Link
                   href="/write"
                   className={`flex items-center gap-2 border rounded-full px-3 xl:px-4 h-[36px] xl:h-[40px] text-xs xl:text-sm transition-all
-                    ${
-                      isDarkMode
-                        ? "border-white text-white hover:bg-white hover:text-black"
-                        : "border-black text-black hover:bg-black hover:text-white"
+                    ${isDarkMode
+                      ? "border-white text-white hover:bg-white hover:text-black"
+                      : "border-black text-black hover:bg-black hover:text-white"
                     }`}
                 >
                   <LuPencil className="text-base" />
@@ -393,13 +386,11 @@ export default function Navbar({
 
                   {accountInfoActive && (
                     <div
-                      className={`absolute top-12 right-0 w-44 p-5 rounded-xl shadow-xl flex flex-col gap-3 ${
-                        isDarkMode
-                          ? "bg-[#1c1d1d] text-white"
-                          : "bg-white text-black"
-                      } border ${
-                        isDarkMode ? "border-gray-700" : "border-gray-200"
-                      }`}
+                      className={`absolute top-12 right-0 w-44 p-5 rounded-xl shadow-xl flex flex-col gap-3 ${isDarkMode
+                        ? "bg-[#1c1d1d] text-white"
+                        : "bg-white text-black"
+                        } border ${isDarkMode ? "border-gray-700" : "border-gray-200"
+                        }`}
                     >
                       <h1 className="font-bold truncate">{user?.username}</h1>
 
@@ -436,9 +427,8 @@ export default function Navbar({
               </div>
             ) : (
               <div
-                className={`flex gap-4 text-sm xl:text-base ${
-                  isDarkMode ? "text-white" : "text-black"
-                }`}
+                className={`flex gap-4 text-sm xl:text-base ${isDarkMode ? "text-white" : "text-black"
+                  }`}
               >
                 <p
                   className="cursor-pointer hover:text-[#f75555] transition-colors"
@@ -460,20 +450,18 @@ export default function Navbar({
 
       {/* MOBILE TOP - Similar improvements */}
       <div
-        className={`lg:hidden fixed top-0 left-0 right-0 z-50 flex items-center gap-3 px-4 py-3 ${
-          isDarkMode
-            ? "bg-[#1c1d1d] text-white"
-            : "bg-[#f6f6f7] text-black"
-        } shadow-md`}
+        className={`lg:hidden fixed top-0 left-0 right-0 z-50 flex items-center gap-3 px-4 py-3 ${isDarkMode
+          ? "bg-[#1c1d1d] text-white"
+          : "bg-[#f6f6f7] text-black"
+          } shadow-md`}
       >
         <div ref={searchRef} className="flex-1 relative">
           <div className="flex items-center gap-2 border-b-[1px] border-[#f75555] py-2 px-3">
             <IoSearch className="text-[#f75555] text-xl" />
             <input
               placeholder="Search..."
-              className={`bg-transparent outline-none font-bold text-sm w-full ${
-                isDarkMode ? "text-white placeholder-gray-400" : "text-black placeholder-gray-500"
-              }`}
+              className={`bg-transparent outline-none font-bold text-sm w-full ${isDarkMode ? "text-white placeholder-gray-400" : "text-black placeholder-gray-500"
+                }`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={handleSearchKeyPress}
@@ -487,18 +475,16 @@ export default function Navbar({
           {/* MOBILE DROPDOWN - Same improved UI */}
           {showDropdown && searchQuery.trim().length > 0 && (
             <div
-              className={`absolute top-full left-0 right-0 mt-2 rounded-lg shadow-2xl max-h-80 overflow-y-auto z-50 ${
-                isDarkMode
-                  ? "bg-[#1c1d1d] border border-gray-700"
-                  : "bg-white border border-gray-200"
-              }`}
+              className={`absolute top-full left-0 right-0 mt-2 rounded-lg shadow-2xl max-h-80 overflow-y-auto z-50 ${isDarkMode
+                ? "bg-[#1c1d1d] border border-gray-700"
+                : "bg-white border border-gray-200"
+                }`}
             >
               {searchResults.users.length > 0 && (
                 <div className="p-3 border-b border-gray-700">
                   <h3
-                    className={`text-xs font-bold mb-2 uppercase ${
-                      isDarkMode ? "text-gray-400" : "text-gray-500"
-                    }`}
+                    className={`text-xs font-bold mb-2 uppercase ${isDarkMode ? "text-gray-400" : "text-gray-500"
+                      }`}
                   >
                     👤 Users
                   </h3>
@@ -507,9 +493,8 @@ export default function Navbar({
                       key={u._id}
                       href={`/profile/${u.username}`}
                       onClick={handleResultClick}
-                      className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${
-                        isDarkMode ? "hover:bg-gray-800" : "hover:bg-gray-100"
-                      }`}
+                      className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${isDarkMode ? "hover:bg-gray-800" : "hover:bg-gray-100"
+                        }`}
                     >
                       <img
                         src={getRandomProfileImage(u.image, u.username)}
@@ -520,9 +505,8 @@ export default function Navbar({
                         <p className="font-medium text-sm">@{u.username}</p>
                         {u.name && (
                           <p
-                            className={`text-xs ${
-                              isDarkMode ? "text-gray-400" : "text-gray-500"
-                            }`}
+                            className={`text-xs ${isDarkMode ? "text-gray-400" : "text-gray-500"
+                              }`}
                           >
                             {u.name}
                           </p>
@@ -535,14 +519,12 @@ export default function Navbar({
 
               {searchResults.posts.length > 0 && (
                 <div
-                  className={`p-3 ${
-                    searchResults.users.length > 0 ? "border-t" : ""
-                  } ${isDarkMode ? "border-gray-700" : "border-gray-200"}`}
+                  className={`p-3 ${searchResults.users.length > 0 ? "border-t" : ""
+                    } ${isDarkMode ? "border-gray-700" : "border-gray-200"}`}
                 >
                   <h3
-                    className={`text-xs font-bold mb-2 uppercase ${
-                      isDarkMode ? "text-gray-400" : "text-gray-500"
-                    }`}
+                    className={`text-xs font-bold mb-2 uppercase ${isDarkMode ? "text-gray-400" : "text-gray-500"
+                      }`}
                   >
                     📝 Posts
                   </h3>
@@ -551,18 +533,16 @@ export default function Navbar({
                       key={p._id}
                       href={`/blog/${p._id}`}
                       onClick={handleResultClick}
-                      className={`block p-2 rounded-lg transition-colors ${
-                        isDarkMode ? "hover:bg-gray-800" : "hover:bg-gray-100"
-                      }`}
+                      className={`block p-2 rounded-lg transition-colors ${isDarkMode ? "hover:bg-gray-800" : "hover:bg-gray-100"
+                        }`}
                     >
                       <p className="font-medium text-sm line-clamp-1">
                         {p.title}
                       </p>
                       {p.description && (
                         <p
-                          className={`text-xs mt-1 line-clamp-2 ${
-                            isDarkMode ? "text-gray-400" : "text-gray-500"
-                          }`}
+                          className={`text-xs mt-1 line-clamp-2 ${isDarkMode ? "text-gray-400" : "text-gray-500"
+                            }`}
                         >
                           {p.description}
                         </p>
@@ -598,11 +578,10 @@ export default function Navbar({
 
       {/* MOBILE BOTTOM NAV */}
       <div
-        className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t py-2 px-2 ${
-          isDarkMode
-            ? "bg-[#1c1d1d] text-white border-gray-800"
-            : "bg-[#f6f6f7] text-black border-gray-200"
-        } shadow-lg`}
+        className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t py-2 px-2 ${isDarkMode
+          ? "bg-[#1c1d1d] text-white border-gray-800"
+          : "bg-[#f6f6f7] text-black border-gray-200"
+          } shadow-lg`}
       >
         {isAuthenticated ? (
           <div className="flex items-center justify-around max-w-md mx-auto">
@@ -649,11 +628,10 @@ export default function Navbar({
 
               {accountInfoActive && (
                 <div
-                  className={`absolute bottom-16 right-0 w-48 p-4 rounded-xl shadow-2xl flex flex-col gap-3 ${
-                    isDarkMode
-                      ? "bg-[#1c1d1d] text-white border border-gray-700"
-                      : "bg-white text-black border border-gray-200"
-                  }`}
+                  className={`absolute bottom-16 right-0 w-48 p-4 rounded-xl shadow-2xl flex flex-col gap-3 ${isDarkMode
+                    ? "bg-[#1c1d1d] text-white border border-gray-700"
+                    : "bg-white text-black border border-gray-200"
+                    }`}
                 >
                   <h1 className="font-bold text-base truncate">
                     {user?.name || user?.username || ""}
