@@ -1,4 +1,4 @@
-// src/lib/auth.js - COMPLETE FIX FOR BOTH GOOGLE & MANUAL LOGIN
+// src/lib/auth.js - COMPLETE FIX with better username generation
 import { getToken } from "next-auth/jwt";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -26,6 +26,43 @@ export async function getAuthenticatedUser(req) {
   };
 }
 
+// ✅ Helper function to generate unique username
+async function generateUniqueUsername(email, name) {
+  // Try email-based username first
+  let baseUsername = email.split("@")[0].toLowerCase().trim();
+  
+  // Remove special characters and spaces
+  baseUsername = baseUsername.replace(/[^a-z0-9]/g, '');
+  
+  // If empty after cleanup, use name
+  if (!baseUsername || baseUsername.length < 3) {
+    baseUsername = (name || 'user').toLowerCase().replace(/[^a-z0-9]/g, '');
+  }
+  
+  // Ensure minimum length
+  if (baseUsername.length < 3) {
+    baseUsername = 'user' + baseUsername;
+  }
+  
+  let username = baseUsername;
+  let counter = 1;
+  
+  // Keep trying until we find a unique username
+  while (await User.findOne({ username })) {
+    username = `${baseUsername}${counter}`;
+    counter++;
+    
+    // Prevent infinite loop
+    if (counter > 1000) {
+      username = `${baseUsername}${Date.now()}`;
+      break;
+    }
+  }
+  
+  console.log(`✅ Generated unique username: ${username} (from base: ${baseUsername})`);
+  return username;
+}
+
 export const authOptions = {
   providers: [
     GoogleProvider({
@@ -47,7 +84,6 @@ export const authOptions = {
         try {
           await connectDB();
           
-          // ✅ CRITICAL FIX: Select password field explicitly
           const user = await User.findOne({ email: credentials.email }).select("+password");
           
           if (!user) {
@@ -55,7 +91,6 @@ export const authOptions = {
             throw new Error("Invalid credentials");
           }
 
-          // ✅ Check if password exists (Google users won't have password)
           if (!user.password) {
             console.log("❌ No password set for user:", credentials.email);
             throw new Error("Please login with Google");
@@ -73,7 +108,6 @@ export const authOptions = {
             username: user.username
           });
 
-          // ✅ CRITICAL FIX: Return _id consistently with Google login
           return {
             _id: user._id.toString(),
             id: user._id.toString(),
@@ -94,17 +128,16 @@ export const authOptions = {
 
   session: {
     strategy: "jwt",
-    maxAge: 7 * 24 * 60 * 60, // 7 days
-    updateAge: 24 * 60 * 60, // 24 hours
+    maxAge: 7 * 24 * 60 * 60,
+    updateAge: 24 * 60 * 60,
   },
 
   pages: { 
     signIn: "/",
-    error: "/", // Redirect to home on error
+    error: "/",
   },
 
   callbacks: {
-    // ✅ FIXED JWT callback - Works for BOTH Google & Credentials
     async jwt({ token, account, profile, user, trigger }) {
       console.log("\n=== JWT CALLBACK START ===");
       console.log("Trigger:", trigger);
@@ -118,28 +151,40 @@ export const authOptions = {
 
           if (!dbUser) {
             console.log("📝 Creating new Google user:", profile.email);
-            const baseUsername = profile.email.split("@")[0];
-            let username = baseUsername;
-            let counter = 1;
             
-            while (await User.findOne({ username })) {
-              username = `${baseUsername}${counter}`;
-              counter++;
-            }
+            // ✅ Generate unique username
+            const username = await generateUniqueUsername(profile.email, profile.name);
             
             dbUser = await User.create({
-              name: profile.name || baseUsername,
-              username,
+              name: profile.name || username,
+              username: username,
               email: profile.email,
               image: profile.picture || null,
-              password: null, // No password for Google users
+              password: null,
+              provider: "google",
+              googleId: profile.sub || profile.id,
             });
-            console.log("✅ New Google user created with _id:", dbUser._id.toString());
+            
+            console.log("✅ New Google user created:", {
+              _id: dbUser._id.toString(),
+              username: dbUser.username,
+              email: dbUser.email
+            });
           } else {
-            console.log("✅ Existing Google user found with _id:", dbUser._id.toString());
+            console.log("✅ Existing Google user found:", {
+              _id: dbUser._id.toString(),
+              username: dbUser.username,
+              email: dbUser.email
+            });
+            
+            // ✅ Update image if changed
+            if (profile.picture && profile.picture !== dbUser.image) {
+              dbUser.image = profile.picture;
+              await dbUser.save();
+              console.log("✅ Updated user image");
+            }
           }
 
-          // ✅ Store MongoDB _id consistently
           const mongoId = dbUser._id.toString();
           token._id = mongoId;
           token.id = mongoId;
@@ -153,8 +198,8 @@ export const authOptions = {
           
           console.log("✅ Google token set:", {
             _id: token._id,
-            email: token.email,
-            username: token.username
+            username: token.username,
+            email: token.email
           });
         } catch (error) {
           console.error("❌ Google JWT callback error:", error);
@@ -179,16 +224,15 @@ export const authOptions = {
         
         console.log("✅ Credentials token set:", {
           _id: token._id,
-          email: token.email,
-          username: token.username
+          username: token.username,
+          email: token.email
         });
       }
 
-      // ✅ TOKEN REFRESH (subsequent calls)
+      // ✅ TOKEN REFRESH
       else if (!account && !user) {
         console.log("🔄 Token refresh - ensuring consistency");
         
-        // Ensure all ID fields are consistent
         if (token._id) {
           token.id = token._id;
           token.sub = token._id;
@@ -200,7 +244,6 @@ export const authOptions = {
           token.id = token.sub;
         }
 
-        // Ensure image field is consistent
         if (token.picture && !token.image) {
           token.image = token.picture;
         } else if (token.image && !token.picture) {
@@ -222,10 +265,8 @@ export const authOptions = {
 
       console.log("Token final state:", {
         _id: token._id,
-        id: token.id,
-        sub: token.sub,
-        email: token.email,
         username: token.username,
+        email: token.email,
         provider: token.provider
       });
       console.log("=== JWT CALLBACK END ===\n");
@@ -233,28 +274,19 @@ export const authOptions = {
       return token;
     },
 
-    // ✅ FIXED SESSION callback - Works for BOTH providers
     async session({ session, token }) {
       console.log("\n=== SESSION CALLBACK START ===");
-      console.log("Token in session:", {
-        _id: token._id,
-        id: token.id,
-        email: token.email,
-        provider: token.provider
-      });
+      console.log("Token username:", token.username);
+      console.log("Token email:", token.email);
       
       if (token) {
         session.user = session.user || {};
 
-        // ✅ Use MongoDB _id consistently
         const userId = token._id || token.id || token.sub;
         
-        // Set all ID variations for compatibility
         session.user._id = userId;
         session.user.id = userId;
         session.user.sub = userId;
-        
-        // Set user details
         session.user.username = token.username || null;
         session.user.email = token.email || session.user.email || null;
         session.user.name = token.name || session.user.name || null;
@@ -264,8 +296,8 @@ export const authOptions = {
 
         console.log("✅ Session user final:", {
           _id: session.user._id,
-          email: session.user.email,
           username: session.user.username,
+          email: session.user.email,
           provider: session.user.provider
         });
       }
@@ -278,7 +310,6 @@ export const authOptions = {
       console.log("\n=== SIGNIN CALLBACK ===");
       console.log("Provider:", account?.provider);
       console.log("User email:", user?.email);
-      console.log("User _id:", user?._id);
       console.log("=== SIGNIN CALLBACK END ===\n");
       
       return true;

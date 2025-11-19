@@ -1,4 +1,4 @@
-// src/app/api/user/[username]/route.js
+// src/app/api/user/[username]/route.js - FINAL FIX
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/database/db.js";
 import { User } from "@/lib/models/User.js";
@@ -15,12 +15,18 @@ export async function GET(req, { params }) {
       );
     }
 
-    const user = await User.findOne({ username }).select(
+    // ✅ CRITICAL FIX: Case-insensitive regex search
+    const user = await User.findOne({ 
+      username: { $regex: new RegExp(`^${username}$`, 'i') }
+    }).select(
       "name username email image bio createdAt followers following"
     );
 
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return NextResponse.json({ 
+        error: "User not found",
+        requestedUsername: username 
+      }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -36,6 +42,9 @@ export async function GET(req, { params }) {
     });
   } catch (error) {
     console.error("Error fetching user by username:", error);
-    return NextResponse.json({ error: "Server Error" }, { status: 500 });
+    return NextResponse.json({ 
+      error: "Server Error",
+      details: process.env.NODE_ENV === "development" ? error.message : undefined
+    }, { status: 500 });
   }
 }

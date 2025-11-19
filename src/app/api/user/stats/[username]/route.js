@@ -1,17 +1,12 @@
 // src/app/api/user/stats/[username]/route.js
-// ============================================
-// FIXED VERSION - Added await params for Next.js 15
-
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/database/db.js";
 import { User } from "@/lib/models/User.js";
-import { Blog } from "@/lib/models/Blog.js";
+import { Blog } from "@/lib/models/Blog.js"; // ✅ Fixed import
 
 export async function GET(req, { params }) {
   try {
     await connectDB();
-    
-    // ✅ FIX: Await params
     const { username } = await params;
 
     if (!username) {
@@ -21,34 +16,49 @@ export async function GET(req, { params }) {
       );
     }
 
-    const user = await User.findOne({ username });
+    // ✅ Case-insensitive search
+    const user = await User.findOne({ 
+      username: { $regex: new RegExp(`^${username}$`, 'i') }
+    }).select("_id followers following");
 
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "User not found" },
+        { status: 404 }
+      );
     }
 
-    // Get user's posts
-    const userPosts = await Blog.find({ author: user._id });
-
-    // Calculate stats
-    const totalPosts = userPosts.length;
-    const totalViews = userPosts.reduce((sum, post) => sum + (post.views || 0), 0);
+    // Get user's posts and calculate stats
+    const posts = await Blog.find({ author: user._id });
     
-    // Use new rating system if available, fallback to starRating
-    const totalRating = userPosts.reduce((sum, post) => {
-      return sum + (post.averageRating || post.starRating || 0);
-    }, 0);
-    const avgRating = totalPosts > 0 ? totalRating / totalPosts : 0;
+    const totalPosts = posts.length;
+    const totalViews = posts.reduce((sum, post) => sum + (post.views || 0), 0);
+    
+    // Calculate average rating using the new rating system
+    const postsWithRatings = posts.filter(post => 
+      post.ratings && post.ratings.length > 0
+    );
+    
+    let avgRating = 0;
+    if (postsWithRatings.length > 0) {
+      const totalRating = postsWithRatings.reduce((sum, post) => {
+        return sum + (post.averageRating || 0);
+      }, 0);
+      avgRating = totalRating / postsWithRatings.length;
+    }
 
     return NextResponse.json({
       followers: user.followers?.length || 0,
       following: user.following?.length || 0,
       totalPosts,
       totalViews,
-      avgRating: Math.round(avgRating * 10) / 10, // Round to 1 decimal
+      avgRating: Math.round(avgRating * 100) / 100, // Round to 2 decimals
     });
   } catch (error) {
     console.error("Error fetching user stats:", error);
-    return NextResponse.json({ error: "Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Server Error" },
+      { status: 500 }
+    );
   }
 }

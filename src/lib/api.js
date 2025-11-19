@@ -1,22 +1,11 @@
-// src/lib/api.js - FIXED FOR PRODUCTION (Vercel)
+// src/lib/api.js - COMPLETE FIXED VERSION FOR NEXT.JS 15
 
 class ApiClient {
   constructor() {
-    // ✅ FIX: Use relative URLs in production, absolute in development
-    // This ensures it works on both localhost AND Vercel
-    if (typeof window !== 'undefined') {
-      // Client-side: use relative URLs (works on any domain)
-      this.baseURL = '';
-    } else {
-      // Server-side: use environment variable or empty string
-      this.baseURL = process.env.NEXTAUTH_URL || '';
-    }
-    
-    console.log('🔧 ApiClient initialized with baseURL:', this.baseURL || '(relative)');
+    this.baseURL = process.env.NEXTAUTH_URL || "";
   }
 
   async request(endpoint, options = {}) {
-    // ✅ Always use relative URLs for API routes
     const url = `${this.baseURL}${endpoint}`;
     const headers = options.headers ? { ...options.headers } : {};
     const body = options.body;
@@ -36,14 +25,13 @@ class ApiClient {
     };
 
     try {
-      console.log(`📡 API Request: ${options.method || 'GET'} ${url}`);
       const response = await fetch(url, config);
       const contentType = response.headers.get("content-type") || "";
 
       if (!response.ok) {
         let errorMessage = `Request failed with status ${response.status}`;
         let errorData = null;
-        
+
         try {
           if (contentType.includes("application/json")) {
             errorData = await response.json();
@@ -55,8 +43,7 @@ class ApiClient {
         } catch (parseError) {
           console.error("Error parsing error response:", parseError);
         }
-        
-        console.error(`❌ API Error: ${url}`, errorMessage);
+
         const error = new Error(errorMessage || "An unknown error occurred");
         error.status = response.status;
         error.data = errorData;
@@ -65,14 +52,10 @@ class ApiClient {
 
       if (response.status === 204) return null;
 
-      if (contentType.includes("application/json")) {
-        const data = await response.json();
-        console.log(`✅ API Success: ${url}`);
-        return data;
-      }
+      if (contentType.includes("application/json")) return response.json();
       return response.text();
     } catch (error) {
-      console.error(`❌ API request failed: ${endpoint}`, error);
+      console.error(`API request failed: ${endpoint}`, error);
       if (error.message) {
         throw error;
       } else {
@@ -97,7 +80,7 @@ class ApiClient {
     if (!username) {
       throw new Error("Username is required");
     }
-    
+
     try {
       return await this.request(`/api/user/${encodeURIComponent(username)}`);
     } catch (error) {
@@ -110,7 +93,7 @@ class ApiClient {
     if (!username) {
       throw new Error("Username is required");
     }
-    
+
     try {
       return await this.request(`/api/user/${encodeURIComponent(username)}`);
     } catch (error) {
@@ -123,7 +106,7 @@ class ApiClient {
     if (!username) {
       throw new Error("Username is required");
     }
-    
+
     try {
       return await this.request(`/api/user/stats/${encodeURIComponent(username)}`);
     } catch (error) {
@@ -143,10 +126,9 @@ class ApiClient {
     if (!username) {
       throw new Error("Username is required");
     }
-    
+
     try {
-      // ✅ FIX: Use the correct API endpoint
-      return await this.request(`/api/protected/user/posts/${encodeURIComponent(username)}`);
+      return await this.request(`/api/user/posts/${encodeURIComponent(username)}`);
     } catch (error) {
       console.error(`Failed to fetch posts for ${username}:`, error);
       // Return empty posts array instead of throwing
@@ -171,7 +153,7 @@ class ApiClient {
     if (!targetUserId) {
       throw new Error("Target user ID is required");
     }
-    
+
     try {
       return await this.request("/api/follow", {
         method: "POST",
@@ -215,7 +197,7 @@ class ApiClient {
     if (!id) {
       throw new Error("Blog ID is required");
     }
-    
+
     try {
       return await this.request(`/api/blogs/${id}`);
     } catch (error) {
@@ -240,7 +222,7 @@ class ApiClient {
     if (!postId) {
       throw new Error("Post ID is required");
     }
-    
+
     try {
       return await this.request(`/api/blogs/${postId}`, {
         method: "PATCH",
@@ -256,7 +238,7 @@ class ApiClient {
     if (!postId) {
       throw new Error("Post ID is required");
     }
-    
+
     try {
       return await this.request(`/api/blogs/${postId}`, {
         method: "DELETE",
@@ -267,27 +249,28 @@ class ApiClient {
     }
   }
 
-  // ===== RATING METHODS =====
+  // ===== RATING METHODS (ENHANCED) =====
   async ratePost(postId, rating) {
     if (!postId) {
       throw new Error("Post ID is required");
     }
-    
+
     if (!rating || rating < 1 || rating > 5) {
       throw new Error("Rating must be between 1 and 5");
     }
-    
+
     try {
       const result = await this.request(`/api/blogs/${postId}/rating`, {
         method: "POST",
         body: { rating },
       });
-      
+
       console.log("Rating submitted successfully:", result);
       return result;
     } catch (error) {
       console.error("Rating submission failed:", error);
-      
+
+      // ✅ Provide user-friendly error messages
       if (error.status === 401) {
         throw new Error("Please log in to rate this post");
       } else if (error.status === 403) {
@@ -297,7 +280,7 @@ class ApiClient {
       } else if (error.message.includes("Invalid user ID")) {
         throw new Error("Session error. Please log out and log back in.");
       }
-      
+
       throw new Error(error.message || "Failed to submit rating. Please try again.");
     }
   }
@@ -306,11 +289,12 @@ class ApiClient {
     if (!postId) {
       return { userRating: null, averageRating: 0, ratingCount: 0 };
     }
-    
+
     try {
       return await this.request(`/api/blogs/${postId}/rating`);
     } catch (error) {
       console.error("Failed to fetch user rating:", error);
+      // Don't throw error, just return null rating
       return { userRating: null, averageRating: 0, ratingCount: 0 };
     }
   }
@@ -319,7 +303,7 @@ class ApiClient {
     if (!postId) {
       throw new Error("Post ID is required");
     }
-    
+
     try {
       return await this.request(`/api/blogs/${postId}/rating`, {
         method: "DELETE",
@@ -336,7 +320,7 @@ class ApiClient {
       return await this.request("/api/blogposts/trending");
     } catch (error) {
       console.error("Failed to fetch trending blogs:", error);
-      return [];
+      return { posts: [] };
     }
   }
 
@@ -345,7 +329,7 @@ class ApiClient {
       return await this.request("/api/blogposts/latest");
     } catch (error) {
       console.error("Failed to fetch latest blogs:", error);
-      return [];
+      return { posts: [] };
     }
   }
 
@@ -354,27 +338,31 @@ class ApiClient {
       return await this.request("/api/blogposts/for-you");
     } catch (error) {
       console.error("Failed to fetch for you blogs:", error);
-      return [];
+      return { posts: [] };
     }
   }
 
-  // ===== COMMENT METHODS =====
+  // ===== COMMENT METHODS (IF NEEDED) =====
   async getComments(postId) {
     if (!postId) {
       return [];
     }
-    
+
     try {
-      return await this.request(`/api/comments?postId=${postId}`);
+      return await this.request(`/api/blogs/${postId}/comments`);
     } catch (error) {
       console.error("Failed to fetch comments:", error);
       return [];
     }
   }
 
-  async addComment(commentData) {
+  async addComment(postId, commentData) {
+    if (!postId) {
+      throw new Error("Post ID is required");
+    }
+
     try {
-      return await this.request("/api/comments", {
+      return await this.request(`/api/blogs/${postId}/comments`, {
         method: "POST",
         body: commentData,
       });
@@ -384,17 +372,33 @@ class ApiClient {
     }
   }
 
-  async deleteComment(commentId) {
-    if (!commentId) {
-      throw new Error("Comment ID is required");
+  async deleteComment(postId, commentId) {
+    if (!postId || !commentId) {
+      throw new Error("Post ID and Comment ID are required");
     }
-    
+
     try {
-      return await this.request(`/api/comments?commentId=${commentId}`, {
+      return await this.request(`/api/blogs/${postId}/comments/${commentId}`, {
         method: "DELETE",
       });
     } catch (error) {
       console.error("Failed to delete comment:", error);
+      throw error;
+    }
+  }
+
+  // ===== LIKE METHODS (IF NEEDED) =====
+  async toggleLike(postId) {
+    if (!postId) {
+      throw new Error("Post ID is required");
+    }
+
+    try {
+      return await this.request(`/api/blogs/${postId}/like`, {
+        method: "POST",
+      });
+    } catch (error) {
+      console.error("Failed to toggle like:", error);
       throw error;
     }
   }
@@ -404,7 +408,7 @@ class ApiClient {
     if (!query) {
       return [];
     }
-    
+
     try {
       return await this.request(`/api/search/users?q=${encodeURIComponent(query)}`);
     } catch (error) {
@@ -417,7 +421,7 @@ class ApiClient {
     if (!query) {
       return [];
     }
-    
+
     try {
       return await this.request(`/api/search/posts?q=${encodeURIComponent(query)}`);
     } catch (error) {
