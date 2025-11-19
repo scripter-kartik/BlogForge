@@ -186,12 +186,15 @@ class ApiClient {
   // ===== BLOG METHODS =====
   async getAllPosts() {
     try {
-      return await this.request("/api/blogposts");
-    } catch (error) {
-      console.error("Failed to fetch all posts:", error);
-      return { posts: [] };
+      const res = await fetch("/api/blogposts");
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    } catch (err) {
+      console.error("Failed to fetch all posts:", err);
+      return []; // ← THIS FIXES THE ONE-TIME ERROR
     }
   }
+
 
   async getBlogById(id) {
     if (!id) {
