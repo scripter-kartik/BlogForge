@@ -2,15 +2,65 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import fs from "fs/promises";
-import path from "path";
-import { v4 as uuidv4 } from "uuid";
+import { v2 as cloudinary } from "cloudinary";
 import connectDB from "@/lib/database/db";
 import { User } from "@/lib/models/User";
 import bcrypt from "bcryptjs";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// Helper function to upload image to Cloudinary
+async function uploadToCloudinary(file) {
+  try {
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    
+    return new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: "profile-images",
+          resource_type: "auto",
+          transformation: [
+            { width: 500, height: 500, crop: "fill", gravity: "face" },
+            { quality: "auto" }
+          ]
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      
+      uploadStream.end(buffer);
+    });
+  } catch (error) {
+    console.error("Cloudinary upload error:", error);
+    throw new Error("Failed to upload image to Cloudinary");
+  }
+}
+
+// Helper function to delete image from Cloudinary
+async function deleteFromCloudinary(imageUrl) {
+  try {
+    // Extract public_id from Cloudinary URL
+    const matches = imageUrl.match(/\/profile-images\/([^/.]+)/);
+    if (matches && matches[1]) {
+      const publicId = `profile-images/${matches[1]}`;
+      await cloudinary.uploader.destroy(publicId);
+      console.log("✅ Old image deleted from Cloudinary");
+    }
+  } catch (error) {
+    console.log("⚠️ Could not delete old image from Cloudinary:", error.message);
+  }
+}
 
 export async function POST(req) {
   try {
@@ -35,7 +85,7 @@ export async function POST(req) {
       );
     }
 
-    // ✅ THIRD: Get user ID from session (use _id, not email)
+    // ✅ THIRD: Get user ID from session
     const userId = session.user.id || session.user._id;
     console.log("👤 User ID from session:", userId);
 
@@ -46,7 +96,7 @@ export async function POST(req) {
       );
     }
 
-    // ✅ FOURTH: Find user by ID (more reliable than email)
+    // ✅ FOURTH: Find user by ID
     const user = await User.findById(userId);
     console.log("🔍 Found user:", user ? "Yes" : "No");
 
@@ -62,34 +112,24 @@ export async function POST(req) {
     const formData = await req.formData();
     let imageUrl = user.image;
 
-    // ✅ Handle profile image upload
+    // ✅ Handle profile image upload to Cloudinary
     const profileImage = formData.get("profileImage");
     if (profileImage && profileImage.size > 0) {
       try {
-        const uploadDir = path.join(process.cwd(), "public/uploads");
-        await fs.mkdir(uploadDir, { recursive: true });
+        console.log("📤 Uploading image to Cloudinary...");
+        
+        // Upload new image to Cloudinary
+        const uploadResult = await uploadToCloudinary(profileImage);
+        imageUrl = uploadResult.secure_url;
+        
+        console.log("✅ Image uploaded successfully:", imageUrl);
 
-        const bytes = await profileImage.arrayBuffer();
-        const buffer = Buffer.from(bytes);
-
-        const ext = path.extname(profileImage.name || ".jpg");
-        const safeName = `${uuidv4()}${ext}`;
-        const newPath = path.join(uploadDir, safeName);
-
-        await fs.writeFile(newPath, buffer);
-        imageUrl = `/uploads/${safeName}`;
-
-        // Delete old image if it exists
-        if (user.image && user.image.startsWith("/uploads/")) {
-          const oldImagePath = path.join(process.cwd(), "public", user.image);
-          try {
-            await fs.unlink(oldImagePath);
-          } catch (err) {
-            console.log("Could not delete old image:", err.message);
-          }
+        // Delete old image from Cloudinary (if it exists and is from Cloudinary)
+        if (user.image && user.image.includes("cloudinary.com")) {
+          await deleteFromCloudinary(user.image);
         }
       } catch (uploadError) {
-        console.error("Image upload error:", uploadError);
+        console.error("❌ Image upload error:", uploadError);
         return NextResponse.json(
           { success: false, error: "Failed to upload image" },
           { status: 400 }
