@@ -1,4 +1,3 @@
-// Error Handling Utility - src/lib/errorHandler.js
 export class ApiError extends Error {
   constructor(message, statusCode = 500, isOperational = true) {
     super(message);
@@ -18,7 +17,6 @@ export const handleApiError = (error) => {
     };
   }
 
-  // Handle mongoose validation errors
   if (error.name === "ValidationError") {
     return {
       message: Object.values(error.errors)
@@ -28,7 +26,6 @@ export const handleApiError = (error) => {
     };
   }
 
-  // Handle duplicate key errors
   if (error.code === 11000) {
     const field = Object.keys(error.keyValue)[0];
     return {

@@ -1,4 +1,3 @@
-// src/components/SignupForm.jsx - UPDATED RESPONSIVE
 "use client";
 import { ImCross } from "react-icons/im";
 import { useState } from "react";
@@ -104,7 +103,6 @@ export default function Signup({
       <hr className="border-t-[1px] border-red-500 mb-8" />
 
       <form onSubmit={handleSignup}>
-        {/* Username */}
         <div className="relative mb-7">
           <input
             type="text"
@@ -138,7 +136,6 @@ export default function Signup({
           </label>
         </div>
 
-        {/* Email */}
         <div className="relative mb-7">
           <input
             type="email"
@@ -172,7 +169,6 @@ export default function Signup({
           </label>
         </div>
 
-        {/* Password */}
         <div className="relative mb-7">
           <input
             type="password"
@@ -206,7 +202,6 @@ export default function Signup({
           </label>
         </div>
 
-        {/* Confirm Password */}
         <div className="relative mb-7">
           <input
             type="password"
@@ -240,7 +235,6 @@ export default function Signup({
           </label>
         </div>
 
-        {/* Signup button */}
         <button
           type="submit"
           disabled={loading}
@@ -250,7 +244,6 @@ export default function Signup({
           {loading ? "Creating account..." : "Create Account"}
         </button>
 
-        {/* message */}
         {message && (
           <p
             className={`text-center mb-4 text-sm ${
@@ -264,7 +257,6 @@ export default function Signup({
         )}
       </form>
 
-      {/* OR separator */}
       <div className="flex items-center mb-4">
         <span
           className={`flex-grow border-t ${
@@ -279,7 +271,6 @@ export default function Signup({
         />
       </div>
 
-      {/* Google signup */}
       <button
         onClick={handleGoogleSignup}
         disabled={loading}

@@ -1,4 +1,3 @@
-// src/app/(pages)/write/page.jsx - RESPONSIVE
 "use client";
 
 import Navbar from "../../../components/Navbar.jsx";
@@ -206,13 +205,11 @@ const WritePage = () => {
       />
 
       <div className="flex flex-col lg:flex-row mt-20 sm:mt-24 md:mt-32 lg:mt-44 w-full max-w-[1280px] px-4 sm:px-6 lg:px-8 gap-6 lg:gap-8 xl:gap-12 justify-between">
-        {/* Left Column - Form Inputs */}
         <div
           className={`flex flex-col gap-4 sm:gap-6 items-start w-full lg:w-80 xl:w-96 ${
             isDarkMode ? "text-white" : "text-black"
           } transition-colors duration-500`}
         >
-          {/* Title Input */}
           <div className="relative w-full">
             <input
               className={`w-full h-10 sm:h-12 px-3 py-2 border rounded text-sm sm:text-base ${
@@ -232,7 +229,6 @@ const WritePage = () => {
             </span>
           </div>
 
-          {/* Description Input */}
           <div className="relative w-full">
             <textarea
               className={`w-full h-20 sm:h-24 px-3 py-2 border rounded resize-none text-sm sm:text-base ${
@@ -251,7 +247,6 @@ const WritePage = () => {
             </span>
           </div>
 
-          {/* Tags Input */}
           <input
             className={`w-full h-10 sm:h-12 px-3 py-2 border rounded text-sm sm:text-base ${
               isDarkMode
@@ -265,7 +260,6 @@ const WritePage = () => {
             disabled={publishing}
           />
 
-          {/* Upload Cover Button */}
           <div className="flex items-center gap-2 font-semibold text-sm sm:text-base">
             <GrGallery className="text-base sm:text-lg" />
             <button
@@ -288,7 +282,6 @@ const WritePage = () => {
             disabled={publishing}
           />
 
-          {/* Cover Image Preview */}
           <div
             className={`w-full h-40 sm:h-48 rounded-lg relative overflow-hidden border-2 border-dashed ${
               coverImage
@@ -337,14 +330,12 @@ const WritePage = () => {
             )}
           </div>
 
-          {/* Error Display */}
           {error && (
             <div className="w-full p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
               {error}
             </div>
           )}
 
-          {/* Publish Button */}
           <button
             onClick={handlePublish}
             disabled={publishing || !title.trim() || !description.trim() || !content.trim()}
@@ -366,13 +357,11 @@ const WritePage = () => {
             )}
           </button>
 
-          {/* User Info */}
           <div className="text-xs sm:text-sm text-gray-500 mt-2 sm:mt-4">
             Publishing as: <span className="font-medium">{user?.name}</span>
           </div>
         </div>
 
-        {/* Right Column - Blog Editor */}
         <div className="w-full lg:flex-1 min-h-[400px] sm:min-h-[500px] lg:min-h-[600px] mb-24 lg:mb-0">
           <BlogEditor isDarkMode={isDarkMode} onContentChange={handleContentChange} />
         </div>

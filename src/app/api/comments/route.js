@@ -1,4 +1,3 @@
-// src/app/api/comments/route.js - OPTIMIZED
 import connectDB from "@/lib/database/db.js";
 import { Comment } from "@/lib/models/Comment.js";
 import { Blog } from "@/lib/models/Blog.js";
@@ -12,7 +11,6 @@ export async function POST(req) {
     const body = await req.json();
     const { postId, authorId, content } = body;
 
-    // ✅ Validation
     if (!postId || !authorId || !content?.trim()) {
       return Response.json(
         { error: "Missing required fields: postId, authorId, and content" },
@@ -27,7 +25,6 @@ export async function POST(req) {
       );
     }
 
-    // ✅ OPTIMIZED: Check user existence with lean()
     const userExists = await User.findById(authorId).select('_id').lean();
     if (!userExists) {
       return Response.json(
@@ -36,7 +33,6 @@ export async function POST(req) {
       );
     }
 
-    // ✅ Create comment and update blog count in parallel
     const [comment] = await Promise.all([
       Comment.create({
         postId,
@@ -50,14 +46,13 @@ export async function POST(req) {
       )
     ]);
 
-    // ✅ Populate after creation
     await comment.populate("author", "username name image email");
 
-    console.log("✅ Comment created and blog updated");
+    console.log("Comment created and blog updated");
 
     return Response.json(comment, { status: 201 });
   } catch (err) {
-    console.error("❌ Error creating comment:", err);
+    console.error("Error creating comment:", err);
     return Response.json(
       { error: "Failed to create comment", details: err.message },
       { status: 500 }
@@ -80,14 +75,13 @@ export async function GET(req) {
       return Response.json({ error: "Invalid postId" }, { status: 400 });
     }
 
-    // ✅ OPTIMIZED: Use lean() for faster queries
     const comments = await Comment.find({ postId })
       .populate("author", "username name image")
       .populate("replies.author", "username name image")
       .sort({ createdAt: -1 })
       .lean();
 
-    console.log(`✅ Fetched ${comments.length} comments`);
+    console.log(`Fetched ${comments.length} comments`);
 
     return Response.json(comments, { 
       status: 200,
@@ -96,7 +90,7 @@ export async function GET(req) {
       }
     });
   } catch (err) {
-    console.error("❌ Error fetching comments:", err);
+    console.error("Error fetching comments:", err);
     return Response.json({ error: "Failed to fetch comments" }, { status: 500 });
   }
 }
@@ -112,24 +106,22 @@ export async function DELETE(req) {
       return Response.json({ error: "Invalid commentId" }, { status: 400 });
     }
 
-    // ✅ Delete comment and update blog count in parallel
     const deletedComment = await Comment.findByIdAndDelete(commentId).lean();
 
     if (!deletedComment) {
       return Response.json({ error: "Comment not found" }, { status: 404 });
     }
 
-    // ✅ Update blog count asynchronously (don't wait)
     Blog.findByIdAndUpdate(
       deletedComment.postId,
       { $inc: { commentCount: -1 } }
     ).exec();
 
-    console.log("✅ Comment deleted and blog updated");
+    console.log("Comment deleted and blog updated");
 
     return Response.json({ success: true, message: "Comment deleted" }, { status: 200 });
   } catch (err) {
-    console.error("❌ Error deleting comment:", err);
+    console.error("Error deleting comment:", err);
     return Response.json({ error: "Failed to delete comment" }, { status: 500 });
   }
 }

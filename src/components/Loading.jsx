@@ -6,7 +6,6 @@ export default function Loading() {
   const [dots, setDots] = useState("");
 
   useEffect(() => {
-    // Generate random particle styles only on client
     const generated = Array.from({ length: 20 }).map(() => ({
       width: Math.random() * 4 + 2 + "px",
       height: Math.random() * 4 + 2 + "px",
@@ -29,7 +28,6 @@ export default function Loading() {
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-[#1a0a0e] via-[#1c1d1d] to-[#0f0a0d] z-50 overflow-hidden">
 
-      {/* Background Particles */}
       <div className="absolute inset-0">
         {particles.map((p, i) => (
           <div
@@ -47,7 +45,6 @@ export default function Loading() {
         ))}
       </div>
 
-      {/* Main loader */}
       <div className="relative flex flex-col items-center gap-8">
         <div className="relative w-32 h-32">
           <div className="absolute inset-0 rounded-full bg-[#f75555] opacity-20 blur-2xl animate-pulse" />

@@ -1,4 +1,3 @@
-// src/app/api/blogs/[id]/rating/route.js - FIXED VERSION
 import connectDB from "@/lib/database/db.js";
 import { Blog } from "@/lib/models/Blog.js";
 import { User } from "@/lib/models/User.js";
@@ -66,7 +65,7 @@ export async function POST(req, { params }) {
     const userId = await getMongoUserId(session);
 
     if (!userId) {
-      console.error("❌ FAILED TO GET USER ID:", {
+      console.error("FAILED TO GET USER ID:", {
         sessionUser: session.user,
         email: session.user.email
       });
@@ -83,7 +82,7 @@ export async function POST(req, { params }) {
       );
     }
 
-    console.log("✅ Valid userId extracted:", userId.toString());
+    console.log("Valid userId extracted:", userId.toString());
 
     if (blog.author.equals(userId)) {
       return NextResponse.json(
@@ -99,7 +98,7 @@ export async function POST(req, { params }) {
     if (index !== -1) {
       blog.ratings[index].rating = rating;
       blog.ratings[index].createdAt = new Date();
-      console.log("✅ Updated existing rating");
+      console.log("Updated existing rating");
     } else {
       // Add new rating
       blog.ratings.push({
@@ -107,7 +106,7 @@ export async function POST(req, { params }) {
         rating,
         createdAt: new Date(),
       });
-      console.log("✅ Added new rating");
+      console.log("Added new rating");
     }
 
     await blog.save();
@@ -122,7 +121,7 @@ export async function POST(req, { params }) {
       { status: 200 }
     );
   } catch (err) {
-    console.error("❌ Rating POST error:", err);
+    console.error("Rating POST error:", err);
     return NextResponse.json(
       { 
         error: err.message || "Failed to rate post",

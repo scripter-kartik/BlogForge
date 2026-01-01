@@ -34,7 +34,6 @@ export default function BlogPage() {
   const [replyInputs, setReplyInputs] = useState({});
   const [deletingIds, setDeletingIds] = useState(new Set());
 
-  // ✅ NEW: Rating state
   const [userRating, setUserRating] = useState(null);
   const [ratingStats, setRatingStats] = useState({
     averageRating: 0,
@@ -43,7 +42,6 @@ export default function BlogPage() {
 
   const isAuthor = blog?.author?._id === user?.id || blog?.author?._id === user?._id;
 
-  // Fetch blog
   useEffect(() => {
     async function fetchBlog() {
       if (!params.id) return;
@@ -57,7 +55,6 @@ export default function BlogPage() {
         const data = await res.json();
         setBlog(data);
         
-        // ✅ Set initial rating stats
         setRatingStats({
           averageRating: data.averageRating || 0,
           ratingCount: data.ratingCount || 0
@@ -74,7 +71,6 @@ export default function BlogPage() {
     fetchBlog();
   }, [params.id]);
 
-  // ✅ Fetch user's rating
   useEffect(() => {
     async function fetchUserRating() {
       if (!params.id || !isAuthenticated) return;
@@ -89,7 +85,6 @@ export default function BlogPage() {
     fetchUserRating();
   }, [params.id, isAuthenticated]);
 
-  // Fetch comments
   useEffect(() => {
     async function fetchComments() {
       if (!params.id) return;
@@ -106,7 +101,6 @@ export default function BlogPage() {
     fetchComments();
   }, [params.id]);
 
-  // ✅ Handle rating submission
   const handleRate = async (rating) => {
     if (!isAuthenticated) {
       setIsLoginActive(true);
@@ -116,7 +110,6 @@ export default function BlogPage() {
     try {
       const result = await apiClient.ratePost(params.id, rating);
       
-      // Update local state
       setUserRating(rating);
       setRatingStats({
         averageRating: result.averageRating,
@@ -343,7 +336,6 @@ export default function BlogPage() {
       </div>
 
       <div className="max-w-[1280px] mx-auto pt-20 sm:pt-24 md:pt-28 px-4 sm:px-6 lg:px-8 pb-12 sm:pb-16">
-        {/* Blog Header */}
         <div className="mb-6 sm:mb-8">
           <Link
             href="/"
@@ -390,7 +382,6 @@ export default function BlogPage() {
             </p>
           )}
 
-          {/* ✅ RATING COMPONENT */}
           <div className="mb-4">
             <StarRating
               postId={params.id}
@@ -406,7 +397,6 @@ export default function BlogPage() {
             />
           </div>
 
-          {/* Blog Metadata */}
           <div
             className={`flex flex-wrap items-center gap-3 sm:gap-4 lg:gap-6 text-xs sm:text-sm ${
               isDarkMode ? "text-gray-400" : "text-gray-600"
@@ -451,7 +441,6 @@ export default function BlogPage() {
           </div>
         </div>
 
-        {/* Blog Content */}
         {blog.content && (
           <div
             className={`max-w-none mb-8 sm:mb-12 leading-relaxed whitespace-pre-wrap text-sm sm:text-base ${
@@ -466,7 +455,6 @@ export default function BlogPage() {
           className={`my-6 sm:my-8 ${isDarkMode ? "border-gray-700" : "border-gray-300"}`}
         />
 
-        {/* Comments Section */}
         <div className="mt-6 sm:mt-8">
           <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Comments ({comments.length})</h2>
 
@@ -513,7 +501,6 @@ export default function BlogPage() {
             </div>
           )}
 
-          {/* Comments List */}
           <div className="flex flex-col gap-3 sm:gap-4">
             {comments.length === 0 ? (
               <p
@@ -585,7 +572,6 @@ export default function BlogPage() {
                     </div>
                   </div>
 
-                  {/* Replies */}
                   <div className="ml-8 sm:ml-10 md:ml-12 mt-2 sm:mt-3 flex flex-col gap-2 sm:gap-3">
                     {(comment.replies || []).map((reply) => (
                       <div key={reply._id} className="flex gap-2 sm:gap-3">

@@ -1,4 +1,3 @@
-// src/components/Home.jsx - RESPONSIVE VERSION
 "use client";
 
 import { useState, useEffect } from "react";
@@ -46,7 +45,6 @@ export default function Home({ isDarkMode, setIsLoginActive, setIsSignupActive }
     router.push("/write");
   };
 
-  // Show loading state
   if (authLoading || (isAuthenticated && loading)) {
     return (
       <div className="w-full max-w-7xl px-4 sm:px-6 lg:px-8 mt-20 sm:mt-28 lg:mt-32 h-auto flex justify-center items-center">
@@ -55,7 +53,6 @@ export default function Home({ isDarkMode, setIsLoginActive, setIsSignupActive }
     );
   }
 
-  // Show error state
   if (error) {
     return (
       <div className="w-full max-w-7xl px-4 sm:px-6 lg:px-8 mt-20 sm:mt-28 lg:mt-32 h-auto">
@@ -141,7 +138,6 @@ export default function Home({ isDarkMode, setIsLoginActive, setIsSignupActive }
             👋 <span onClick={() => setIsLoginActive(true)} className="underline">Login</span> or <span onClick={() => setIsSignupActive(true)} children className="underline">Sign up</span> fot best experience
           </div>
 
-          {/* IMAGE FIRST ON MOBILE, LAST ON DESKTOP */}
           <div className="order-1 lg:order-2 flex justify-center lg:justify-end w-full lg:w-auto">
             <img
               className="w-96 h-80 object-contain"
@@ -150,7 +146,6 @@ export default function Home({ isDarkMode, setIsLoginActive, setIsSignupActive }
             />
           </div>
 
-          {/* TEXT AFTER IMAGE ON MOBILE, FIRST ON DESKTOP */}
           <div
             className={`order-2 lg:order-1 flex flex-col gap-4 sm:gap-6 items-center lg:items-start mt-0 sm:mt-4 lg:mt-[28px] ${isDarkMode ? "text-white" : "text-black"
               } text-center lg:text-left`}

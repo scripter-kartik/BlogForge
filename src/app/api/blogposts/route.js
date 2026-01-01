@@ -1,16 +1,13 @@
-// src/app/api/blogposts/route.js - OPTIMIZED
 import dbConnect from "@/lib/database/db.js";
 import { Blog } from "@/lib/models/Blog.js";
 import { NextResponse } from "next/server";
 
-// ✅ In-memory cache (for development - use Redis in production)
 let postsCache = null;
 let cacheTimestamp = 0;
-const CACHE_DURATION = 60 * 1000; // 1 minute
+const CACHE_DURATION = 60 * 1000; 
 
 export async function GET() {
   try {
-    // ✅ Return cached data if fresh
     const now = Date.now();
     if (postsCache && (now - cacheTimestamp) < CACHE_DURATION) {
       console.log("📦 Returning cached posts");
@@ -22,21 +19,17 @@ export async function GET() {
     }
 
     await dbConnect();
-
-    // ✅ OPTIMIZED: Use lean() for faster queries (plain JS objects)
-    // ✅ Only select needed fields to reduce payload
     const posts = await Blog.find()
       .select('title description coverImage author tags category averageRating ratingCount views commentCount estimatedRead createdAt updatedAt')
       .populate("author", "name username image")
       .sort({ createdAt: -1 })
-      .lean() // ✅ 2-3x faster than Mongoose documents
+      .lean() 
       .exec();
 
-    // ✅ Cache the results
     postsCache = posts;
     cacheTimestamp = now;
 
-    console.log(`✅ Fetched ${posts.length} posts from DB`);
+    console.log(`Fetched ${posts.length} posts from DB`);
 
     return NextResponse.json(posts, {
       headers: {
@@ -44,7 +37,7 @@ export async function GET() {
       }
     });
   } catch (error) {
-    console.error("❌ Error fetching posts:", error);
+    console.error("Error fetching posts:", error);
     return NextResponse.json(
       { error: "Failed to fetch posts" }, 
       { status: 500 }
@@ -60,15 +53,14 @@ export async function POST(request) {
     const newPost = await Blog.create(body);
     await newPost.populate("author", "name username image");
 
-    // ✅ Invalidate cache when new post is created
     postsCache = null;
     cacheTimestamp = 0;
 
-    console.log("✅ New post created, cache invalidated");
+    console.log("New post created, cache invalidated");
 
     return NextResponse.json(newPost, { status: 201 });
   } catch (error) {
-    console.error("❌ Error creating post:", error);
+    console.error("Error creating post:", error);
     return NextResponse.json(
       { error: error.message }, 
       { status: 500 }

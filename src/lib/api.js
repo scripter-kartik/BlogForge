@@ -1,5 +1,3 @@
-// src/lib/api.js - COMPLETE FIXED VERSION FOR NEXT.JS 15
-
 class ApiClient {
   constructor() {
     this.baseURL = process.env.NEXTAUTH_URL || "";
@@ -66,7 +64,6 @@ class ApiClient {
     }
   }
 
-  // ===== USER METHODS =====
   async getUserInfo() {
     try {
       return await this.request("/api/user/home");
@@ -111,7 +108,6 @@ class ApiClient {
       return await this.request(`/api/user/stats/${encodeURIComponent(username)}`);
     } catch (error) {
       console.error(`Failed to fetch stats for ${username}:`, error);
-      // Return default stats instead of throwing
       return {
         followers: 0,
         following: 0,
@@ -131,7 +127,6 @@ class ApiClient {
       return await this.request(`/api/user/posts/${encodeURIComponent(username)}`);
     } catch (error) {
       console.error(`Failed to fetch posts for ${username}:`, error);
-      // Return empty posts array instead of throwing
       return { posts: [], count: 0 };
     }
   }
@@ -148,7 +143,6 @@ class ApiClient {
     }
   }
 
-  // ===== FOLLOW METHODS =====
   async toggleFollow(targetUserId) {
     if (!targetUserId) {
       throw new Error("Target user ID is required");
@@ -183,7 +177,6 @@ class ApiClient {
     }
   }
 
-  // ===== BLOG METHODS =====
   async getAllPosts() {
     try {
       const res = await fetch("/api/blogposts");
@@ -191,7 +184,7 @@ class ApiClient {
       return Array.isArray(data) ? data : [];
     } catch (err) {
       console.error("Failed to fetch all posts:", err);
-      return []; // ← THIS FIXES THE ONE-TIME ERROR
+      return []; 
     }
   }
 
@@ -252,7 +245,6 @@ class ApiClient {
     }
   }
 
-  // ===== RATING METHODS (ENHANCED) =====
   async ratePost(postId, rating) {
     if (!postId) {
       throw new Error("Post ID is required");
@@ -273,7 +265,6 @@ class ApiClient {
     } catch (error) {
       console.error("Rating submission failed:", error);
 
-      // ✅ Provide user-friendly error messages
       if (error.status === 401) {
         throw new Error("Please log in to rate this post");
       } else if (error.status === 403) {
@@ -297,7 +288,6 @@ class ApiClient {
       return await this.request(`/api/blogs/${postId}/rating`);
     } catch (error) {
       console.error("Failed to fetch user rating:", error);
-      // Don't throw error, just return null rating
       return { userRating: null, averageRating: 0, ratingCount: 0 };
     }
   }
@@ -317,7 +307,6 @@ class ApiClient {
     }
   }
 
-  // ===== TRENDING/LATEST/FOR YOU =====
   async getTrendingBlogs() {
     try {
       return await this.request("/api/blogposts/trending");
@@ -345,7 +334,6 @@ class ApiClient {
     }
   }
 
-  // ===== COMMENT METHODS (IF NEEDED) =====
   async getComments(postId) {
     if (!postId) {
       return [];
@@ -390,7 +378,6 @@ class ApiClient {
     }
   }
 
-  // ===== LIKE METHODS (IF NEEDED) =====
   async toggleLike(postId) {
     if (!postId) {
       throw new Error("Post ID is required");
@@ -406,7 +393,6 @@ class ApiClient {
     }
   }
 
-  // ===== SEARCH METHODS =====
   async searchUsers(query) {
     if (!query) {
       return [];

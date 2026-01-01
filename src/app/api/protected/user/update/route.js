@@ -1,4 +1,3 @@
-// src/app/api/protected/user/update/route.js
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
@@ -10,14 +9,12 @@ import bcrypt from "bcryptjs";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-// Configure Cloudinary with validation
 const cloudinaryConfig = {
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 };
 
-// Validate Cloudinary config
 const isCloudinaryConfigured = () => {
   return cloudinaryConfig.cloud_name && 
          cloudinaryConfig.api_key && 
@@ -31,7 +28,6 @@ if (isCloudinaryConfigured()) {
   console.warn("⚠️ Cloudinary not configured. Image uploads will fail.");
 }
 
-// Helper function to upload image to Cloudinary
 async function uploadToCloudinary(file) {
   if (!isCloudinaryConfigured()) {
     throw new Error("Cloudinary is not configured. Please check your environment variables.");
@@ -53,10 +49,10 @@ async function uploadToCloudinary(file) {
         },
         (error, result) => {
           if (error) {
-            console.error("❌ Cloudinary upload error:", error);
+            console.error("Cloudinary upload error:", error);
             reject(error);
           } else {
-            console.log("✅ Cloudinary upload success:", result.secure_url);
+            console.log("Cloudinary upload success:", result.secure_url);
             resolve(result);
           }
         }
@@ -65,15 +61,14 @@ async function uploadToCloudinary(file) {
       uploadStream.end(buffer);
     });
   } catch (error) {
-    console.error("❌ Cloudinary upload error:", error);
+    console.error("Cloudinary upload error:", error);
     throw new Error(`Failed to upload image: ${error.message}`);
   }
 }
 
-// Helper function to delete image from Cloudinary
 async function deleteFromCloudinary(imageUrl) {
   if (!imageUrl || !imageUrl.includes("cloudinary.com")) {
-    return; // Skip if not a Cloudinary URL
+    return; 
   }
 
   try {
@@ -84,18 +79,16 @@ async function deleteFromCloudinary(imageUrl) {
       console.log("✅ Old image deleted from Cloudinary");
     }
   } catch (error) {
-    console.log("⚠️ Could not delete old image from Cloudinary:", error.message);
+    console.log("Could not delete old image from Cloudinary:", error.message);
   }
 }
 
 export async function POST(req) {
   try {
-    // Connect to database
     await connectDB();
 
-    // Get session
     const session = await getServerSession(authOptions);
-    console.log("📌 Session exists:", !!session);
+    console.log("Session exists:", !!session);
 
     if (!session || !session.user) {
       return NextResponse.json(
@@ -104,7 +97,6 @@ export async function POST(req) {
       );
     }
 
-    // Get user ID from session
     const userId = session.user.id || session.user._id;
     console.log("👤 User ID from session:", userId);
 
@@ -115,31 +107,27 @@ export async function POST(req) {
       );
     }
 
-    // Find user by ID
     const user = await User.findById(userId);
     console.log("🔍 Found user:", user ? "Yes" : "No");
 
     if (!user) {
-      console.error("❌ User not found for ID:", userId);
+      console.error("User not found for ID:", userId);
       return NextResponse.json(
         { success: false, error: "User not found" },
         { status: 404 }
       );
     }
 
-    // Parse form data
     const formData = await req.formData();
     let imageUrl = user.image;
 
-    // Handle profile image upload
     const profileImage = formData.get("profileImage");
     if (profileImage && profileImage.size > 0) {
       try {
-        console.log("📤 Uploading image to Cloudinary...");
-        console.log("📦 File size:", profileImage.size, "bytes");
-        console.log("📦 File type:", profileImage.type);
+        console.log("Uploading image to Cloudinary...");
+        console.log("File size:", profileImage.size, "bytes");
+        console.log("File type:", profileImage.type);
         
-        // Validate file size (5MB max)
         if (profileImage.size > 5 * 1024 * 1024) {
           return NextResponse.json(
             { success: false, error: "Image must be less than 5MB" },
@@ -147,7 +135,6 @@ export async function POST(req) {
           );
         }
         
-        // Validate file type
         const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
         if (!allowedTypes.includes(profileImage.type)) {
           return NextResponse.json(
@@ -156,18 +143,16 @@ export async function POST(req) {
           );
         }
         
-        // Upload new image to Cloudinary
         const uploadResult = await uploadToCloudinary(profileImage);
         imageUrl = uploadResult.secure_url;
         
-        console.log("✅ Image uploaded successfully:", imageUrl);
+        console.log("Image uploaded successfully:", imageUrl);
 
-        // Delete old image from Cloudinary (if it exists)
         if (user.image && user.image.includes("cloudinary.com")) {
           await deleteFromCloudinary(user.image);
         }
       } catch (uploadError) {
-        console.error("❌ Image upload error:", uploadError);
+        console.error("Image upload error:", uploadError);
         return NextResponse.json(
           { 
             success: false, 
@@ -178,13 +163,11 @@ export async function POST(req) {
       }
     }
 
-    // Get form fields
     const name = formData.get("name")?.trim();
     const bio = formData.get("bio")?.trim() || "";
     const password = formData.get("password")?.trim();
     const email = formData.get("email")?.trim();
 
-    // Validation
     if (name && name.length === 0) {
       return NextResponse.json(
         { success: false, error: "Name cannot be empty" },
@@ -206,7 +189,6 @@ export async function POST(req) {
       );
     }
 
-    // Check if email is already taken
     if (email && email !== user.email) {
       const existingUser = await User.findOne({ email });
       if (existingUser) {
@@ -218,21 +200,17 @@ export async function POST(req) {
       user.email = email;
     }
 
-    // Update fields
     if (name) user.name = name;
     user.bio = bio;
     user.image = imageUrl;
 
-    // Update password only if provided
     if (password) {
       user.password = await bcrypt.hash(password, 10);
     }
 
-    // Save user
     const updatedUser = await user.save();
     console.log("✅ User updated successfully");
 
-    // Return updated user data
     return NextResponse.json(
       {
         success: true,
@@ -249,7 +227,7 @@ export async function POST(req) {
       { status: 200 }
     );
   } catch (error) {
-    console.error("❌ Profile update error:", error);
+    console.error("Profile update error:", error);
     return NextResponse.json(
       {
         success: false,

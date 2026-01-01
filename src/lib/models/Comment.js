@@ -1,5 +1,3 @@
-// src/lib/models/Comment.js
-// ============================================
 import mongoose from "mongoose";
 
 const ReplySchema = new mongoose.Schema(
@@ -20,7 +18,6 @@ const CommentSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
-// Index for faster queries
 CommentSchema.index({ postId: 1, createdAt: -1 });
 
 export const Comment = mongoose.models.Comment || mongoose.model("Comment", CommentSchema);

@@ -1,4 +1,3 @@
-// src/components/FollowersModal.jsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -31,13 +30,11 @@ export default function FollowersModal({
       try {
         setLoading(true);
 
-        // Fetch current user's following list
         const currentUserRes = await fetch("/api/user/home");
         const currentUserData = await currentUserRes.json();
         const currentUserFollowing = currentUserData.following || [];
 
         const userPromises = userIds.map((userId) => {
-          // Convert ObjectId to string if needed
           const id = typeof userId === "object" ? userId.toString() : userId;
           return fetch(`/api/user/by-id/${id}`)
             .then((res) => res.json())
@@ -51,7 +48,6 @@ export default function FollowersModal({
         const validUsers = fetchedUsers.filter((u) => u && !u.error);
         setUsers(validUsers);
 
-        // Initialize following states based on current user's following list
         const states = {};
         validUsers.forEach((user) => {
           const isFollowing = currentUserFollowing.some(
@@ -95,7 +91,6 @@ export default function FollowersModal({
           isDarkMode ? "bg-[#2D2D2D] text-white" : "bg-white text-black"
         } rounded-lg shadow-lg w-96 max-h-96 flex flex-col`}
       >
-        {/* Header */}
         <div
           className={`flex justify-between items-center p-4 border-b ${
             isDarkMode ? "border-gray-700" : "border-gray-300"
@@ -110,7 +105,6 @@ export default function FollowersModal({
           </button>
         </div>
 
-        {/* Content */}
         <div className="overflow-y-auto flex-1">
           {loading ? (
             <div className="flex items-center justify-center h-32">

@@ -1,5 +1,3 @@
-// src/lib/profileImage.js
-
 export function getRandomProfileImage(userImage, username) {
   if (userImage) {
     return userImage;

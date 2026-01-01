@@ -1,9 +1,6 @@
-// src/app/api/comments/[commentId]/replies/[replyId]/route.js
-// ============================================
 import connectDB from "@/lib/database/db.js";
 import { Comment } from "@/lib/models/Comment.js";
 
-// DELETE a specific reply
 export async function DELETE(req, { params }) {
   await connectDB();
   try {
@@ -16,7 +13,6 @@ export async function DELETE(req, { params }) {
       );
     }
 
-    // Remove reply from comment
     const updatedComment = await Comment.findByIdAndUpdate(
       commentId,
       { $pull: { replies: { _id: replyId } } },

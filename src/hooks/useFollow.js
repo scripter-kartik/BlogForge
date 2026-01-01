@@ -1,4 +1,3 @@
-// src/hooks/useFollow.js
 "use client";
 
 import { useState } from "react";
@@ -8,7 +7,6 @@ export function useFollow() {
   const [error, setError] = useState(null);
   const [followingState, setFollowingState] = useState({});
 
-  // Removed unused 'currentIsFollowing' parameter
   const toggleFollow = async (targetUserId) => {
     try {
       setLoading(true);

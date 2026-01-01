@@ -1,8 +1,7 @@
-// src/app/api/user/stats/[username]/route.js
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/database/db.js";
 import { User } from "@/lib/models/User.js";
-import { Blog } from "@/lib/models/Blog.js"; // ✅ Fixed import
+import { Blog } from "@/lib/models/Blog.js"; 
 
 export async function GET(req, { params }) {
   try {
@@ -16,7 +15,6 @@ export async function GET(req, { params }) {
       );
     }
 
-    // ✅ Case-insensitive search
     const user = await User.findOne({ 
       username: { $regex: new RegExp(`^${username}$`, 'i') }
     }).select("_id followers following");
@@ -28,13 +26,11 @@ export async function GET(req, { params }) {
       );
     }
 
-    // Get user's posts and calculate stats
     const posts = await Blog.find({ author: user._id });
     
     const totalPosts = posts.length;
     const totalViews = posts.reduce((sum, post) => sum + (post.views || 0), 0);
     
-    // Calculate average rating using the new rating system
     const postsWithRatings = posts.filter(post => 
       post.ratings && post.ratings.length > 0
     );
@@ -52,7 +48,7 @@ export async function GET(req, { params }) {
       following: user.following?.length || 0,
       totalPosts,
       totalViews,
-      avgRating: Math.round(avgRating * 100) / 100, // Round to 2 decimals
+      avgRating: Math.round(avgRating * 100) / 100, 
     });
   } catch (error) {
     console.error("Error fetching user stats:", error);

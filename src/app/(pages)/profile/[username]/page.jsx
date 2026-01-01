@@ -185,22 +185,18 @@ export default function Profile() {
       // 5. Fetch fresh data from API to confirm
       console.log("🔄 Refreshing from database...");
       await refreshUser();
-
-      // 6. Set localStorage flag to trigger Navbar refresh
       localStorage.setItem('profileImageUpdated', Date.now().toString());
       window.dispatchEvent(new Event('storage'));
 
       setSuccess("Profile image updated!");
       setError("");
-
-      // 7. Hard reload after a short delay to ensure everything syncs
       setTimeout(() => {
         console.log("🔄 Reloading page to apply changes everywhere...");
         window.location.reload();
       }, 1000);
 
     } catch (err) {
-      console.error("❌ Upload error:", err);
+      console.error("Upload error:", err);
       setError(err.message || "Error uploading image");
     } finally {
       setSaving(false);
@@ -264,9 +260,8 @@ export default function Profile() {
         throw new Error(data.error || "Failed to update profile");
       }
 
-      console.log("✅ Profile updated:", data.user);
+      console.log("Profile updated:", data.user);
 
-      // Update all sources
       const updatedData = {
         name: data.user.name,
         email: data.user.email,
@@ -275,33 +270,28 @@ export default function Profile() {
         _forceRefresh: Date.now(),
       };
 
-      // 1. Update local state
       setUser((prev) => ({
         ...prev,
         ...updatedData,
       }));
 
-      // 2. Update global context
       updateUser(updatedData);
 
-      // 3. Update session
       console.log("🔄 Updating session...");
       await updateSession();
 
-      // 4. Refresh from database
       await refreshUser();
 
       setSuccess("Profile updated successfully!");
       setFormData((prev) => ({ ...prev, password: "" }));
       setError("");
 
-      // Reload after a delay
       setTimeout(() => {
         console.log("🔄 Reloading to apply changes...");
         window.location.reload();
       }, 1500);
     } catch (error) {
-      console.error("❌ Profile update error:", error);
+      console.error("Profile update error:", error);
       setError(error.message || "Failed to update profile");
     } finally {
       setSaving(false);
@@ -458,7 +448,6 @@ export default function Profile() {
             )}
           </div>
 
-          {/* Profile Details */}
           <div className="flex flex-col gap-4 items-start flex-1 w-full">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 sm:mb-4">
               {isOwnProfile ? `Welcome, ${user?.name || "User"}` : user?.name}
@@ -466,7 +455,6 @@ export default function Profile() {
 
             {isOwnProfile ? (
               <>
-                {/* Editable fields */}
                 {["username", "email", "name", "password", "bio"].map((field) => (
                   <div className="flex flex-col w-full" key={field}>
                     <label
@@ -558,7 +546,6 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* User posts */}
         <div className="mt-8 sm:mt-12 lg:mt-16 w-full mb-24 sm:mb-28">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 justify-between mb-6 sm:mb-10">
             <h1 className={`${isDarkMode ? "text-white" : "text-black"

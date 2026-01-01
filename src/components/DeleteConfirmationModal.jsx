@@ -1,4 +1,3 @@
-// src/components/DeleteConfirmationModal.jsx
 "use client";
 
 import { useState } from "react";
@@ -68,9 +67,7 @@ export default function DeleteConfirmationModal({
           </button>
         )}
 
-        {/* Modal Content */}
         <div className="p-6 sm:p-8">
-          {/* Icon */}
           <div className="flex justify-center mb-4">
             <div className="relative">
               <div className="absolute inset-0 bg-red-500 opacity-20 rounded-full animate-ping"></div>
@@ -80,21 +77,18 @@ export default function DeleteConfirmationModal({
             </div>
           </div>
 
-          {/* Title */}
           <h2 className={`text-xl sm:text-2xl font-bold text-center mb-3 ${
             isDarkMode ? "text-white" : "text-black"
           }`}>
             {title}
           </h2>
 
-          {/* Message */}
           <p className={`text-center mb-6 text-sm sm:text-base ${
             isDarkMode ? "text-gray-300" : "text-gray-600"
           }`}>
             {message}
           </p>
 
-          {/* Warning Box */}
           <div className={`p-4 rounded-lg mb-6 border ${
             isDarkMode 
               ? "bg-red-900 bg-opacity-20 border-red-800" 
@@ -108,7 +102,6 @@ export default function DeleteConfirmationModal({
             </p>
           </div>
 
-          {/* Confirmation Input */}
           <div className="mb-6">
             <label className={`block text-sm font-medium mb-2 ${
               isDarkMode ? "text-gray-300" : "text-gray-700"
@@ -143,7 +136,6 @@ export default function DeleteConfirmationModal({
             )}
           </div>
 
-          {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={handleClose}

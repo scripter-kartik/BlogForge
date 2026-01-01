@@ -48,7 +48,6 @@ export default function SearchPage({ isDarkMode }) {
 
   return (
     <div className="w-full max-w-7xl px-4 sm:px-6 lg:px-8 mt-24 sm:mt-28 lg:mt-32 mb-20">
-      {/* HEADER */}
       <div className="flex flex-col gap-2 mb-10">
         <h1
           className={`${textClass} text-3xl sm:text-4xl font-bold tracking-tight`}
@@ -63,7 +62,6 @@ export default function SearchPage({ isDarkMode }) {
         </p>
       </div>
 
-      {/* LOADING */}
       {loading && (
         <div className="flex flex-col gap-4 mt-10">
           {[...Array(3)].map((_, i) => (
@@ -75,17 +73,14 @@ export default function SearchPage({ isDarkMode }) {
         </div>
       )}
 
-      {/* ERROR */}
       {error && (
         <p className="text-red-500 text-center bg-red-50 border border-red-200 p-4 rounded-xl mt-6">
           {error}
         </p>
       )}
 
-      {/* RESULTS */}
       {!loading && !error && (
         <>
-          {/* POSTS */}
           <div className="mt-14">
             <h2
               className={`${textClass} text-2xl sm:text-3xl font-bold mb-6 flex items-center`}
@@ -141,7 +136,6 @@ export default function SearchPage({ isDarkMode }) {
             )}
           </div>
 
-          {/* USERS */}
           <div className="mt-16">
             <h2
               className={`${textClass} text-2xl sm:text-3xl font-bold mb-6 flex items-center`}
@@ -186,7 +180,6 @@ export default function SearchPage({ isDarkMode }) {
             )}
           </div>
 
-          {/* EMPTY STATE */}
           {results.posts.length === 0 &&
             results.users.length === 0 &&
             !loading && (

@@ -49,10 +49,8 @@ export default function StarRating({
   const renderStars = () => {
     const stars = [];
     
-    // ✅ FIX: Use average rating for display, not user's rating
     const displayRating = hoveredRating || rating;
 
-    // Size classes
     const sizeClasses = {
       sm: "text-sm",
       md: "text-lg",
@@ -96,13 +94,9 @@ export default function StarRating({
           <StarIcon
             className={`
               ${
-                // ✅ FIX: Show red color ONLY for stars the current user rated
                 isUserRated && userCurrentRating !== null ? "text-[#f75555]" :
-                // Show yellow for hovered or filled (average rating)
                 (isFilled || isHovered) ? "text-yellow-500" : 
-                // Show yellow for half stars
                 isHalf ? "text-yellow-500" :
-                // Show gray for empty stars
                 isDarkMode ? "text-gray-600" : "text-gray-300"
               }
               transition-colors duration-200
@@ -134,7 +128,6 @@ export default function StarRating({
         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#f75555]"></div>
       )}
 
-      {/* Helper text */}
       {!readonly && isAuthenticated && !isAuthor && (
         <span className={`text-xs ${isDarkMode ? "text-gray-500" : "text-gray-500"}`}>
           {userCurrentRating ? `You rated: ${userCurrentRating} ⭐` : "Click to rate"}

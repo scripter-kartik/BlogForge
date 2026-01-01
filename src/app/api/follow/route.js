@@ -1,4 +1,3 @@
-// src/app/api/follow/route.js
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -24,19 +23,16 @@ export async function POST(request) {
       );
     }
 
-    // Get current user
     const currentUser = await User.findOne({ email: session.user.email });
     if (!currentUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Get target user
     const targetUser = await User.findById(targetUserId);
     if (!targetUser) {
       return NextResponse.json({ error: "Target user not found" }, { status: 404 });
     }
 
-    // Prevent following self
     if (currentUser._id.toString() === targetUserId) {
       return NextResponse.json(
         { error: "You cannot follow yourself" },
@@ -44,7 +40,6 @@ export async function POST(request) {
       );
     }
 
-    // Initialize arrays if they don't exist
     if (!currentUser.following) {
       currentUser.following = [];
     }
@@ -52,13 +47,11 @@ export async function POST(request) {
       targetUser.followers = [];
     }
 
-    // Check if already following
     const isFollowing = currentUser.following.some(
       (id) => id.toString() === targetUserId
     );
 
     if (isFollowing) {
-      // Unfollow
       currentUser.following = currentUser.following.filter(
         (id) => id.toString() !== targetUserId
       );
@@ -66,12 +59,10 @@ export async function POST(request) {
         (id) => id.toString() !== currentUser._id.toString()
       );
     } else {
-      // Follow
       currentUser.following.push(targetUserId);
       targetUser.followers.push(currentUser._id);
     }
 
-    // Mark fields as modified before saving
     currentUser.markModified("following");
     targetUser.markModified("followers");
 

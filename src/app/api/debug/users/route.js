@@ -1,11 +1,8 @@
-// src/app/api/debug/users/route.js
-// ⚠️ REMOVE THIS FILE IN PRODUCTION - FOR DEBUGGING ONLY
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/database/db.js";
 import { User } from "@/lib/models/User.js";
 
 export async function GET(req) {
-  // ⚠️ Add security check - only allow in development
   if (process.env.NODE_ENV === "production") {
     return NextResponse.json(
       { error: "Not available in production" },
@@ -17,7 +14,6 @@ export async function GET(req) {
     await connectDB();
     console.log("✅ Database connected");
 
-    // Get all users (limited to essential fields)
     const users = await User.find({})
       .select("name username email createdAt provider")
       .limit(20)

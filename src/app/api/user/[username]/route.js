@@ -1,4 +1,3 @@
-// src/app/api/user/[username]/route.js - FINAL FIX
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/database/db.js";
 import { User } from "@/lib/models/User.js";
@@ -15,7 +14,6 @@ export async function GET(req, { params }) {
       );
     }
 
-    // ✅ CRITICAL FIX: Case-insensitive regex search
     const user = await User.findOne({ 
       username: { $regex: new RegExp(`^${username}$`, 'i') }
     }).select(

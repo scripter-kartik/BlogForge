@@ -1,4 +1,3 @@
-// src/app/api/suggested-users/route.js - OPTIMIZED
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -6,7 +5,6 @@ import connectDB from "@/lib/database/db.js";
 import { User } from "@/lib/models/User.js";
 import { Blog } from "@/lib/models/Blog.js";
 
-// ✅ Cache for suggested users
 let suggestedCache = null;
 let cacheTimestamp = 0;
 const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
@@ -20,7 +18,6 @@ export async function GET() {
     let currentUserId = null;
     let currentUserFollowing = [];
 
-    // Get current user if authenticated
     if (session?.user?.email) {
       const currentUser = await User.findOne({ email: session.user.email })
         .select('_id following')
@@ -31,7 +28,6 @@ export async function GET() {
       }
     }
 
-    // ✅ Check cache (but only for non-authenticated users or if no specific exclusions)
     const cacheKey = `${currentUserId || 'anonymous'}`;
     const now = Date.now();
     
@@ -40,17 +36,13 @@ export async function GET() {
       return NextResponse.json(suggestedCache.data);
     }
 
-    // Get users that current user is NOT following and NOT themselves
     const excludeIds = currentUserId 
       ? [currentUserId, ...currentUserFollowing]
       : [];
 
-    // ✅ OPTIMIZED: Use aggregation pipeline for better performance
     const users = await User.aggregate([
-      // Filter out excluded users
       { $match: { _id: { $nin: excludeIds.map(id => id) } } },
       
-      // Lookup user's posts count and views
       {
         $lookup: {
           from: 'blogs',
@@ -60,7 +52,6 @@ export async function GET() {
         }
       },
       
-      // Calculate engagement metrics
       {
         $addFields: {
           postsCount: { $size: '$posts' },
@@ -76,13 +67,10 @@ export async function GET() {
         }
       },
       
-      // Sort by engagement score
       { $sort: { engagementScore: -1 } },
       
-      // Limit to top users
       { $limit: 20 },
       
-      // Project only needed fields
       {
         $project: {
           name: 1,
@@ -96,7 +84,6 @@ export async function GET() {
       }
     ]);
 
-    // Filter out users without username
     const validUsers = users
       .filter(user => user.username)
       .map(user => ({
@@ -111,14 +98,13 @@ export async function GET() {
       }))
       .slice(0, 10);
 
-    // ✅ Cache the results
     suggestedCache = {
       key: cacheKey,
       data: validUsers
     };
     cacheTimestamp = now;
 
-    console.log(`✅ Suggested users calculated: ${validUsers.length} users`);
+    console.log(`Suggested users calculated: ${validUsers.length} users`);
 
     return NextResponse.json(validUsers, {
       headers: {

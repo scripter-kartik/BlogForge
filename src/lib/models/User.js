@@ -60,7 +60,6 @@ const UserSchema = new mongoose.Schema(
   }
 );
 
-// ✅ ONLY ONE TEXT INDEX - No field-level indexes
 UserSchema.index({ 
   username: 'text', 
   name: 'text',

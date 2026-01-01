@@ -1,4 +1,3 @@
-// src/app/api/search/route.js - BETTER VERSION
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/database/db.js";
 import { Blog } from "@/lib/models/Blog.js";
@@ -24,23 +23,21 @@ export async function GET(request) {
     const cacheKey = query.toLowerCase();
     const cached = searchCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      console.log("📦 Cache hit for:", query);
+      console.log("Cache hit for:", query);
       return NextResponse.json(cached.data);
     }
 
     await dbConnect();
 
-    // Search in parallel
     const [posts, users] = await Promise.all([
       searchPosts(query),
       searchUsers(query)
     ]);
 
-    console.log(`✅ Found ${posts.length} posts and ${users.length} users for: "${query}"`);
+    console.log(`Found ${posts.length} posts and ${users.length} users for: "${query}"`);
 
     const result = { posts, users, query };
 
-    // Update cache
     if (searchCache.size >= MAX_CACHE_SIZE) {
       const firstKey = searchCache.keys().next().value;
       searchCache.delete(firstKey);
@@ -49,7 +46,7 @@ export async function GET(request) {
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error("❌ Search error:", error);
+    console.error("Search error:", error);
     return NextResponse.json(
       { error: "Search failed", posts: [], users: [], details: error.message },
       { status: 500 }
@@ -59,7 +56,6 @@ export async function GET(request) {
 
 async function searchPosts(query) {
   try {
-    // Try text search
     const results = await Blog.find(
       { $text: { $search: query } },
       { score: { $meta: "textScore" } }
@@ -70,11 +66,10 @@ async function searchPosts(query) {
       .limit(10)
       .lean();
     
-    console.log(`📝 Text search found ${results.length} posts`);
+    console.log(`Text search found ${results.length} posts`);
     return results;
   } catch (error) {
-    console.warn("⚠️ Text search failed, using regex");
-    // Fallback to regex
+    console.warn("Text search failed, using regex");
     return await Blog.find({
       $or: [
         { title: { $regex: query, $options: 'i' } },
@@ -91,7 +86,6 @@ async function searchPosts(query) {
 
 async function searchUsers(query) {
   try {
-    // Try text search
     const results = await User.find(
       { $text: { $search: query } },
       { score: { $meta: "textScore" } }
@@ -104,8 +98,7 @@ async function searchUsers(query) {
     console.log(`👤 Text search found ${results.length} users`);
     return results;
   } catch (error) {
-    console.warn("⚠️ User text search failed, using regex");
-    // Fallback to regex
+    console.warn("User text search failed, using regex");
     return await User.find({
       $or: [
         { name: { $regex: query, $options: 'i' } },

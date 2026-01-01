@@ -1,4 +1,3 @@
-// src/lib/auth.js
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
@@ -50,7 +49,7 @@ export const authOptions = {
           throw new Error("Invalid email or password");
         }
 
-        console.log("✅ Credentials login successful:", {
+        console.log("Credentials login successful:", {
           _id: user._id.toString(),
           email: user.email,
           username: user.username,
@@ -91,7 +90,7 @@ export const authOptions = {
               image: user.image,
               provider: "google",
             });
-            console.log("✅ New Google user created");
+            console.log("New Google user created");
           }
 
           user.id = existingUser._id.toString();
@@ -102,7 +101,7 @@ export const authOptions = {
         console.log("=== SIGNIN CALLBACK END ===\n");
         return true;
       } catch (error) {
-        console.error("❌ SignIn error:", error);
+        console.error("SignIn error:", error);
         return false;
       }
     },
@@ -119,25 +118,25 @@ export const authOptions = {
           token.username = user.username;
           token.email = user.email;
           token.provider = "credentials";
-          console.log("✅ Credentials token set:", {
+          console.log("Credentials token set:", {
             _id: token._id,
             username: token.username,
             email: token.email,
           });
         } else if (account?.provider === "google") {
-          console.log("📝 Processing Google login:", user.email);
+          console.log("Processing Google login:", user.email);
           token._id = user._id || user.id;
           token.username = user.username;
           token.email = user.email;
           token.provider = "google";
-          console.log("✅ Google token set:", {
+          console.log("Google token set:", {
             _id: token._id,
             username: token.username,
             email: token.email,
           });
         }
       } else {
-        console.log("🔄 Token refresh - ensuring consistency");
+        console.log("Token refresh - ensuring consistency");
       }
 
       console.log("Token final state:", {
@@ -173,10 +172,10 @@ export const authOptions = {
             session.user.bio = user.bio;
           }
         } catch (error) {
-          console.error("⚠️ Session user fetch error:", error);
+          console.error("Session user fetch error:", error);
         }
 
-        console.log("✅ Session user final:", {
+        console.log("Session user final:", {
           _id: session.user._id,
           username: session.user.username,
           email: session.user.email,
@@ -199,7 +198,6 @@ export const authOptions = {
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
 
-  // DISABLE DEBUG MODE TO REMOVE WARNINGS
   debug: false,
 
   secret: process.env.NEXTAUTH_SECRET,

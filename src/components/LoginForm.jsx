@@ -1,4 +1,3 @@
-// src/components/LoginForm.jsx - UPDATED RESPONSIVE
 "use client";
 import { ImCross } from "react-icons/im";
 import { useState } from "react";
@@ -78,7 +77,6 @@ export default function Login({
       <hr className="border-t-[1px] border-red-500 mb-8" />
 
       <form onSubmit={handleLogin}>
-        {/* Email */}
         <div className="relative mb-7">
           <input
             type="email"
@@ -112,7 +110,6 @@ export default function Login({
           </label>
         </div>
 
-        {/* Password */}
         <div className="relative mb-7">
           <input
             type="password"
@@ -145,7 +142,6 @@ export default function Login({
           </label>
         </div>
 
-        {/* Login button */}
         <button
           type="submit"
           disabled={loading}
@@ -161,7 +157,6 @@ export default function Login({
         </button>
       </form>
 
-      {/* message */}
       {message && (
         <p
           className={`text-center mb-4 text-sm ${
@@ -174,7 +169,6 @@ export default function Login({
         </p>
       )}
 
-      {/* OR */}
       <div className="flex items-center mb-4">
         <span
           className={`flex-grow border-t ${
@@ -189,7 +183,6 @@ export default function Login({
         />
       </div>
 
-      {/* Google */}
       <button
         onClick={handleGoogleLogin}
         disabled={loading}
@@ -201,7 +194,6 @@ export default function Login({
         Continue with Google
       </button>
 
-      {/* bottom */}
       <p
         className={`text-center ${
           isDarkMode ? "text-gray-400" : "text-gray-600"

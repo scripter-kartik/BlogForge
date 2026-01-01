@@ -1,4 +1,3 @@
-// src/context/UserContext.jsx - FIXED VERSION
 "use client";
 
 import { createContext, useContext, useCallback, useEffect, useState } from "react";
@@ -11,13 +10,11 @@ export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // ✅ Sync user when session changes
   useEffect(() => {
     if (session?.user) {
-      console.log("🔄 User Context: Session updated", session.user);
+      console.log("User Context: Session updated", session.user);
       setUser({
         ...session.user,
-        // Force a timestamp to trigger re-renders
         _timestamp: Date.now(),
       });
       setIsAuthenticated(true);
@@ -27,16 +24,13 @@ export const UserProvider = ({ children }) => {
     }
   }, [session?.user, session?.user?.image, session?.user?.name, session?.user?.email]);
 
-  // ✅ IMPROVED: Force refresh user data from database
   const refreshUser = useCallback(async () => {
-    console.log("🔄 Refreshing user data globally...");
+    console.log("Refreshing user data globally...");
     try {
-      // First, trigger NextAuth session refresh to get latest from JWT
-      console.log("🔄 Updating NextAuth session...");
+      console.log("Updating NextAuth session...");
       const sessionUpdate = await updateSession();
-      console.log("📥 Session updated:", sessionUpdate?.user);
+      console.log("Session updated:", sessionUpdate?.user);
 
-      // Then fetch fresh data from the database
       const response = await fetch('/api/user/home', {
         credentials: 'include',
         cache: 'no-store',
@@ -48,19 +42,17 @@ export const UserProvider = ({ children }) => {
 
       if (response.ok) {
         const freshUserData = await response.json();
-        console.log("📥 Fresh user data from DB:", freshUserData);
+        console.log("Fresh user data from DB:", freshUserData);
 
-        // Update the local state immediately
         setUser({
           ...freshUserData,
           _timestamp: Date.now(),
         });
         
-        console.log("✅ User data refreshed successfully");
+        console.log("User data refreshed successfully");
         return freshUserData;
       } else {
-        console.error("❌ Failed to fetch fresh user data");
-        // Use session data as fallback
+        console.error("Failed to fetch fresh user data");
         if (sessionUpdate?.user) {
           setUser({
             ...sessionUpdate.user,
@@ -71,18 +63,17 @@ export const UserProvider = ({ children }) => {
         return null;
       }
     } catch (error) {
-      console.error("❌ Error refreshing user:", error);
+      console.error("Error refreshing user:", error);
       return null;
     }
   }, [updateSession]);
 
-  // ✅ Function to manually update user data (for immediate feedback)
   const updateUser = useCallback((newUserData) => {
     console.log("🔄 Manually updating user data:", newUserData);
     setUser((prev) => ({
       ...prev,
       ...newUserData,
-      _timestamp: Date.now(), // Force re-render
+      _timestamp: Date.now(), 
     }));
   }, []);
 

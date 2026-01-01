@@ -1,4 +1,3 @@
-// src/components/HomePost.jsx - OPTIMIZED WITH REACT.MEMO
 "use client";
 
 import { IoEyeOutline } from "react-icons/io5";
@@ -14,7 +13,6 @@ import { getRandomProfileImage } from "@/lib/profileImage";
 import { useRouter } from "next/navigation";
 import StarRating from "@/components/StarRating";
 
-// ✅ Memoize gradient generation
 const GRADIENTS = [
   "bg-gradient-to-r from-purple-500 to-pink-500",
   "bg-gradient-to-r from-blue-500 to-cyan-500",
@@ -35,7 +33,6 @@ const getGradientForPost = (postId) => {
   return GRADIENTS[hash % GRADIENTS.length];
 };
 
-// ✅ OPTIMIZED: Memoized Post Card Component
 const PostCard = memo(({ post, isDarkMode, onClick }) => {
   return (
     <div
@@ -140,7 +137,6 @@ const PostCard = memo(({ post, isDarkMode, onClick }) => {
 
 PostCard.displayName = 'PostCard';
 
-// ✅ OPTIMIZED: Memoized User Card Component
 const UserCard = memo(({ user, isDarkMode, onFollowClick, followStates, followLoading, onClick }) => {
   return (
     <div
@@ -203,7 +199,6 @@ export default function HomePost({ isDarkMode, searchResults }) {
   const scrollContainerRef = useRef(null);
   const router = useRouter();
 
-  // ✅ OPTIMIZED: Memoize normalized posts
   const normalizedPosts = useMemo(() => {
     if (!Array.isArray(posts)) return [];
     return posts.map((post) => ({
@@ -224,7 +219,6 @@ export default function HomePost({ isDarkMode, searchResults }) {
     }));
   }, [posts]);
 
-  // ✅ OPTIMIZED: Memoize sorted posts
   const { featured, trending, latest } = useMemo(() => ({
     featured: [...normalizedPosts]
       .sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0))
@@ -237,7 +231,6 @@ export default function HomePost({ isDarkMode, searchResults }) {
       .slice(0, 6),
   }), [normalizedPosts]);
 
-  // ✅ OPTIMIZED: Memoize callbacks
   const handlePostClick = useCallback((postId) => {
     router.push(`/blog/${postId}`);
   }, [router]);
@@ -272,7 +265,6 @@ export default function HomePost({ isDarkMode, searchResults }) {
     }
   }, []);
 
-  // ✅ Fetch posts (runs once)
   useEffect(() => {
     async function fetchData() {
       try {
@@ -298,9 +290,8 @@ export default function HomePost({ isDarkMode, searchResults }) {
     } else {
       setLoading(false);
     }
-  }, []); // Only run once
+  }, []);
 
-  // ✅ Fetch suggested users
   useEffect(() => {
     async function fetchSuggestedUsers() {
       if (!isAuthenticated) return;
@@ -333,7 +324,6 @@ export default function HomePost({ isDarkMode, searchResults }) {
     fetchSuggestedUsers();
   }, [isAuthenticated, user]);
 
-  // ✅ Render functions with memoization
   const renderPosts = useCallback((postList) => {
     if (postList.length === 0) {
       return (
@@ -384,7 +374,6 @@ export default function HomePost({ isDarkMode, searchResults }) {
     );
   }
 
-  // Search results view
   if (searchResults) {
     return (
       <div className="w-full max-w-7xl px-4 sm:px-6 lg:px-8 mt-20 sm:mt-28 lg:mt-32 mb-20 md:mb-[70px]">
@@ -442,10 +431,8 @@ export default function HomePost({ isDarkMode, searchResults }) {
     );
   }
 
-  // Regular home view
   return (
     <div className="w-full max-w-7xl px-4 sm:px-6 lg:px-8 md:mt-20 lg:mt-32 mb-20 md:mb-[70px]">
-      {/* Featured Posts */}
       <div className="flex flex-col md:flex-row items-center sm:items-start md:items-center gap-4 justify-between mb-10">
         <h1 className={`${isDarkMode ? "text-[#f75555]" : "text-black"} sm:text-white text-4xl md:text-4xl font-bold sm:tracking-tight`}>
           Featured Posts
@@ -454,7 +441,6 @@ export default function HomePost({ isDarkMode, searchResults }) {
       </div>
       {renderPosts(featured)}
 
-      {/* Suggested Users */}
       {isAuthenticated && suggestedUsers.length > 0 && (
         <div className="mt-24 md:mt-32">
           <div className="flex flex-col md:flex-row items-center sm:items-start md:items-center gap-4 justify-between mb-8">
@@ -537,7 +523,6 @@ export default function HomePost({ isDarkMode, searchResults }) {
         </div>
       )}
 
-      {/* Trending Posts */}
       <div className="flex flex-col md:flex-row items-center sm:items-start md:items-center gap-4 justify-between mb-10 mt-24 md:mt-32">
         <h1 className={`${isDarkMode ? "text-[#f75555]" : "text-black"} sm:text-white text-4xl md:text-4xl font-bold sm:tracking-tight`}>
           Trending Posts
@@ -546,7 +531,6 @@ export default function HomePost({ isDarkMode, searchResults }) {
       </div>
       {renderPosts(trending)}
 
-      {/* Latest Posts */}
       <div className="flex flex-col md:flex-row items-center sm:items-start md:items-center gap-4 justify-between mb-10 mt-24 md:mt-32">
         <h1 className={`${isDarkMode ? "text-[#f75555]" : "text-black"} sm:text-white text-4xl md:text-4xl font-bold sm:tracking-tight`}>
           Latest Posts

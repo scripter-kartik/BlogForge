@@ -1,4 +1,3 @@
-// src/app/api/protected/user/posts/[username]/route.js - USER POSTS API
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/database/db.js";
 import { User } from "@/lib/models/User.js";
@@ -19,7 +18,6 @@ export async function GET(req, { params }) {
       .populate("author", "name username image")
       .lean();
 
-    // Transform posts to include author info
     const transformedPosts = posts.map((post) => ({
       ...post,
       authorName: post.author?.name || "Anonymous",

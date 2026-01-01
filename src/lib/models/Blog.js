@@ -62,7 +62,6 @@ const BlogSchema = new mongoose.Schema(
   }
 );
 
-// ✅ Text search index
 BlogSchema.index({ 
   title: 'text', 
   description: 'text', 

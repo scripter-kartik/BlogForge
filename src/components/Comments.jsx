@@ -13,7 +13,6 @@ export default function Comments({ postId, isDarkMode }) {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  // Fetch comments
   const fetchComments = async () => {
     try {
       const res = await fetch(`/api/comments?postId=${postId}`);
@@ -31,7 +30,6 @@ export default function Comments({ postId, isDarkMode }) {
     if (postId) fetchComments();
   }, [postId]);
 
-  // Handle new comment
   const handleSubmitComment = async () => {
     if (!isAuthenticated) {
       alert("Please log in to comment.");
@@ -63,7 +61,6 @@ export default function Comments({ postId, isDarkMode }) {
     }
   };
 
-  // Handle reply
   const handleSubmitReply = async (commentId) => {
     if (!isAuthenticated) {
       alert("Please log in to reply.");
@@ -125,7 +122,6 @@ export default function Comments({ postId, isDarkMode }) {
         Comments ({comments.length})
       </h2>
 
-      {/* Comment Input */}
       {isAuthenticated ? (
         <div className="flex flex-col gap-3 mb-6">
           <textarea
@@ -154,7 +150,6 @@ export default function Comments({ postId, isDarkMode }) {
         </p>
       )}
 
-      {/* Comments List */}
       <div className="flex flex-col gap-6">
         {comments.length === 0 && (
           <p className="text-gray-400">No comments yet. Be the first!</p>
@@ -167,7 +162,6 @@ export default function Comments({ postId, isDarkMode }) {
               isDarkMode ? "bg-[#2a2a2a]" : "bg-white"
             }`}
           >
-            {/* Comment Header */}
             <div className="flex items-center gap-3 mb-2">
               <img
                 src={comment.author?.image || "/default-avatar.png"}
@@ -185,10 +179,8 @@ export default function Comments({ postId, isDarkMode }) {
               </span>
             </div>
 
-            {/* Comment Text */}
             <p className="ml-11">{comment.content}</p>
 
-            {/* Reply Button */}
             <div className="ml-11 mt-2">
               <button
                 onClick={() =>
@@ -200,7 +192,6 @@ export default function Comments({ postId, isDarkMode }) {
               </button>
             </div>
 
-            {/* Reply Form */}
             {replyingTo === comment._id && (
               <div className="ml-11 mt-2">
                 <textarea
@@ -220,7 +211,6 @@ export default function Comments({ postId, isDarkMode }) {
               </div>
             )}
 
-            {/* Replies */}
             {comment.replies?.length > 0 && (
               <div className="ml-11 mt-4 flex flex-col gap-3">
                 {comment.replies.map((reply) => (

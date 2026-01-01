@@ -1,4 +1,3 @@
-// src/app/api/protected/blogposts/route.js - PROTECTED BLOG POSTS API
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/database/db.js";
 import { Blog } from "@/lib/models/Blog.js";
@@ -24,19 +23,16 @@ export async function POST(req) {
       const trendingThresholdViews = 100;
       const featuredThresholdRating = 4.5;
 
-      // Mark Trending posts
       await Blog.updateMany(
         { views: { $gte: trendingThresholdViews } },
         { category: "Trending" }
       );
 
-      // Mark Featured posts
       await Blog.updateMany(
         { starRating: { $gte: featuredThresholdRating } },
         { category: "Featured" }
       );
 
-      // Reset other posts to Latest if they do not meet trending or featured
       await Blog.updateMany(
         {
           views: { $lt: trendingThresholdViews },
@@ -48,7 +44,6 @@ export async function POST(req) {
 
     const body = await req.json();
 
-    // Calculate estimated read time (roughly 200 words per minute)
     const wordCount = body.description ? body.description.split(" ").length : 0;
     const estimatedRead = Math.max(1, Math.ceil(wordCount / 200));
 
@@ -67,7 +62,6 @@ export async function POST(req) {
       console.error("Error updating categories:", err)
     );
 
-    // Populate author info for response
     await newPost.populate("author", "name username image");
 
     return NextResponse.json(newPost, { status: 201 });

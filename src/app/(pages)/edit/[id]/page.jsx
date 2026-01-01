@@ -1,4 +1,3 @@
-// src/app/(pages)/edit/[id]/page.jsx
 "use client";
 
 import Navbar from "../../../../components/Navbar.jsx";
@@ -45,7 +44,6 @@ const EditPage = () => {
     setRandomColor(colors[randomIndex]);
   }, []);
 
-  // Fetch blog data
   useEffect(() => {
     async function fetchBlog() {
       if (!params.id) return;
@@ -69,7 +67,6 @@ const EditPage = () => {
           currentUserName: user?.name
         });
 
-        // ✅ Better author check with multiple fallbacks
         const userIdToCheck = user?.id || user?._id || user?.sub;
         const authorIdToCheck = blog.author?._id || blog.author?.id;
         
@@ -87,7 +84,6 @@ const EditPage = () => {
           return;
         }
 
-        // Populate form with existing data
         setTitle(blog.title || "");
         setDescription(blog.description || "");
         setTag(blog.tags?.join(", ") || "");
@@ -95,9 +91,9 @@ const EditPage = () => {
         setCoverImage(blog.coverImage || null);
         setError("");
         
-        console.log("✅ Edit form initialized");
+        console.log("Edit form initialized");
       } catch (err) {
-        console.error("❌ Error fetching blog:", err);
+        console.error("Error fetching blog:", err);
         setError("Failed to load blog data: " + (err.message || "Unknown error"));
       } finally {
         setLoading(false);
@@ -161,14 +157,13 @@ const EditPage = () => {
 
       const updatedPost = await apiClient.updatePost(params.id, postData);
       
-      console.log("✅ Post updated successfully:", updatedPost);
+      console.log("Post updated successfully:", updatedPost);
       
       alert("Post updated successfully!");
       router.push(`/blog/${params.id}`);
     } catch (error) {
-      console.error("❌ Error updating post:", error);
+      console.error("Error updating post:", error);
       
-      // Better error handling
       let errorMsg = "Failed to update post. ";
       
       if (error.status === 401) {
@@ -271,7 +266,6 @@ const EditPage = () => {
       />
 
       <div className="flex flex-col lg:flex-row mt-20 sm:mt-24 md:mt-32 lg:mt-44 w-full max-w-[1280px] px-4 sm:px-6 lg:px-8 gap-6 lg:gap-8 xl:gap-12 justify-between">
-        {/* Left Column - Form Inputs */}
         <div
           className={`flex flex-col gap-4 sm:gap-6 items-start w-full lg:w-80 xl:w-96 ${
             isDarkMode ? "text-white" : "text-black"
@@ -279,7 +273,6 @@ const EditPage = () => {
         >
           <h2 className="text-2xl font-bold text-[#f75555]">Edit Post</h2>
 
-          {/* Title Input */}
           <div className="relative w-full">
             <input
               className={`w-full h-10 sm:h-12 px-3 py-2 border rounded text-sm sm:text-base ${
@@ -299,7 +292,6 @@ const EditPage = () => {
             </span>
           </div>
 
-          {/* Description Input */}
           <div className="relative w-full">
             <textarea
               className={`w-full h-20 sm:h-24 px-3 py-2 border rounded resize-none text-sm sm:text-base ${
@@ -318,7 +310,6 @@ const EditPage = () => {
             </span>
           </div>
 
-          {/* Tags Input */}
           <input
             className={`w-full h-10 sm:h-12 px-3 py-2 border rounded text-sm sm:text-base ${
               isDarkMode
@@ -332,7 +323,6 @@ const EditPage = () => {
             disabled={updating}
           />
 
-          {/* Upload Cover Button */}
           <div className="flex items-center gap-2 font-semibold text-sm sm:text-base">
             <GrGallery className="text-base sm:text-lg" />
             <button
@@ -355,7 +345,6 @@ const EditPage = () => {
             disabled={updating}
           />
 
-          {/* Cover Image Preview */}
           <div
             className={`w-full h-40 sm:h-48 rounded-lg relative overflow-hidden border-2 border-dashed ${
               coverImage
@@ -404,14 +393,12 @@ const EditPage = () => {
             )}
           </div>
 
-          {/* Error Display */}
           {error && (
             <div className="w-full p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
               {error}
             </div>
           )}
 
-          {/* Action Buttons */}
           <div className="flex gap-3 w-full">
             <button
               onClick={handleUpdate}
@@ -449,13 +436,11 @@ const EditPage = () => {
             </button>
           </div>
 
-          {/* User Info */}
           <div className="text-xs sm:text-sm text-gray-500 mt-2 sm:mt-4">
             Editing as: <span className="font-medium">{user?.name}</span>
           </div>
         </div>
 
-        {/* Right Column - Blog Editor */}
         <div className="w-full lg:flex-1 min-h-[400px] sm:min-h-[500px] lg:min-h-[600px] mb-24 lg:mb-0">
           <BlogEditor 
             isDarkMode={isDarkMode} 

@@ -32,7 +32,6 @@ export default function Navbar({
   const pathname = usePathname();
   const router = useRouter();
 
-  // Close dropdown by clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
       if (
@@ -53,7 +52,6 @@ export default function Navbar({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Debounce search input
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (searchQuery.trim().length > 0) {
@@ -67,7 +65,6 @@ export default function Navbar({
     return () => clearTimeout(timeout);
   }, [searchQuery]);
 
-  // Search API
   const performSearch = async (query) => {
     setIsSearching(true);
     try {
@@ -95,7 +92,6 @@ export default function Navbar({
     }
   };
 
-  // SMALL DELAY before closing so Link click can fire reliably
   const handleResultClick = () => {
     setTimeout(() => {
       setShowDropdown(false);
@@ -131,7 +127,6 @@ export default function Navbar({
 
   return (
     <>
-      {/* DESKTOP NAV */}
       <div
         className={`hidden lg:flex fixed top-0 left-0 right-0 z-50 transition-colors duration-500 ${isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f6f6f7]"
           } shadow-sm justify-center`}
@@ -162,9 +157,7 @@ export default function Navbar({
             )}
           </div>
 
-          {/* RIGHT */}
           <div className="flex items-center gap-3 xl:gap-5">
-            {/* SEARCH */}
             <div className="relative z-[99999]" ref={searchRef}>
               <div
                 className={`w-[250px] xl:w-[330px] flex items-center gap-2 font-sm border-b-[1px] py-2 px-3 transition-colors ${isDarkMode ? "border-[#ABB2BF]" : "border-gray-400"
@@ -188,7 +181,6 @@ export default function Navbar({
                 )}
               </div>
 
-              {/* IMPROVED DROPDOWN */}
               {showDropdown && (searchQuery.trim().length > 0) && (
                 <div
                   className={`absolute top-full left-0 mt-2 w-[250px] xl:w-[330px] max-h-[500px] overflow-auto rounded-lg shadow-2xl z-[200000] pointer-events-auto ${isDarkMode
@@ -196,7 +188,6 @@ export default function Navbar({
                     : "bg-white border border-gray-200"
                     }`}
                 >
-                  {/* USERS SECTION */}
                   {searchResults?.users?.length > 0 && (
                     <div className="p-3 border-b border-gray-700">
                       <h3
@@ -209,7 +200,6 @@ export default function Navbar({
                         {searchResults.users.map((u) => (
                           <div
                             key={u._id}
-                            // Use onMouseDown so navigation happens before any blur/close
                             onMouseDown={(e) => {
                               e.preventDefault();
                               router.push(`/profile/${u.username}`);
@@ -245,7 +235,6 @@ export default function Navbar({
                     </div>
                   )}
 
-                  {/* POSTS SECTION */}
                   {searchResults?.posts?.length > 0 && (
                     <div className="p-3">
                       <h3
@@ -291,7 +280,6 @@ export default function Navbar({
                     </div>
                   )}
 
-                  {/* NO RESULTS */}
                   {searchResults?.users?.length === 0 &&
                     searchResults?.posts?.length === 0 &&
                     !isSearching && (
@@ -308,7 +296,6 @@ export default function Navbar({
                       </div>
                     )}
 
-                  {/* LOADING STATE */}
                   {isSearching && (
                     <div className="p-8 text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#f75555] mx-auto" />
@@ -319,7 +306,6 @@ export default function Navbar({
                     </div>
                   )}
 
-                  {/* FOOTER - VIEW ALL */}
                   {(searchResults?.users?.length > 0 || searchResults?.posts?.length > 0) && (
                     <div className={`p-3 border-t ${isDarkMode ? "border-gray-700" : "border-gray-200"
                       }`}>
@@ -344,7 +330,6 @@ export default function Navbar({
               )}
             </div>
 
-            {/* THEME TOGGLE */}
             {isDarkMode ? (
               <CiBrightnessDown
                 className="text-white w-5 h-5 xl:w-6 xl:h-6 cursor-pointer hover:text-[#f75555] transition-colors"
@@ -357,7 +342,6 @@ export default function Navbar({
               />
             )}
 
-            {/* AUTH USER MENU */}
             {isAuthenticated ? (
               <div className="flex items-center gap-3 xl:gap-4">
                 <Link
@@ -372,7 +356,6 @@ export default function Navbar({
                   <span className="hidden xl:inline">Write a post</span>
                 </Link>
 
-                {/* PROFILE MENU */}
                 <div className="relative" ref={divRef}>
                   <img
                     className="w-[32px] h-[32px] xl:w-[38px] xl:h-[38px] rounded-full object-cover cursor-pointer border-2 border-transparent hover:border-[#f75555] transition-all"
@@ -448,7 +431,6 @@ export default function Navbar({
         </div>
       </div>
 
-      {/* MOBILE TOP - Similar improvements */}
       <div
         className={`lg:hidden fixed top-0 left-0 right-0 z-50 flex items-center gap-3 px-4 py-3 ${isDarkMode
           ? "bg-[#1c1d1d] text-white"
@@ -472,7 +454,6 @@ export default function Navbar({
             )}
           </div>
 
-          {/* MOBILE DROPDOWN - Same improved UI */}
           {showDropdown && searchQuery.trim().length > 0 && (
             <div
               className={`absolute top-full left-0 right-0 mt-2 rounded-lg shadow-2xl max-h-80 overflow-y-auto z-50 ${isDarkMode
@@ -576,7 +557,6 @@ export default function Navbar({
         )}
       </div>
 
-      {/* MOBILE BOTTOM NAV */}
       <div
         className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t py-2 px-2 ${isDarkMode
           ? "bg-[#1c1d1d] text-white border-gray-800"

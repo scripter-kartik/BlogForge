@@ -1,4 +1,3 @@
-// src/app/api/blogs/[id]/route.js - OPTIMIZED
 import connectDB from "@/lib/database/db.js";
 import { Blog } from "@/lib/models/Blog.js";
 import { User } from "@/lib/models/User.js";
@@ -29,7 +28,6 @@ export async function GET(req, { params }) {
     await connectDB();
     const { id } = await params;
 
-    // ✅ OPTIMIZED: Use lean() and only select needed fields
     const blog = await Blog.findById(id)
       .select('title description content coverImage author tags category averageRating ratingCount views commentCount estimatedRead ratings createdAt updatedAt')
       .populate("author", "username name image")
@@ -38,9 +36,6 @@ export async function GET(req, { params }) {
     if (!blog) {
       return Response.json({ error: "Blog not found" }, { status: 404 });
     }
-
-    // ✅ OPTIMIZED: Increment views asynchronously (don't wait)
-    // This makes the response faster
     Blog.findByIdAndUpdate(id, { $inc: { views: 1 } }).exec();
 
     return Response.json(blog, { 
@@ -68,7 +63,6 @@ export async function PATCH(req, { params }) {
     const { id } = await params;
     const body = await req.json();
 
-    // ✅ OPTIMIZED: Use lean() for faster query
     const blog = await Blog.findById(id).select('author').lean();
 
     if (!blog) {
@@ -125,7 +119,6 @@ export async function DELETE(req, { params }) {
 
     const { id } = await params;
 
-    // ✅ OPTIMIZED: Use lean() for faster query
     const blog = await Blog.findById(id).select('author').lean();
 
     if (!blog) {

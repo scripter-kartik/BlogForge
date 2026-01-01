@@ -1,4 +1,3 @@
-// src/app/page.jsx - UPDATED WITH SEARCH INTEGRATION
 "use client";
 
 import Navbar from "@/components/Navbar.jsx";
@@ -39,12 +38,10 @@ export default function Page() {
         onSearchResults={handleSearchResults}
       />
 
-      {/* Only show Home hero section when not searching */}
       {!searchResults && (
         <Home isDarkMode={isDarkMode} setIsLoginActive={setIsLoginActive} setIsSignupActive={setIsSignupActive}/>
       )}
 
-      {/* HomePost shows either search results or regular posts */}
       <HomePost isDarkMode={isDarkMode} searchResults={searchResults} />
 
       {isLoginActive && (

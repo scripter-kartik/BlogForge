@@ -1,5 +1,3 @@
-// src/components/BlogEditor.jsx
-
 "use client";
 
 import React, { useState, useRef } from "react";
@@ -94,7 +92,6 @@ const BlogEditor = ({ isDarkMode, onContentChange }) => {
 
   const handleEditorInput = (e) => {
     const html = e.target.innerHTML;
-    // Pass content to parent component
     if (onContentChange) {
       onContentChange(html);
     }

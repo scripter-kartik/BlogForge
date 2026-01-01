@@ -1,4 +1,3 @@
-// src/app/api/signup/route.js - FIXED VERSION
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/database/db.js";
 import { User } from "@/lib/models/User.js";
@@ -10,7 +9,6 @@ export async function POST(req) {
 
     const { name, username, email, password } = await req.json();
 
-    // ✅ Validation
     if (!name || !username || !email || !password) {
       return NextResponse.json(
         { success: false, message: "All fields are required" },
@@ -18,12 +16,10 @@ export async function POST(req) {
       );
     }
 
-    // ✅ Trim and normalize inputs
     const trimmedEmail = email.trim().toLowerCase();
     const trimmedUsername = username.trim().toLowerCase();
     const trimmedName = name.trim();
 
-    // ✅ Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(trimmedEmail)) {
       return NextResponse.json(
@@ -32,7 +28,6 @@ export async function POST(req) {
       );
     }
 
-    // ✅ Validate username format (alphanumeric + underscore only)
     const usernameRegex = /^[a-zA-Z0-9_]+$/;
     if (!usernameRegex.test(trimmedUsername)) {
       return NextResponse.json(
@@ -44,7 +39,6 @@ export async function POST(req) {
       );
     }
 
-    // ✅ Validate password length
     if (password.length < 6) {
       return NextResponse.json(
         {
@@ -55,7 +49,6 @@ export async function POST(req) {
       );
     }
 
-    // ✅ Check if user already exists
     const existingUser = await User.findOne({
       $or: [{ email: trimmedEmail }, { username: trimmedUsername }],
     });
@@ -75,10 +68,8 @@ export async function POST(req) {
       }
     }
 
-    // ✅ Hash password with stronger cost factor
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // ✅ Create user with provider field
     const newUser = await User.create({
       name: trimmedName,
       username: trimmedUsername,
@@ -89,7 +80,7 @@ export async function POST(req) {
       provider: "credentials",
     });
 
-    console.log("✅ New user created:", {
+    console.log("New user created:", {
       _id: newUser._id.toString(),
       email: newUser.email,
       username: newUser.username,
@@ -111,9 +102,8 @@ export async function POST(req) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("❌ Signup error:", error);
+    console.error("Signup error:", error);
     
-    // ✅ Handle duplicate key errors
     if (error.code === 11000) {
       const field = Object.keys(error.keyPattern)[0];
       return NextResponse.json(
