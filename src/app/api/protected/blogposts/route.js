@@ -7,9 +7,9 @@ export async function POST(req) {
   try {
     await connectDB();
 
-    const userEmail = req.headers.get("user-email");
-    const userName = req.headers.get("user-name");
-
+    const userEmail = req.headers.get("x-user-email");
+    const userName = req.headers.get("x-user-name");
+    
     if (!userEmail) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -25,12 +25,12 @@ export async function POST(req) {
 
       await Blog.updateMany(
         { views: { $gte: trendingThresholdViews } },
-        { category: "Trending" }
+        { category: "Trending" },
       );
 
       await Blog.updateMany(
         { starRating: { $gte: featuredThresholdRating } },
-        { category: "Featured" }
+        { category: "Featured" },
       );
 
       await Blog.updateMany(
@@ -38,7 +38,7 @@ export async function POST(req) {
           views: { $lt: trendingThresholdViews },
           starRating: { $lt: featuredThresholdRating },
         },
-        { category: "Latest" }
+        { category: "Latest" },
       );
     }
 
@@ -59,7 +59,7 @@ export async function POST(req) {
     });
 
     updatePostCategories().catch((err) =>
-      console.error("Error updating categories:", err)
+      console.error("Error updating categories:", err),
     );
 
     await newPost.populate("author", "name username image");
@@ -72,7 +72,7 @@ export async function POST(req) {
         error: "Failed to create post",
         details: error.message,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

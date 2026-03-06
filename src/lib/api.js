@@ -1,6 +1,6 @@
 class ApiClient {
   constructor() {
-    this.baseURL = process.env.NEXTAUTH_URL || "";
+    this.baseURL = "";
   }
 
   async request(endpoint, options = {}) {
@@ -19,7 +19,11 @@ class ApiClient {
       headers,
       credentials: "include",
       body:
-        body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
+        body instanceof FormData
+          ? body
+          : body
+            ? JSON.stringify(body)
+            : undefined,
     };
 
     try {
@@ -105,7 +109,9 @@ class ApiClient {
     }
 
     try {
-      return await this.request(`/api/user/stats/${encodeURIComponent(username)}`);
+      return await this.request(
+        `/api/user/stats/${encodeURIComponent(username)}`,
+      );
     } catch (error) {
       console.error(`Failed to fetch stats for ${username}:`, error);
       return {
@@ -124,7 +130,9 @@ class ApiClient {
     }
 
     try {
-      return await this.request(`/api/user/posts/${encodeURIComponent(username)}`);
+      return await this.request(
+        `/api/user/posts/${encodeURIComponent(username)}`,
+      );
     } catch (error) {
       console.error(`Failed to fetch posts for ${username}:`, error);
       return { posts: [], count: 0 };
@@ -184,10 +192,9 @@ class ApiClient {
       return Array.isArray(data) ? data : [];
     } catch (err) {
       console.error("Failed to fetch all posts:", err);
-      return []; 
+      return [];
     }
   }
-
 
   async getBlogById(id) {
     if (!id) {
@@ -275,7 +282,9 @@ class ApiClient {
         throw new Error("Session error. Please log out and log back in.");
       }
 
-      throw new Error(error.message || "Failed to submit rating. Please try again.");
+      throw new Error(
+        error.message || "Failed to submit rating. Please try again.",
+      );
     }
   }
 
@@ -399,7 +408,9 @@ class ApiClient {
     }
 
     try {
-      return await this.request(`/api/search/users?q=${encodeURIComponent(query)}`);
+      return await this.request(
+        `/api/search/users?q=${encodeURIComponent(query)}`,
+      );
     } catch (error) {
       console.error("Failed to search users:", error);
       return [];
@@ -412,7 +423,9 @@ class ApiClient {
     }
 
     try {
-      return await this.request(`/api/search/posts?q=${encodeURIComponent(query)}`);
+      return await this.request(
+        `/api/search/posts?q=${encodeURIComponent(query)}`,
+      );
     } catch (error) {
       console.error("Failed to search posts:", error);
       return [];
