@@ -23,24 +23,34 @@ export default function BlogPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [isLoginActive, setIsLoginActive] = useState(false);
   const [isSignupActive, setIsSignupActive] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [replyInputs, setReplyInputs] = useState({});
   const [deletingIds, setDeletingIds] = useState(new Set());
-
   const [userRating, setUserRating] = useState(null);
   const [ratingStats, setRatingStats] = useState({
     averageRating: 0,
-    ratingCount: 0
+    ratingCount: 0,
   });
 
-  const isAuthor = blog?.author?._id === user?.id || blog?.author?._id === user?._id;
+  const isAuthor =
+    blog?.author?._id === user?.id || blog?.author?._id === user?._id;
+
+  useEffect(() => {
+    const saved = localStorage.getItem("darkMode");
+    if (saved !== null) setIsDarkMode(saved === "true");
+    setIsInitialized(true);
+  }, []);
+
+  useEffect(() => {
+    if (isInitialized) localStorage.setItem("darkMode", isDarkMode.toString());
+  }, [isDarkMode, isInitialized]);
 
   useEffect(() => {
     async function fetchBlog() {
@@ -54,15 +64,12 @@ export default function BlogPage() {
         }
         const data = await res.json();
         setBlog(data);
-        
         setRatingStats({
           averageRating: data.averageRating || 0,
-          ratingCount: data.ratingCount || 0
+          ratingCount: data.ratingCount || 0,
         });
-        
         setError(null);
       } catch (err) {
-        console.error("Fetch blog error:", err);
         setError(err.message || "Failed to load blog.");
       } finally {
         setLoading(false);
@@ -74,7 +81,6 @@ export default function BlogPage() {
   useEffect(() => {
     async function fetchUserRating() {
       if (!params.id || !isAuthenticated) return;
-      
       try {
         const data = await apiClient.getUserRating(params.id);
         setUserRating(data.userRating);
@@ -94,7 +100,6 @@ export default function BlogPage() {
         const data = await res.json();
         setComments(Array.isArray(data) ? data : []);
       } catch (err) {
-        console.error(err);
         setComments([]);
       }
     }
@@ -106,19 +111,15 @@ export default function BlogPage() {
       setIsLoginActive(true);
       return null;
     }
-
     try {
       const result = await apiClient.ratePost(params.id, rating);
-      
       setUserRating(rating);
       setRatingStats({
         averageRating: result.averageRating,
-        ratingCount: result.ratingCount
+        ratingCount: result.ratingCount,
       });
-      
       return result;
     } catch (error) {
-      console.error("Rating error:", error);
       alert(error.message || "Failed to submit rating");
       return null;
     }
@@ -132,15 +133,10 @@ export default function BlogPage() {
         router.push("/");
       }, 500);
     } catch (err) {
-      console.error("Delete error:", err);
       alert(`Failed to delete post: ${err.message}`);
       setDeleting(false);
       setShowDeleteModal(false);
     }
-  };
-
-  const handleEditPost = () => {
-    router.push(`/edit/${params.id}`);
   };
 
   const handleAddComment = async () => {
@@ -149,9 +145,7 @@ export default function BlogPage() {
       setIsLoginActive(true);
       return;
     }
-
     const userId = user.id || user._id;
-
     setSubmitting(true);
     try {
       const res = await fetch(`/api/comments`, {
@@ -163,20 +157,16 @@ export default function BlogPage() {
           content: trimmed,
         }),
       });
-
       const responseData = await res.json();
-
-      if (!res.ok) throw new Error(responseData.error || "Failed to post comment");
-
+      if (!res.ok)
+        throw new Error(responseData.error || "Failed to post comment");
       setComments([responseData, ...comments]);
       setNewComment("");
-
-      setBlog((prevBlog) => ({
-        ...prevBlog,
-        commentCount: (prevBlog?.commentCount || 0) + 1,
+      setBlog((prev) => ({
+        ...prev,
+        commentCount: (prev?.commentCount || 0) + 1,
       }));
     } catch (err) {
-      console.error("Failed to add comment:", err);
       alert(`Failed to post comment: ${err.message}`);
     } finally {
       setSubmitting(false);
@@ -192,27 +182,24 @@ export default function BlogPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Failed to delete comment");
-
       setComments(comments.filter((c) => c._id !== commentId));
-
-      setBlog((prevBlog) => ({
-        ...prevBlog,
-        commentCount: Math.max(0, (prevBlog?.commentCount || 1) - 1),
+      setBlog((prev) => ({
+        ...prev,
+        commentCount: Math.max(0, (prev?.commentCount || 1) - 1),
       }));
     } catch (err) {
       alert(`Failed to delete comment: ${err.message}`);
     } finally {
       setDeletingIds((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(commentId);
-        return newSet;
+        const s = new Set(prev);
+        s.delete(commentId);
+        return s;
       });
     }
   };
 
-  const handleReplyChange = (commentId, value) => {
+  const handleReplyChange = (commentId, value) =>
     setReplyInputs({ ...replyInputs, [commentId]: value });
-  };
 
   const handleAddReply = async (commentId) => {
     const reply = replyInputs[commentId]?.trim();
@@ -220,28 +207,21 @@ export default function BlogPage() {
       setIsLoginActive(true);
       return;
     }
-
     const userId = user.id || user._id;
-
     try {
       const res = await fetch(`/api/comments/${commentId}/replies`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          authorId: userId,
-          content: reply,
-        }),
+        body: JSON.stringify({ authorId: userId, content: reply }),
       });
       const data = await res.json();
-
       if (!res.ok) throw new Error(data.error || "Failed to post reply");
-
       setComments(
         comments.map((c) =>
           c._id === commentId
             ? { ...c, replies: [data, ...(c.replies || [])] }
-            : c
-        )
+            : c,
+        ),
       );
       setReplyInputs({ ...replyInputs, [commentId]: "" });
     } catch (err) {
@@ -259,31 +239,30 @@ export default function BlogPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Failed to delete reply");
-
       setComments(
         comments.map((c) =>
           c._id === commentId
             ? { ...c, replies: c.replies.filter((r) => r._id !== replyId) }
-            : c
-        )
+            : c,
+        ),
       );
     } catch (err) {
       alert(`Failed to delete reply: ${err.message}`);
     } finally {
       setDeletingIds((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(deleteKey);
-        return newSet;
+        const s = new Set(prev);
+        s.delete(deleteKey);
+        return s;
       });
     }
   };
 
+  if (!isInitialized) return null;
+
   if (loading) {
     return (
       <div
-        className={`min-h-screen flex justify-center items-center transition-colors duration-500 ${
-          isDarkMode ? "bg-[#1c1d1d] text-white" : "bg-[#f6f6f7] text-black"
-        }`}
+        className={`min-h-screen flex justify-center items-center transition-colors duration-500 ${isDarkMode ? "bg-[#1c1d1d] text-white" : "bg-[#f6f6f7] text-black"}`}
       >
         Loading blog...
       </div>
@@ -293,9 +272,7 @@ export default function BlogPage() {
   if (error) {
     return (
       <div
-        className={`min-h-screen flex flex-col justify-center items-center gap-4 transition-colors duration-500 px-4 ${
-          isDarkMode ? "bg-[#1c1d1d] text-white" : "bg-[#f6f6f7] text-black"
-        }`}
+        className={`min-h-screen flex flex-col justify-center items-center gap-4 transition-colors duration-500 px-4 ${isDarkMode ? "bg-[#1c1d1d] text-white" : "bg-[#f6f6f7] text-black"}`}
       >
         <p className="text-red-500 text-lg text-center">{error}</p>
         <Link href="/" className="text-[#f75555] hover:underline">
@@ -308,9 +285,7 @@ export default function BlogPage() {
   if (!blog) {
     return (
       <div
-        className={`min-h-screen flex flex-col justify-center items-center gap-4 transition-colors duration-500 px-4 ${
-          isDarkMode ? "bg-[#1c1d1d] text-white" : "bg-[#f6f6f7] text-black"
-        }`}
+        className={`min-h-screen flex flex-col justify-center items-center gap-4 transition-colors duration-500 px-4 ${isDarkMode ? "bg-[#1c1d1d] text-white" : "bg-[#f6f6f7] text-black"}`}
       >
         <p className="text-xl text-center">Blog not found.</p>
         <Link href="/" className="text-[#f75555] hover:underline">
@@ -322,9 +297,7 @@ export default function BlogPage() {
 
   return (
     <div
-      className={`min-h-screen transition-colors duration-500 ${
-        isDarkMode ? "bg-[#1c1d1d] text-white" : "bg-[#f6f6f7] text-black"
-      }`}
+      className={`min-h-screen transition-colors duration-500 ${isDarkMode ? "bg-[#1c1d1d] text-white" : "bg-[#f6f6f7] text-black"}`}
     >
       <div className="fixed top-0 w-full flex justify-center z-50">
         <Navbar
@@ -345,26 +318,21 @@ export default function BlogPage() {
           </Link>
 
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold break-words flex-1">{blog.title}</h1>
-            
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold break-words flex-1">
+              {blog.title}
+            </h1>
             {isAuthenticated && isAuthor && (
               <div className="flex gap-3">
                 <button
-                  onClick={handleEditPost}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
-                    isDarkMode
-                      ? "bg-blue-600 hover:bg-blue-700 text-white"
-                      : "bg-blue-500 hover:bg-blue-600 text-white"
-                  }`}
+                  onClick={() => router.push(`/edit/${params.id}`)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   <FaEdit /> Edit
                 </button>
                 <button
                   onClick={() => setShowDeleteModal(true)}
                   disabled={deleting}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
-                    deleting ? "opacity-50 cursor-not-allowed" : ""
-                  } bg-red-600 hover:bg-red-700 text-white`}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium bg-red-600 hover:bg-red-700 text-white ${deleting ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
                   <FaTrash /> Delete
                 </button>
@@ -374,9 +342,7 @@ export default function BlogPage() {
 
           {blog.description && (
             <p
-              className={`text-base sm:text-lg mb-3 sm:mb-4 ${
-                isDarkMode ? "text-gray-400" : "text-gray-600"
-              }`}
+              className={`text-base sm:text-lg mb-3 sm:mb-4 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}
             >
               {blog.description}
             </p>
@@ -398,25 +364,21 @@ export default function BlogPage() {
           </div>
 
           <div
-            className={`flex flex-wrap items-center gap-3 sm:gap-4 lg:gap-6 text-xs sm:text-sm ${
-              isDarkMode ? "text-gray-400" : "text-gray-600"
-            }`}
+            className={`flex flex-wrap items-center gap-3 sm:gap-4 lg:gap-6 text-xs sm:text-sm ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}
           >
             {blog.author && (
               <div className="flex items-center gap-2">
                 <img
                   src={getRandomProfileImage(
                     blog.author.image,
-                    blog.author.username || blog.author.email
+                    blog.author.username || blog.author.email,
                   )}
                   alt={blog.author.name}
                   className="w-7 h-7 sm:w-8 sm:h-8 rounded-full"
                 />
                 <Link
                   href={`/profile/${blog.author.username}`}
-                  className={`hover:underline font-medium ${
-                    isDarkMode ? "text-white" : "text-black"
-                  }`}
+                  className={`hover:underline font-medium ${isDarkMode ? "text-white" : "text-black"}`}
                 >
                   {blog.author.name || blog.author.username}
                 </Link>
@@ -425,7 +387,9 @@ export default function BlogPage() {
             {blog.createdAt && (
               <div className="flex items-center gap-1">
                 <FaRegClock className="flex-shrink-0" />
-                <span className="whitespace-nowrap">{new Date(blog.createdAt).toLocaleDateString()}</span>
+                <span className="whitespace-nowrap">
+                  {new Date(blog.createdAt).toLocaleDateString()}
+                </span>
               </div>
             )}
             {blog.views !== undefined && (
@@ -436,16 +400,16 @@ export default function BlogPage() {
             )}
             <div className="flex items-center gap-1">
               <BiComment className="flex-shrink-0" />
-              <span className="whitespace-nowrap">{comments.length} comments</span>
+              <span className="whitespace-nowrap">
+                {comments.length} comments
+              </span>
             </div>
           </div>
         </div>
 
         {blog.content && (
           <div
-            className={`max-w-none mb-8 sm:mb-12 leading-relaxed whitespace-pre-wrap text-sm sm:text-base ${
-              isDarkMode ? "text-gray-300" : "text-gray-700"
-            }`}
+            className={`max-w-none mb-8 sm:mb-12 leading-relaxed whitespace-pre-wrap text-sm sm:text-base ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}
           >
             <div dangerouslySetInnerHTML={{ __html: blog.content }} />
           </div>
@@ -456,20 +420,16 @@ export default function BlogPage() {
         />
 
         <div className="mt-6 sm:mt-8">
-          <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Comments ({comments.length})</h2>
+          <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">
+            Comments ({comments.length})
+          </h2>
 
           {isAuthenticated ? (
             <div
-              className={`w-full rounded p-3 sm:p-4 mb-4 sm:mb-6 transition-colors ${
-                isDarkMode ? "bg-[#23272a]" : "bg-gray-100"
-              }`}
+              className={`w-full rounded p-3 sm:p-4 mb-4 sm:mb-6 transition-colors ${isDarkMode ? "bg-[#23272a]" : "bg-gray-100"}`}
             >
               <textarea
-                className={`bg-transparent w-full outline-none px-2 py-2 rounded text-sm resize-none ${
-                  isDarkMode
-                    ? "text-white placeholder-gray-500"
-                    : "text-black placeholder-gray-400"
-                }`}
+                className={`bg-transparent w-full outline-none px-2 py-2 rounded text-sm resize-none ${isDarkMode ? "text-white placeholder-gray-500" : "text-black placeholder-gray-400"}`}
                 placeholder="Write a comment..."
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
@@ -485,28 +445,22 @@ export default function BlogPage() {
             </div>
           ) : (
             <div
-              className={`w-full rounded p-3 sm:p-4 mb-4 sm:mb-6 text-center transition-colors text-sm sm:text-base ${
-                isDarkMode
-                  ? "bg-[#23272a] text-gray-400"
-                  : "bg-gray-100 text-gray-600"
-              }`}
+              className={`w-full rounded p-3 sm:p-4 mb-4 sm:mb-6 text-center transition-colors text-sm sm:text-base ${isDarkMode ? "bg-[#23272a] text-gray-400" : "bg-gray-100 text-gray-600"}`}
             >
               <button
                 onClick={() => setIsLoginActive(true)}
                 className="text-[#f75555] hover:underline"
               >
                 Sign in
-              </button>
-              {" "}to comment on this post
+              </button>{" "}
+              to comment on this post
             </div>
           )}
 
           <div className="flex flex-col gap-3 sm:gap-4">
             {comments.length === 0 ? (
               <p
-                className={`text-center py-6 sm:py-8 text-sm sm:text-base ${
-                  isDarkMode ? "text-gray-400" : "text-gray-600"
-                }`}
+                className={`text-center py-6 sm:py-8 text-sm sm:text-base ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}
               >
                 No comments yet. Be the first to comment!
               </p>
@@ -514,15 +468,13 @@ export default function BlogPage() {
               comments.map((comment) => (
                 <div
                   key={comment._id}
-                  className={`flex flex-col gap-2 p-3 sm:p-4 rounded transition-colors ${
-                    isDarkMode ? "bg-[#2c2f33]" : "bg-gray-100"
-                  }`}
+                  className={`flex flex-col gap-2 p-3 sm:p-4 rounded transition-colors ${isDarkMode ? "bg-[#2c2f33]" : "bg-gray-100"}`}
                 >
                   <div className="flex gap-2 sm:gap-3">
                     <img
                       src={getRandomProfileImage(
                         comment.author?.image,
-                        comment.author?.username || comment.author?.email
+                        comment.author?.username || comment.author?.email,
                       )}
                       alt={comment.author?.name || "User"}
                       className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-[#f75555] flex-shrink-0"
@@ -539,11 +491,7 @@ export default function BlogPage() {
                               "Anonymous"}
                           </Link>
                           <span
-                            className={`text-xs block ${
-                              isDarkMode
-                                ? "text-gray-500"
-                                : "text-gray-500"
-                            }`}
+                            className={`text-xs block ${isDarkMode ? "text-gray-500" : "text-gray-500"}`}
                           >
                             {new Date(comment.createdAt).toLocaleString()}
                           </span>
@@ -561,11 +509,7 @@ export default function BlogPage() {
                         )}
                       </div>
                       <p
-                        className={`text-sm mt-2 break-words ${
-                          isDarkMode
-                            ? "text-gray-300"
-                            : "text-gray-700"
-                        }`}
+                        className={`text-sm mt-2 break-words ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}
                       >
                         {comment.content}
                       </p>
@@ -578,7 +522,7 @@ export default function BlogPage() {
                         <img
                           src={getRandomProfileImage(
                             reply.author?.image,
-                            reply.author?.username || reply.author?.email
+                            reply.author?.username || reply.author?.email,
                           )}
                           alt={reply.author?.name || "User"}
                           className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 border-[#f75555] flex-shrink-0"
@@ -595,11 +539,7 @@ export default function BlogPage() {
                                   "Anonymous"}
                               </Link>
                               <span
-                                className={`text-xs block ${
-                                  isDarkMode
-                                    ? "text-gray-500"
-                                    : "text-gray-500"
-                                }`}
+                                className={`text-xs block ${isDarkMode ? "text-gray-500" : "text-gray-500"}`}
                               >
                                 {new Date(reply.createdAt).toLocaleString()}
                               </span>
@@ -610,24 +550,18 @@ export default function BlogPage() {
                                   handleDeleteReply(comment._id, reply._id)
                                 }
                                 disabled={deletingIds.has(
-                                  `${comment._id}-${reply._id}`
+                                  `${comment._id}-${reply._id}`,
                                 )}
                                 className="text-red-500 text-xs hover:text-red-400 disabled:opacity-50 flex-shrink-0"
                               >
-                                {deletingIds.has(
-                                  `${comment._id}-${reply._id}`
-                                )
+                                {deletingIds.has(`${comment._id}-${reply._id}`)
                                   ? "Deleting..."
                                   : "Delete"}
                               </button>
                             )}
                           </div>
                           <p
-                            className={`text-xs sm:text-sm mt-1 break-words ${
-                              isDarkMode
-                                ? "text-gray-300"
-                                : "text-gray-700"
-                            }`}
+                            className={`text-xs sm:text-sm mt-1 break-words ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}
                           >
                             {reply.content}
                           </p>
@@ -644,14 +578,9 @@ export default function BlogPage() {
                             handleReplyChange(comment._id, e.target.value)
                           }
                           placeholder="Write a reply..."
-                          className={`flex-1 border rounded px-3 py-2 text-sm outline-none focus:border-[#f75555] transition-colors ${
-                            isDarkMode
-                              ? "bg-[#23272a] border-gray-600 text-white placeholder-gray-500"
-                              : "bg-white border-gray-300 text-black placeholder-gray-400"
-                          }`}
+                          className={`flex-1 border rounded px-3 py-2 text-sm outline-none focus:border-[#f75555] transition-colors ${isDarkMode ? "bg-[#23272a] border-gray-600 text-white placeholder-gray-500" : "bg-white border-gray-300 text-black placeholder-gray-400"}`}
                           onKeyPress={(e) => {
-                            if (e.key === "Enter")
-                              handleAddReply(comment._id);
+                            if (e.key === "Enter") handleAddReply(comment._id);
                           }}
                         />
                         <button
