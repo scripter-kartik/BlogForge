@@ -17,7 +17,12 @@ export default function Profile() {
   const username = params.username;
   const router = useRouter();
 
-  const { isAuthenticated, user: authUser, loading: authLoading, updateSession } = useAuth();
+  const {
+    isAuthenticated,
+    user: authUser,
+    loading: authLoading,
+    updateSession,
+  } = useAuth();
   const { refreshUser, updateUser } = useUser();
   const { toggleFollow, loading: followLoading } = useFollow();
 
@@ -29,6 +34,7 @@ export default function Profile() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState(null);
@@ -57,23 +63,32 @@ export default function Profile() {
   ];
 
   const getGradientForPost = (postId) => {
-    const hash = postId.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const hash = postId
+      .split("")
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return gradients[hash % gradients.length];
   };
 
+  useEffect(() => {
+    const saved = localStorage.getItem("darkMode");
+    if (saved !== null) setIsDarkMode(saved === "true");
+    setIsInitialized(true);
+  }, []);
+
+  useEffect(() => {
+    if (isInitialized) localStorage.setItem("darkMode", isDarkMode.toString());
+  }, [isDarkMode, isInitialized]);
+
   const fetchUserData = useCallback(async () => {
     if (!username) return;
-
     try {
       setLoading(true);
       const userData = await apiClient.getUserByUsername(username);
-
       if (!userData) {
         setError("User not found");
         setLoading(false);
         return;
       }
-
       setUser(userData);
       setFormData({
         username: userData.username || "",
@@ -82,21 +97,17 @@ export default function Profile() {
         bio: userData.bio || "",
         password: "",
       });
-
       const stats = await apiClient.getUserStats(userData.username);
       setUserStats(stats);
-
       const postsData = await apiClient.getUserPosts(userData.username);
       setUserPosts(postsData.posts || []);
-
       if (isAuthenticated && authUser?._id) {
         const isUserFollowing = userData.followers?.some(
-          (followerId) => followerId.toString() === authUser._id
+          (id) => id.toString() === authUser._id,
         );
         setIsFollowing(isUserFollowing || false);
       }
     } catch (err) {
-      console.error("Error loading profile:", err);
       setError("Failed to load profile data");
     } finally {
       setLoading(false);
@@ -112,91 +123,46 @@ export default function Profile() {
       router.push("/");
       return;
     }
-
     const result = await toggleFollow(user._id, isFollowing);
     if (result) {
       setIsFollowing(result.isFollowing);
-      setUserStats((prev) => ({
-        ...prev,
-        followers: result.followersCount,
-      }));
+      setUserStats((prev) => ({ ...prev, followers: result.followersCount }));
     }
   };
 
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     setSaving(true);
     setError("");
     setSuccess("");
-
     try {
-      // Upload the file
       const uploadData = new FormData();
       uploadData.append("profileImage", file);
       uploadData.append("username", formData.username);
       uploadData.append("email", formData.email);
       uploadData.append("name", formData.name);
       uploadData.append("bio", formData.bio);
-
-      console.log("📤 Uploading profile image...");
-
       const res = await fetch("/api/protected/user/update", {
         method: "POST",
         body: uploadData,
       });
-
       const data = await res.json();
-
-      if (!res.ok) {
+      if (!res.ok)
         throw new Error(data.error || "Failed to update profile image");
-      }
-
-      console.log("✅ Image uploaded successfully:", data.user.image);
-
-      // CRITICAL: Update all sources immediately
       const newImageUrl = data.user.image;
-
-      // 1. Update local state
-      setUser((prev) => ({
-        ...prev,
-        image: newImageUrl,
-      }));
-
-      // 2. Update global context with force refresh flag
-      updateUser({
-        image: newImageUrl,
-        _forceRefresh: Date.now(),
-      });
-
-      // 3. Update NextAuth session with the new image
-      console.log("🔄 Updating NextAuth session...");
-      const sessionResult = await updateSession({
-        user: {
-          image: newImageUrl,
-        }
-      });
-      console.log("✅ Session updated:", sessionResult);
-
-      // 4. Give the session a moment to propagate
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      // 5. Fetch fresh data from API to confirm
-      console.log("🔄 Refreshing from database...");
+      setUser((prev) => ({ ...prev, image: newImageUrl }));
+      updateUser({ image: newImageUrl, _forceRefresh: Date.now() });
+      await updateSession({ user: { image: newImageUrl } });
+      await new Promise((resolve) => setTimeout(resolve, 300));
       await refreshUser();
-      localStorage.setItem('profileImageUpdated', Date.now().toString());
-      window.dispatchEvent(new Event('storage'));
-
+      localStorage.setItem("profileImageUpdated", Date.now().toString());
+      window.dispatchEvent(new Event("storage"));
       setSuccess("Profile image updated!");
-      setError("");
       setTimeout(() => {
-        console.log("🔄 Reloading page to apply changes everywhere...");
         window.location.reload();
       }, 1000);
-
     } catch (err) {
-      console.error("Upload error:", err);
       setError(err.message || "Error uploading image");
     } finally {
       setSaving(false);
@@ -231,37 +197,23 @@ export default function Profile() {
 
   const handleSave = async () => {
     if (!validateForm()) return;
-
     setSaving(true);
     setError("");
     setSuccess("");
-
     try {
       const uploadData = new FormData();
       uploadData.append("username", formData.username);
       uploadData.append("email", formData.email);
       uploadData.append("name", formData.name);
       uploadData.append("bio", formData.bio);
-
-      if (formData.password.trim() !== "") {
+      if (formData.password.trim() !== "")
         uploadData.append("password", formData.password);
-      }
-
-      console.log("📤 Saving profile changes...");
-
       const res = await fetch("/api/protected/user/update", {
         method: "POST",
         body: uploadData,
       });
-
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to update profile");
-      }
-
-      console.log("Profile updated:", data.user);
-
+      if (!res.ok) throw new Error(data.error || "Failed to update profile");
       const updatedData = {
         name: data.user.name,
         email: data.user.email,
@@ -269,29 +221,16 @@ export default function Profile() {
         image: data.user.image,
         _forceRefresh: Date.now(),
       };
-
-      setUser((prev) => ({
-        ...prev,
-        ...updatedData,
-      }));
-
+      setUser((prev) => ({ ...prev, ...updatedData }));
       updateUser(updatedData);
-
-      console.log("🔄 Updating session...");
       await updateSession();
-
       await refreshUser();
-
       setSuccess("Profile updated successfully!");
       setFormData((prev) => ({ ...prev, password: "" }));
-      setError("");
-
       setTimeout(() => {
-        console.log("🔄 Reloading to apply changes...");
         window.location.reload();
       }, 1500);
     } catch (error) {
-      console.error("Profile update error:", error);
       setError(error.message || "Failed to update profile");
     } finally {
       setSaving(false);
@@ -318,11 +257,12 @@ export default function Profile() {
     }
   };
 
+  if (!isInitialized) return null;
+
   if (authLoading || loading) {
     return (
       <div
-        className={`flex items-center justify-center h-screen transition-colors duration-500 ${isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f6f6f7]"
-          }`}
+        className={`flex items-center justify-center h-screen transition-colors duration-500 ${isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f6f6f7]"}`}
       >
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#f75555] mx-auto mb-4"></div>
@@ -337,8 +277,7 @@ export default function Profile() {
   if (error && !user) {
     return (
       <div
-        className={`flex justify-center mt-32 text-lg transition-colors duration-500 px-4 ${isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f6f6f7]"
-          }`}
+        className={`flex justify-center mt-32 text-lg transition-colors duration-500 px-4 ${isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f6f6f7]"}`}
       >
         <p className="text-red-500">{error}</p>
       </div>
@@ -348,22 +287,20 @@ export default function Profile() {
   const isOwnProfile = authUser?.username === user?.username;
 
   return (
-    <div className={`flex flex-col items-center min-h-screen w-full overflow-x-hidden transition-colors duration-500 ${isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f6f6f7]"
-      }`}>
-
+    <div
+      className={`flex flex-col items-center min-h-screen w-full overflow-x-hidden transition-colors duration-500 ${isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f6f6f7]"}`}
+    >
       <Navbar
         isDarkMode={isDarkMode}
         setIsDarkMode={setIsDarkMode}
-        setIsLoginActive={() => { }}
-        setIsSignupActive={() => { }}
+        setIsLoginActive={() => {}}
+        setIsSignupActive={() => {}}
       />
 
       <div
-        className={`mt-20 sm:mt-24 md:mt-32 flex flex-col w-full max-w-[1280px] px-4 sm:px-6 lg:px-8 transition-colors duration-500 ${isDarkMode ? "text-white" : "text-black"
-          }`}
+        className={`mt-20 sm:mt-24 md:mt-32 flex flex-col w-full max-w-[1280px] px-4 sm:px-6 lg:px-8 transition-colors duration-500 ${isDarkMode ? "text-white" : "text-black"}`}
       >
         <div className="flex flex-col lg:flex-row items-start justify-between w-full gap-6 sm:gap-8 lg:gap-12">
-          {/* Profile Sidebar */}
           <div className="flex flex-col items-center gap-4 sm:gap-6 w-full lg:w-80 flex-shrink-0">
             <div className="relative w-40 h-40 sm:w-48 sm:h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 rounded-full overflow-hidden border-4 border-[#f75555] group">
               <img
@@ -419,10 +356,10 @@ export default function Profile() {
             </div>
 
             <p
-              className={`text-xs sm:text-sm text-center ${isDarkMode ? "text-gray-400" : "text-gray-600"
-                }`}
+              className={`text-xs sm:text-sm text-center ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}
             >
-              Member since {user?.createdAt ? formatDate(user.createdAt) : "N/A"}
+              Member since{" "}
+              {user?.createdAt ? formatDate(user.createdAt) : "N/A"}
             </p>
 
             {isOwnProfile ? (
@@ -436,12 +373,7 @@ export default function Profile() {
               <button
                 onClick={handleFollowClick}
                 disabled={followLoading}
-                className={`px-6 sm:px-8 py-2 rounded font-medium transition-colors text-sm sm:text-base ${isFollowing
-                    ? isDarkMode
-                      ? "bg-gray-600 hover:bg-gray-700 text-white"
-                      : "bg-gray-400 hover:bg-gray-500 text-white"
-                    : "bg-[#f75555] hover:bg-red-600 text-white"
-                  } ${followLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                className={`px-6 sm:px-8 py-2 rounded font-medium transition-colors text-sm sm:text-base ${isFollowing ? (isDarkMode ? "bg-gray-600 hover:bg-gray-700 text-white" : "bg-gray-400 hover:bg-gray-500 text-white") : "bg-[#f75555] hover:bg-red-600 text-white"} ${followLoading ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 {followLoading ? "..." : isFollowing ? "Following" : "Follow"}
               </button>
@@ -455,57 +387,49 @@ export default function Profile() {
 
             {isOwnProfile ? (
               <>
-                {["username", "email", "name", "password", "bio"].map((field) => (
-                  <div className="flex flex-col w-full" key={field}>
-                    <label
-                      htmlFor={field}
-                      className="text-xs sm:text-sm font-light mb-1 capitalize"
-                    >
-                      {field}
-                    </label>
-                    {field === "bio" ? (
-                      <textarea
-                        id={field}
-                        value={formData.bio}
-                        onChange={(e) =>
-                          handleInputChange("bio", e.target.value)
-                        }
-                        className={`w-full px-3 py-2 text-sm sm:text-base font-light rounded h-[100px] sm:h-[120px] resize-none outline-none border-none transition-colors duration-500 ${isDarkMode ? "bg-[#2f2f2f] text-white" : "bg-gray-200 text-black"
-                          }`}
-                        placeholder="Tell us something..."
-                      />
-                    ) : (
-                      <input
-                        id={field}
-                        type={field === "password" ? "password" : "text"}
-                        value={formData[field]}
-                        onChange={(e) =>
-                          handleInputChange(field, e.target.value)
-                        }
-                        disabled={field === "username"}
-                        placeholder={
-                          field === "password"
-                            ? "Leave blank to keep unchanged"
-                            : ""
-                        }
-                        className={`w-full h-[35px] sm:h-[40px] border-none outline-none px-3 py-2 text-sm sm:text-base font-light rounded transition-colors duration-500 ${isDarkMode
-                            ? "bg-[#2f2f2f] text-white"
-                            : "bg-gray-200 text-black"
-                          } ${field === "username"
-                            ? "opacity-60 cursor-not-allowed"
-                            : ""
-                          }`}
-                      />
-                    )}
-                  </div>
-                ))}
+                {["username", "email", "name", "password", "bio"].map(
+                  (field) => (
+                    <div className="flex flex-col w-full" key={field}>
+                      <label
+                        htmlFor={field}
+                        className="text-xs sm:text-sm font-light mb-1 capitalize"
+                      >
+                        {field}
+                      </label>
+                      {field === "bio" ? (
+                        <textarea
+                          id={field}
+                          value={formData.bio}
+                          onChange={(e) =>
+                            handleInputChange("bio", e.target.value)
+                          }
+                          className={`w-full px-3 py-2 text-sm sm:text-base font-light rounded h-[100px] sm:h-[120px] resize-none outline-none border-none transition-colors duration-500 ${isDarkMode ? "bg-[#2f2f2f] text-white" : "bg-gray-200 text-black"}`}
+                          placeholder="Tell us something..."
+                        />
+                      ) : (
+                        <input
+                          id={field}
+                          type={field === "password" ? "password" : "text"}
+                          value={formData[field]}
+                          onChange={(e) =>
+                            handleInputChange(field, e.target.value)
+                          }
+                          disabled={field === "username"}
+                          placeholder={
+                            field === "password"
+                              ? "Leave blank to keep unchanged"
+                              : ""
+                          }
+                          className={`w-full h-[35px] sm:h-[40px] border-none outline-none px-3 py-2 text-sm sm:text-base font-light rounded transition-colors duration-500 ${isDarkMode ? "bg-[#2f2f2f] text-white" : "bg-gray-200 text-black"} ${field === "username" ? "opacity-60 cursor-not-allowed" : ""}`}
+                        />
+                      )}
+                    </div>
+                  ),
+                )}
 
                 <button
                   onClick={handleSave}
-                  className={`px-4 sm:px-6 py-2 rounded font-medium transition-all bg-[#f75555] text-white text-sm sm:text-base ${saving
-                      ? "opacity-50 cursor-not-allowed"
-                      : "hover:bg-red-600"
-                    }`}
+                  className={`px-4 sm:px-6 py-2 rounded font-medium transition-all bg-[#f75555] text-white text-sm sm:text-base ${saving ? "opacity-50 cursor-not-allowed" : "hover:bg-red-600"}`}
                   disabled={saving}
                 >
                   {saving ? "Saving..." : "Save changes"}
@@ -523,22 +447,28 @@ export default function Profile() {
                 )}
               </>
             ) : (
-              <div className={`w-full p-4 sm:p-6 rounded-xl ${isDarkMode ? "bg-[#2D2D2D]" : "bg-white"
-                } shadow-lg`}>
+              <div
+                className={`w-full p-4 sm:p-6 rounded-xl ${isDarkMode ? "bg-[#2D2D2D]" : "bg-white"} shadow-lg`}
+              >
                 <h3 className="text-lg sm:text-xl font-bold mb-3">About</h3>
-                <p className={`text-sm sm:text-base leading-relaxed ${isDarkMode ? "text-gray-300" : "text-gray-700"
-                  }`}>
+                <p
+                  className={`text-sm sm:text-base leading-relaxed ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}
+                >
                   {user?.bio || "No bio yet"}
                 </p>
-                <div className={`mt-4 pt-4 border-t ${isDarkMode ? "border-gray-700" : "border-gray-200"
-                  }`}>
-                  <p className={`text-xs sm:text-sm ${isDarkMode ? "text-gray-400" : "text-gray-600"
-                    }`}>
+                <div
+                  className={`mt-4 pt-4 border-t ${isDarkMode ? "border-gray-700" : "border-gray-200"}`}
+                >
+                  <p
+                    className={`text-xs sm:text-sm ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}
+                  >
                     <span className="font-semibold">Email:</span> {user?.email}
                   </p>
-                  <p className={`text-xs sm:text-sm mt-2 ${isDarkMode ? "text-gray-400" : "text-gray-600"
-                    }`}>
-                    <span className="font-semibold">Username:</span> @{user?.username}
+                  <p
+                    className={`text-xs sm:text-sm mt-2 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}
+                  >
+                    <span className="font-semibold">Username:</span> @
+                    {user?.username}
                   </p>
                 </div>
               </div>
@@ -548,12 +478,14 @@ export default function Profile() {
 
         <div className="mt-8 sm:mt-12 lg:mt-16 w-full mb-24 sm:mb-28">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 justify-between mb-6 sm:mb-10">
-            <h1 className={`${isDarkMode ? "text-white" : "text-black"
-              } text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight`}>
+            <h1
+              className={`${isDarkMode ? "text-white" : "text-black"} text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight`}
+            >
               {isOwnProfile ? "Your Posts" : `Posts by ${user?.name}`}
             </h1>
-            <div className={`hidden sm:block flex-1 h-1 rounded-full ${isDarkMode ? "bg-gradient-to-r from-[#f75555] to-transparent" : "bg-gradient-to-r from-[#f75555] to-transparent"
-              }`}></div>
+            <div
+              className={`hidden sm:block flex-1 h-1 rounded-full bg-gradient-to-r from-[#f75555] to-transparent`}
+            ></div>
           </div>
 
           {userPosts.length > 0 ? (
@@ -564,10 +496,7 @@ export default function Profile() {
                 onClick={() => router.push(`/blog/${post._id}`)}
               >
                 <div
-                  className={`w-full ${isDarkMode
-                      ? "text-white bg-[#2D2D2D] hover:bg-[#353535]"
-                      : "text-black bg-[#E8EAEC] hover:bg-[#dfe1e4]"
-                    } flex flex-col sm:flex-row gap-4 sm:gap-6 p-4 sm:p-6 rounded-xl transition-all duration-300 hover:shadow-xl hover:scale-[1.01]`}
+                  className={`w-full ${isDarkMode ? "text-white bg-[#2D2D2D] hover:bg-[#353535]" : "text-black bg-[#E8EAEC] hover:bg-[#dfe1e4]"} flex flex-col sm:flex-row gap-4 sm:gap-6 p-4 sm:p-6 rounded-xl transition-all duration-300 hover:shadow-xl hover:scale-[1.01]`}
                 >
                   {post.coverImage ? (
                     <img
@@ -576,10 +505,6 @@ export default function Profile() {
                       alt={post.title}
                       onError={(e) => {
                         e.target.style.display = "none";
-                        const parent = e.target.parentElement;
-                        const gradientDiv = document.createElement("div");
-                        gradientDiv.className = `w-full sm:w-40 md:w-48 lg:w-52 h-40 sm:h-32 md:h-36 lg:h-40 rounded-lg group-hover:shadow-md transition-shadow flex-shrink-0 ${getGradientForPost(post._id)}`;
-                        parent.insertBefore(gradientDiv, parent.firstChild);
                       }}
                     />
                   ) : (
@@ -587,7 +512,6 @@ export default function Profile() {
                       className={`w-full sm:w-40 md:w-48 lg:w-52 h-40 sm:h-32 md:h-36 lg:h-40 rounded-lg group-hover:shadow-md transition-shadow flex-shrink-0 ${getGradientForPost(post._id)}`}
                     />
                   )}
-
                   <div className="flex flex-col gap-3 sm:gap-4 flex-1">
                     <div className="flex flex-col sm:flex-row justify-between items-start gap-3 sm:gap-4">
                       <h1 className="font-bold text-lg sm:text-xl lg:text-2xl leading-tight">
@@ -596,27 +520,33 @@ export default function Profile() {
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <img
                           className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-[#f75555]"
-                          src={getRandomProfileImage(user?.image, user?.username)}
+                          src={getRandomProfileImage(
+                            user?.image,
+                            user?.username,
+                          )}
                           alt={user?.name}
                         />
-                        <p className="text-xs sm:text-sm font-medium">{user?.name}</p>
+                        <p className="text-xs sm:text-sm font-medium">
+                          {user?.name}
+                        </p>
                       </div>
                     </div>
                     {post.description && (
                       <p
-                        className={`${isDarkMode ? "text-gray-300" : "text-gray-700"
-                          } line-clamp-2 text-sm sm:text-base`}
+                        className={`${isDarkMode ? "text-gray-300" : "text-gray-700"} line-clamp-2 text-sm sm:text-base`}
                       >
                         {post.description}
                       </p>
                     )}
                     <div
-                      className={`${isDarkMode ? "text-gray-400" : "text-gray-600"
-                        } flex flex-wrap items-center gap-4 sm:gap-6 text-xs sm:text-sm font-medium`}
+                      className={`${isDarkMode ? "text-gray-400" : "text-gray-600"} flex flex-wrap items-center gap-4 sm:gap-6 text-xs sm:text-sm font-medium`}
                     >
                       <div className="flex items-center gap-2 hover:text-[#f75555] transition-colors">
                         <FaRegStar className="text-yellow-500 text-sm sm:text-base" />
-                        <p>{post.likesCount || post.starRating || 0} {post.starRating ? "rating" : "likes"}</p>
+                        <p>
+                          {post.likesCount || post.starRating || 0}{" "}
+                          {post.starRating ? "rating" : "likes"}
+                        </p>
                       </div>
                       <div className="flex items-center gap-2">
                         <FaRegClock className="text-sm sm:text-base" />
@@ -628,8 +558,9 @@ export default function Profile() {
               </div>
             ))
           ) : (
-            <div className={`text-center py-12 sm:py-16 ${isDarkMode ? "text-gray-400" : "text-gray-600"
-              }`}>
+            <div
+              className={`text-center py-12 sm:py-16 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}
+            >
               <p className="text-base sm:text-lg lg:text-xl px-4">
                 {isOwnProfile
                   ? "You haven't written any posts yet."
@@ -651,12 +582,11 @@ export default function Profile() {
         }
         isDarkMode={isDarkMode}
         onFollowChange={(isFollowing) => {
-          if (modalType === "following" && !isFollowing) {
+          if (modalType === "following" && !isFollowing)
             setUserStats((prev) => ({
               ...prev,
               following: Math.max(0, (prev?.following || 1) - 1),
             }));
-          }
         }}
       />
     </div>

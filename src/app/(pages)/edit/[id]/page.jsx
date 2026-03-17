@@ -10,6 +10,7 @@ import { apiClient } from "@/lib/api";
 
 const EditPage = () => {
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [coverImage, setCoverImage] = useState(null);
   const [randomColor, setRandomColor] = useState("");
   const [title, setTitle] = useState("");
@@ -23,6 +24,16 @@ const EditPage = () => {
   const router = useRouter();
   const params = useParams();
   const { isAuthenticated, user, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    const saved = localStorage.getItem("darkMode");
+    if (saved !== null) setIsDarkMode(saved === "true");
+    setIsInitialized(true);
+  }, []);
+
+  useEffect(() => {
+    if (isInitialized) localStorage.setItem("darkMode", isDarkMode.toString());
+  }, [isDarkMode, isInitialized]);
 
   useEffect(() => {
     const colors = [
@@ -39,44 +50,24 @@ const EditPage = () => {
       "bg-gradient-to-r from-red-500 to-pink-500",
       "bg-gradient-to-r from-lime-500 to-green-500",
     ];
-
-    const randomIndex = Math.floor(Math.random() * colors.length);
-    setRandomColor(colors[randomIndex]);
+    setRandomColor(colors[Math.floor(Math.random() * colors.length)]);
   }, []);
 
   useEffect(() => {
     async function fetchBlog() {
       if (!params.id) return;
-
       try {
         setLoading(true);
-        console.log("📖 Fetching blog for edit:", params.id);
-        
         const blog = await apiClient.getBlogById(params.id);
-
         if (!blog) {
           setError("Blog not found");
           return;
         }
 
-        console.log("📝 Blog fetched:", {
-          blogId: blog._id,
-          authorId: blog.author?._id,
-          authorName: blog.author?.name,
-          currentUserId: user?.id || user?._id,
-          currentUserName: user?.name
-        });
-
         const userIdToCheck = user?.id || user?._id || user?.sub;
         const authorIdToCheck = blog.author?._id || blog.author?.id;
-        
-        const isAuthor = userIdToCheck?.toString() === authorIdToCheck?.toString();
-
-        console.log("🔐 Authorization check:", {
-          userIdToCheck,
-          authorIdToCheck,
-          isAuthor
-        });
+        const isAuthor =
+          userIdToCheck?.toString() === authorIdToCheck?.toString();
 
         if (!isAuthor) {
           setError("You don't have permission to edit this post");
@@ -90,11 +81,10 @@ const EditPage = () => {
         setContent(blog.content || "");
         setCoverImage(blog.coverImage || null);
         setError("");
-        
-        console.log("Edit form initialized");
       } catch (err) {
-        console.error("Error fetching blog:", err);
-        setError("Failed to load blog data: " + (err.message || "Unknown error"));
+        setError(
+          "Failed to load blog data: " + (err.message || "Unknown error"),
+        );
       } finally {
         setLoading(false);
       }
@@ -131,7 +121,6 @@ const EditPage = () => {
 
   const handleUpdate = async () => {
     if (!validateForm()) return;
-
     setUpdating(true);
     setError("");
 
@@ -143,39 +132,20 @@ const EditPage = () => {
         .map((t) => t.trim())
         .filter(Boolean),
       coverImage,
-      content: content,
+      content,
     };
 
     try {
-      console.log("📝 Updating post with data:", {
-        postId: params.id,
-        title: postData.title,
-        hasContent: !!postData.content,
-        hasCoverImage: !!postData.coverImage,
-        tagsCount: postData.tags.length
-      });
-
-      const updatedPost = await apiClient.updatePost(params.id, postData);
-      
-      console.log("Post updated successfully:", updatedPost);
-      
+      await apiClient.updatePost(params.id, postData);
       alert("Post updated successfully!");
       router.push(`/blog/${params.id}`);
     } catch (error) {
-      console.error("Error updating post:", error);
-      
       let errorMsg = "Failed to update post. ";
-      
-      if (error.status === 401) {
-        errorMsg += "Please login again.";
-      } else if (error.status === 403) {
+      if (error.status === 401) errorMsg += "Please login again.";
+      else if (error.status === 403)
         errorMsg += "You don't have permission to edit this post.";
-      } else if (error.status === 404) {
-        errorMsg += "Post not found.";
-      } else {
-        errorMsg += error.message || "Please try again.";
-      }
-      
+      else if (error.status === 404) errorMsg += "Post not found.";
+      else errorMsg += error.message || "Please try again.";
       setError(errorMsg);
     } finally {
       setUpdating(false);
@@ -184,57 +154,36 @@ const EditPage = () => {
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
-    if (file) {
-      if (file.type.startsWith("image/")) {
-        if (file.size > 5 * 1024 * 1024) {
-          setError("Image size should be less than 5MB");
-          return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          setCoverImage(e.target.result);
-          setError("");
-        };
-        reader.onerror = () => {
-          setError("Failed to read image file");
-        };
-        reader.readAsDataURL(file);
-      } else {
-        setError("Please select a valid image file (JPG, PNG, GIF)");
-      }
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Please select a valid image file (JPG, PNG, GIF)");
+      return;
     }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image size should be less than 5MB");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setCoverImage(e.target.result);
+      setError("");
+    };
+    reader.onerror = () => setError("Failed to read image file");
+    reader.readAsDataURL(file);
   };
 
   const handleUploadClick = () => {
-    if (!updating) {
-      fileInputRef.current?.click();
-    }
+    if (!updating) fileInputRef.current?.click();
   };
 
   const handleRemoveImage = (e) => {
     e.preventDefault();
     e.stopPropagation();
     setCoverImage(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleContentChange = (newContent) => {
-    setContent(newContent);
-  };
-
-  if (authLoading || loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#f75555] mx-auto mb-4"></div>
-          <p>Loading...</p>
-        </div>
-      </div>
-    );
-  }
+  if (!isInitialized || authLoading || loading) return null;
 
   if (!isAuthenticated) {
     return (
@@ -254,9 +203,7 @@ const EditPage = () => {
 
   return (
     <div
-      className={`flex flex-col items-center min-h-screen w-full ${
-        isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f4f6f8]"
-      } transition-colors duration-500`}
+      className={`flex flex-col items-center min-h-screen w-full ${isDarkMode ? "bg-[#1c1d1d]" : "bg-[#f4f6f8]"} transition-colors duration-500`}
     >
       <Navbar
         setIsLoginActive={() => {}}
@@ -267,19 +214,13 @@ const EditPage = () => {
 
       <div className="flex flex-col lg:flex-row mt-20 sm:mt-24 md:mt-32 lg:mt-44 w-full max-w-[1280px] px-4 sm:px-6 lg:px-8 gap-6 lg:gap-8 xl:gap-12 justify-between">
         <div
-          className={`flex flex-col gap-4 sm:gap-6 items-start w-full lg:w-80 xl:w-96 ${
-            isDarkMode ? "text-white" : "text-black"
-          } transition-colors duration-500`}
+          className={`flex flex-col gap-4 sm:gap-6 items-start w-full lg:w-80 xl:w-96 ${isDarkMode ? "text-white" : "text-black"} transition-colors duration-500`}
         >
           <h2 className="text-2xl font-bold text-[#f75555]">Edit Post</h2>
 
           <div className="relative w-full">
             <input
-              className={`w-full h-10 sm:h-12 px-3 py-2 border rounded text-sm sm:text-base ${
-                isDarkMode
-                  ? "bg-[#27272A] border-[#3f3f46] text-white"
-                  : "bg-[#FFFFFF] border-gray-300 text-black"
-              } transition-colors duration-500 focus:outline-none focus:ring-2 focus:ring-[#f75555]`}
+              className={`w-full h-10 sm:h-12 px-3 py-2 border rounded text-sm sm:text-base ${isDarkMode ? "bg-[#27272A] border-[#3f3f46] text-white" : "bg-[#FFFFFF] border-gray-300 text-black"} transition-colors duration-500 focus:outline-none focus:ring-2 focus:ring-[#f75555]`}
               type="text"
               placeholder="Post Title"
               value={title}
@@ -294,11 +235,7 @@ const EditPage = () => {
 
           <div className="relative w-full">
             <textarea
-              className={`w-full h-20 sm:h-24 px-3 py-2 border rounded resize-none text-sm sm:text-base ${
-                isDarkMode
-                  ? "bg-[#27272A] border-[#3f3f46] text-white"
-                  : "bg-[#FFFFFF] border-gray-300 text-black"
-              } transition-colors duration-500 focus:outline-none focus:ring-2 focus:ring-[#f75555]`}
+              className={`w-full h-20 sm:h-24 px-3 py-2 border rounded resize-none text-sm sm:text-base ${isDarkMode ? "bg-[#27272A] border-[#3f3f46] text-white" : "bg-[#FFFFFF] border-gray-300 text-black"} transition-colors duration-500 focus:outline-none focus:ring-2 focus:ring-[#f75555]`}
               placeholder="Post description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -311,11 +248,7 @@ const EditPage = () => {
           </div>
 
           <input
-            className={`w-full h-10 sm:h-12 px-3 py-2 border rounded text-sm sm:text-base ${
-              isDarkMode
-                ? "bg-[#27272A] border-[#3f3f46] text-white"
-                : "bg-[#FFFFFF] border-gray-300 text-black"
-            } transition-colors duration-500 focus:outline-none focus:ring-2 focus:ring-[#f75555]`}
+            className={`w-full h-10 sm:h-12 px-3 py-2 border rounded text-sm sm:text-base ${isDarkMode ? "bg-[#27272A] border-[#3f3f46] text-white" : "bg-[#FFFFFF] border-gray-300 text-black"} transition-colors duration-500 focus:outline-none focus:ring-2 focus:ring-[#f75555]`}
             type="text"
             placeholder="Tags (comma-separated)"
             value={tag}
@@ -328,9 +261,7 @@ const EditPage = () => {
             <button
               onClick={handleUploadClick}
               disabled={updating}
-              className={`hover:text-[#f75555] transition-colors ${
-                updating ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
-              }`}
+              className={`hover:text-[#f75555] transition-colors ${updating ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
             >
               Update Cover Image
             </button>
@@ -346,17 +277,7 @@ const EditPage = () => {
           />
 
           <div
-            className={`w-full h-40 sm:h-48 rounded-lg relative overflow-hidden border-2 border-dashed ${
-              coverImage
-                ? "border-transparent"
-                : isDarkMode
-                ? "border-gray-600"
-                : "border-gray-300"
-            } ${coverImage ? "" : randomColor} ${
-              updating
-                ? "pointer-events-none opacity-50"
-                : "cursor-pointer hover:opacity-90"
-            } transition-all duration-300`}
+            className={`w-full h-40 sm:h-48 rounded-lg relative overflow-hidden border-2 border-dashed ${coverImage ? "border-transparent" : isDarkMode ? "border-gray-600" : "border-gray-300"} ${coverImage ? "" : randomColor} ${updating ? "pointer-events-none opacity-50" : "cursor-pointer hover:opacity-90"} transition-all duration-300`}
             onClick={handleUploadClick}
           >
             {coverImage ? (
@@ -369,7 +290,6 @@ const EditPage = () => {
                 <button
                   onClick={handleRemoveImage}
                   className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center text-lg sm:text-xl transition-colors z-10"
-                  title="Remove image"
                   disabled={updating}
                 >
                   ×
@@ -384,7 +304,9 @@ const EditPage = () => {
               <div className="w-full h-full flex items-center justify-center">
                 <div className="text-center text-white px-4">
                   <GrGallery className="mx-auto mb-2 text-xl sm:text-2xl" />
-                  <p className="text-xs sm:text-sm">Click to upload cover image</p>
+                  <p className="text-xs sm:text-sm">
+                    Click to upload cover image
+                  </p>
                   <p className="text-[10px] sm:text-xs opacity-75 mt-1">
                     Max 5MB (JPG, PNG, GIF)
                   </p>
@@ -402,14 +324,13 @@ const EditPage = () => {
           <div className="flex gap-3 w-full">
             <button
               onClick={handleUpdate}
-              disabled={updating || !title.trim() || !description.trim() || !content.trim()}
-              className={`flex-1 border p-3 rounded-full transition-colors duration-300 font-medium text-sm sm:text-base ${
-                updating || !title.trim() || !description.trim() || !content.trim()
-                  ? "opacity-50 cursor-not-allowed border-gray-400"
-                  : isDarkMode
-                  ? "hover:bg-[#FFFFFF] hover:text-black border-white text-white"
-                  : "hover:bg-[#27272A] hover:text-white border-black text-black"
-              }`}
+              disabled={
+                updating ||
+                !title.trim() ||
+                !description.trim() ||
+                !content.trim()
+              }
+              className={`flex-1 border p-3 rounded-full transition-colors duration-300 font-medium text-sm sm:text-base ${updating || !title.trim() || !description.trim() || !content.trim() ? "opacity-50 cursor-not-allowed border-gray-400" : isDarkMode ? "hover:bg-[#FFFFFF] hover:text-black border-white text-white" : "hover:bg-[#27272A] hover:text-white border-black text-black"}`}
             >
               {updating ? (
                 <div className="flex items-center justify-center gap-2">
@@ -424,13 +345,7 @@ const EditPage = () => {
             <button
               onClick={() => router.push(`/blog/${params.id}`)}
               disabled={updating}
-              className={`px-6 border p-3 rounded-full transition-colors duration-300 font-medium text-sm sm:text-base ${
-                updating
-                  ? "opacity-50 cursor-not-allowed"
-                  : isDarkMode
-                  ? "border-gray-500 text-gray-400 hover:border-gray-300 hover:text-gray-200"
-                  : "border-gray-400 text-gray-600 hover:border-gray-600 hover:text-gray-800"
-              }`}
+              className={`px-6 border p-3 rounded-full transition-colors duration-300 font-medium text-sm sm:text-base ${updating ? "opacity-50 cursor-not-allowed" : isDarkMode ? "border-gray-500 text-gray-400 hover:border-gray-300 hover:text-gray-200" : "border-gray-400 text-gray-600 hover:border-gray-600 hover:text-gray-800"}`}
             >
               Cancel
             </button>
@@ -442,9 +357,9 @@ const EditPage = () => {
         </div>
 
         <div className="w-full lg:flex-1 min-h-[400px] sm:min-h-[500px] lg:min-h-[600px] mb-24 lg:mb-0">
-          <BlogEditor 
-            isDarkMode={isDarkMode} 
-            onContentChange={handleContentChange}
+          <BlogEditor
+            isDarkMode={isDarkMode}
+            onContentChange={(c) => setContent(c)}
             initialContent={content}
           />
         </div>
