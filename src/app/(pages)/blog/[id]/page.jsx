@@ -14,6 +14,7 @@ import { FaRegClock, FaEdit, FaTrash } from "react-icons/fa";
 import { IoEyeOutline } from "react-icons/io5";
 import { BiComment } from "react-icons/bi";
 import { getRandomProfileImage } from "@/lib/profileImage";
+import { toast } from "sonner";
 
 export default function BlogPage() {
   const params = useParams();
@@ -84,9 +85,7 @@ export default function BlogPage() {
       try {
         const data = await apiClient.getUserRating(params.id);
         setUserRating(data.userRating);
-      } catch (err) {
-        console.error("Error fetching user rating:", err);
-      }
+      } catch (err) {}
     }
     fetchUserRating();
   }, [params.id, isAuthenticated]);
@@ -118,9 +117,10 @@ export default function BlogPage() {
         averageRating: result.averageRating,
         ratingCount: result.ratingCount,
       });
+      toast.success("Rating submitted!");
       return result;
     } catch (error) {
-      alert(error.message || "Failed to submit rating");
+      toast.error(error.message || "Failed to submit rating");
       return null;
     }
   };
@@ -129,11 +129,12 @@ export default function BlogPage() {
     setDeleting(true);
     try {
       await apiClient.deletePost(params.id);
+      toast.success("Post deleted successfully");
       setTimeout(() => {
         router.push("/");
       }, 500);
     } catch (err) {
-      alert(`Failed to delete post: ${err.message}`);
+      toast.error(`Failed to delete post: ${err.message}`);
       setDeleting(false);
       setShowDeleteModal(false);
     }
@@ -166,15 +167,16 @@ export default function BlogPage() {
         ...prev,
         commentCount: (prev?.commentCount || 0) + 1,
       }));
+      toast.success("Comment posted!");
     } catch (err) {
-      alert(`Failed to post comment: ${err.message}`);
+      toast.error(err.message || "Failed to post comment");
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDeleteComment = async (commentId) => {
-    if (!confirm("Are you sure you want to delete this comment?")) return;
+    const toastId = toast.loading("Deleting comment...");
     setDeletingIds((prev) => new Set(prev).add(commentId));
     try {
       const res = await fetch(`/api/comments?commentId=${commentId}`, {
@@ -187,8 +189,9 @@ export default function BlogPage() {
         ...prev,
         commentCount: Math.max(0, (prev?.commentCount || 1) - 1),
       }));
+      toast.success("Comment deleted", { id: toastId });
     } catch (err) {
-      alert(`Failed to delete comment: ${err.message}`);
+      toast.error(err.message || "Failed to delete comment", { id: toastId });
     } finally {
       setDeletingIds((prev) => {
         const s = new Set(prev);
@@ -224,14 +227,15 @@ export default function BlogPage() {
         ),
       );
       setReplyInputs({ ...replyInputs, [commentId]: "" });
+      toast.success("Reply posted!");
     } catch (err) {
-      alert(`Failed to post reply: ${err.message}`);
+      toast.error(err.message || "Failed to post reply");
     }
   };
 
   const handleDeleteReply = async (commentId, replyId) => {
-    if (!confirm("Are you sure you want to delete this reply?")) return;
     const deleteKey = `${commentId}-${replyId}`;
+    const toastId = toast.loading("Deleting reply...");
     setDeletingIds((prev) => new Set(prev).add(deleteKey));
     try {
       const res = await fetch(`/api/comments/${commentId}/replies/${replyId}`, {
@@ -246,8 +250,9 @@ export default function BlogPage() {
             : c,
         ),
       );
+      toast.success("Reply deleted", { id: toastId });
     } catch (err) {
-      alert(`Failed to delete reply: ${err.message}`);
+      toast.error(err.message || "Failed to delete reply", { id: toastId });
     } finally {
       setDeletingIds((prev) => {
         const s = new Set(prev);

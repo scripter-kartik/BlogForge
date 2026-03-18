@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "./Providers";
 import { PostsProvider } from "@/context/PostsContext";
 import { UserProvider } from "@/context/UserContext";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,6 +37,7 @@ export default function RootLayout({
             <PostsProvider>{children}</PostsProvider>
           </UserProvider>
         </Providers>
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   );

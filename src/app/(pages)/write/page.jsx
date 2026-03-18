@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation.js";
 import { usePosts } from "@/context/PostsContext.jsx";
 import { useAuth } from "@/hooks/useAuth";
 import { apiClient } from "@/lib/api";
+import { toast } from "sonner";
 
 const WritePage = () => {
   const [isLoginActive, setIsLoginActive] = useState(false);
@@ -24,7 +25,7 @@ const WritePage = () => {
   const [error, setError] = useState("");
   const fileInputRef = useRef(null);
   const router = useRouter();
-  const { posts, setPosts } = usePosts();
+  const { setPosts } = usePosts();
   const { isAuthenticated, user, loading } = useAuth();
 
   useEffect(() => {
@@ -42,7 +43,6 @@ const WritePage = () => {
       router.push("/");
       return;
     }
-
     const colors = [
       "bg-gradient-to-r from-purple-500 to-pink-500",
       "bg-gradient-to-r from-blue-500 to-cyan-500",
@@ -62,29 +62,27 @@ const WritePage = () => {
 
   const validateForm = () => {
     if (!title.trim()) {
-      setError("Title is required");
+      toast.error("Title is required");
       return false;
     }
     if (!description.trim()) {
-      setError("Description is required");
+      toast.error("Description is required");
       return false;
     }
     if (description.length > 250) {
-      setError("Description must be less than 250 characters");
+      toast.error("Description must be less than 250 characters");
       return false;
     }
     if (!content.trim()) {
-      setError("Blog content is required");
+      toast.error("Blog content is required");
       return false;
     }
-    setError("");
     return true;
   };
 
   const handlePublish = async () => {
     if (!validateForm()) return;
     setPublishing(true);
-    setError("");
 
     const postData = {
       title: title.trim(),
@@ -101,7 +99,12 @@ const WritePage = () => {
       commentCount: 0,
       estimatedRead: Math.max(
         1,
-        Math.ceil(description.trim().split(" ").length / 200),
+        Math.ceil(
+          content
+            .replace(/<[^>]*>/g, "")
+            .trim()
+            .split(/\s+/).length / 200,
+        ),
       ),
     };
 
@@ -114,10 +117,10 @@ const WritePage = () => {
       setContent("");
       setCoverImage(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
-      alert("Post published successfully!");
+      toast.success("Post published successfully!");
       router.push("/");
     } catch (error) {
-      setError(error.message || "Failed to publish post. Please try again.");
+      toast.error(error.message || "Failed to publish post. Please try again.");
     } finally {
       setPublishing(false);
     }
@@ -127,11 +130,11 @@ const WritePage = () => {
     const file = event.target.files[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      setError("Please select a valid image file (JPG, PNG, GIF)");
+      toast.error("Please select a valid image file (JPG, PNG, GIF)");
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setError("Image size should be less than 5MB");
+      toast.error("Image size should be less than 5MB");
       return;
     }
     const reader = new FileReader();
@@ -139,7 +142,7 @@ const WritePage = () => {
       setCoverImage(e.target.result);
       setError("");
     };
-    reader.onerror = () => setError("Failed to read image file");
+    reader.onerror = () => toast.error("Failed to read image file");
     reader.readAsDataURL(file);
   };
 
@@ -283,12 +286,6 @@ const WritePage = () => {
               </div>
             )}
           </div>
-
-          {error && (
-            <div className="w-full p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
-              {error}
-            </div>
-          )}
 
           <button
             onClick={handlePublish}
