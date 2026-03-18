@@ -11,6 +11,7 @@ import { apiClient } from "@/lib/api";
 import { getRandomProfileImage } from "@/lib/profileImage.js";
 import { signOut } from "next-auth/react";
 import { FaRegStar, FaRegClock } from "react-icons/fa";
+import { toast } from "sonner";
 
 export default function Profile() {
   const params = useParams();
@@ -32,7 +33,6 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
@@ -127,15 +127,19 @@ export default function Profile() {
     if (result) {
       setIsFollowing(result.isFollowing);
       setUserStats((prev) => ({ ...prev, followers: result.followersCount }));
+      toast.success(
+        result.isFollowing
+          ? `Following ${user.name}`
+          : `Unfollowed ${user.name}`,
+      );
     }
   };
 
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    const toastId = toast.loading("Uploading profile picture...");
     setSaving(true);
-    setError("");
-    setSuccess("");
     try {
       const uploadData = new FormData();
       uploadData.append("profileImage", file);
@@ -158,12 +162,12 @@ export default function Profile() {
       await refreshUser();
       localStorage.setItem("profileImageUpdated", Date.now().toString());
       window.dispatchEvent(new Event("storage"));
-      setSuccess("Profile image updated!");
+      toast.success("Profile picture updated!", { id: toastId });
       setTimeout(() => {
         window.location.reload();
       }, 1000);
     } catch (err) {
-      setError(err.message || "Error uploading image");
+      toast.error(err.message || "Error uploading image", { id: toastId });
     } finally {
       setSaving(false);
     }
@@ -172,24 +176,23 @@ export default function Profile() {
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setError("");
-    setSuccess("");
   };
 
   const validateForm = () => {
     if (!formData.name.trim()) {
-      setError("Name is required");
+      toast.error("Name is required");
       return false;
     }
     if (!formData.email.trim()) {
-      setError("Email is required");
+      toast.error("Email is required");
       return false;
     }
     if (!formData.email.includes("@")) {
-      setError("Please enter a valid email");
+      toast.error("Please enter a valid email");
       return false;
     }
     if (formData.password && formData.password.length < 6) {
-      setError("Password must be at least 6 characters");
+      toast.error("Password must be at least 6 characters");
       return false;
     }
     return true;
@@ -197,9 +200,9 @@ export default function Profile() {
 
   const handleSave = async () => {
     if (!validateForm()) return;
+    const toastId = toast.loading("Saving changes...");
     setSaving(true);
     setError("");
-    setSuccess("");
     try {
       const uploadData = new FormData();
       uploadData.append("username", formData.username);
@@ -225,12 +228,13 @@ export default function Profile() {
       updateUser(updatedData);
       await updateSession();
       await refreshUser();
-      setSuccess("Profile updated successfully!");
+      toast.success("Profile updated successfully!", { id: toastId });
       setFormData((prev) => ({ ...prev, password: "" }));
       setTimeout(() => {
         window.location.reload();
       }, 1500);
     } catch (error) {
+      toast.error(error.message || "Failed to update profile", { id: toastId });
       setError(error.message || "Failed to update profile");
     } finally {
       setSaving(false);
@@ -240,9 +244,7 @@ export default function Profile() {
   const handleLogout = async () => {
     try {
       await signOut({ callbackUrl: "/" });
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) {}
   };
 
   const formatDate = (dateString) => {
@@ -440,11 +442,6 @@ export default function Profile() {
                     <p className="text-red-400">{error}</p>
                   </div>
                 )}
-                {success && (
-                  <div className="w-full p-3 bg-green-500 bg-opacity-20 border border-green-500 rounded text-sm sm:text-base">
-                    <p className="text-green-400">{success}</p>
-                  </div>
-                )}
               </>
             ) : (
               <div
@@ -483,9 +480,7 @@ export default function Profile() {
             >
               {isOwnProfile ? "Your Posts" : `Posts by ${user?.name}`}
             </h1>
-            <div
-              className={`hidden sm:block flex-1 h-1 rounded-full bg-gradient-to-r from-[#f75555] to-transparent`}
-            ></div>
+            <div className="hidden sm:block flex-1 h-1 rounded-full bg-gradient-to-r from-[#f75555] to-transparent"></div>
           </div>
 
           {userPosts.length > 0 ? (

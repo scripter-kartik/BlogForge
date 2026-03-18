@@ -7,6 +7,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation.js";
 import { useAuth } from "@/hooks/useAuth";
 import { apiClient } from "@/lib/api";
+import { toast } from "sonner";
 
 const EditPage = () => {
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -70,7 +71,7 @@ const EditPage = () => {
           userIdToCheck?.toString() === authorIdToCheck?.toString();
 
         if (!isAuthor) {
-          setError("You don't have permission to edit this post");
+          toast.error("You don't have permission to edit this post");
           setTimeout(() => router.push(`/blog/${params.id}`), 2000);
           return;
         }
@@ -93,29 +94,27 @@ const EditPage = () => {
     if (!authLoading && isAuthenticated && user) {
       fetchBlog();
     } else if (!authLoading && !isAuthenticated) {
-      setError("Please login to edit posts");
       router.push("/");
     }
   }, [params.id, isAuthenticated, user, authLoading, router]);
 
   const validateForm = () => {
     if (!title.trim()) {
-      setError("Title is required");
+      toast.error("Title is required");
       return false;
     }
     if (!description.trim()) {
-      setError("Description is required");
+      toast.error("Description is required");
       return false;
     }
     if (description.length > 250) {
-      setError("Description must be less than 250 characters");
+      toast.error("Description must be less than 250 characters");
       return false;
     }
     if (!content.trim()) {
-      setError("Blog content is required");
+      toast.error("Blog content is required");
       return false;
     }
-    setError("");
     return true;
   };
 
@@ -137,7 +136,7 @@ const EditPage = () => {
 
     try {
       await apiClient.updatePost(params.id, postData);
-      alert("Post updated successfully!");
+      toast.success("Post updated successfully!");
       router.push(`/blog/${params.id}`);
     } catch (error) {
       let errorMsg = "Failed to update post. ";
@@ -146,6 +145,7 @@ const EditPage = () => {
         errorMsg += "You don't have permission to edit this post.";
       else if (error.status === 404) errorMsg += "Post not found.";
       else errorMsg += error.message || "Please try again.";
+      toast.error(errorMsg);
       setError(errorMsg);
     } finally {
       setUpdating(false);
@@ -156,11 +156,11 @@ const EditPage = () => {
     const file = event.target.files[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      setError("Please select a valid image file (JPG, PNG, GIF)");
+      toast.error("Please select a valid image file (JPG, PNG, GIF)");
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setError("Image size should be less than 5MB");
+      toast.error("Image size should be less than 5MB");
       return;
     }
     const reader = new FileReader();
@@ -168,7 +168,7 @@ const EditPage = () => {
       setCoverImage(e.target.result);
       setError("");
     };
-    reader.onerror = () => setError("Failed to read image file");
+    reader.onerror = () => toast.error("Failed to read image file");
     reader.readAsDataURL(file);
   };
 
