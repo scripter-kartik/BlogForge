@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BlogSpot - Share Your Stories",
+  title: "BlogForge - Share Your Stories",
   description: "A platform to share and discover amazing blogs",
 };
 
