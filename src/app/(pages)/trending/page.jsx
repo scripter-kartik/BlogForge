@@ -9,6 +9,9 @@ import { BiComment } from "react-icons/bi";
 import { usePosts } from "@/context/PostsContext";
 import { apiClient } from "@/lib/api";
 import { getRandomProfileImage } from "@/lib/profileImage";
+import Image from "next/image";
+
+const PAGE_SIZE = 10;
 
 export default function TrendingPage() {
   const { posts, setPosts } = usePosts();
@@ -17,11 +20,12 @@ export default function TrendingPage() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoginActive, setIsLoginActive] = useState(false);
   const [isSignupActive, setIsSignupActive] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const router = useRouter();
 
   useEffect(() => {
-    const savedDarkMode = localStorage.getItem("darkMode");
-    if (savedDarkMode !== null) setIsDarkMode(savedDarkMode === "true");
+    const saved = localStorage.getItem("darkMode");
+    if (saved !== null) setIsDarkMode(saved === "true");
     setIsInitialized(true);
   }, []);
 
@@ -42,10 +46,9 @@ export default function TrendingPage() {
     fetchPosts();
   }, []);
 
-  const trendingPosts = useMemo(() => {
+  const allTrendingPosts = useMemo(() => {
     return [...posts]
       .sort((a, b) => (b.views || 0) - (a.views || 0))
-      .slice(0, 21)
       .map((post) => ({
         ...post,
         starRating: post.averageRating || post.starRating || 4,
@@ -59,6 +62,9 @@ export default function TrendingPage() {
         ),
       }));
   }, [posts]);
+
+  const visiblePosts = allTrendingPosts.slice(0, visibleCount);
+  const hasMore = visibleCount < allTrendingPosts.length;
 
   if (!isInitialized) return null;
 
@@ -84,14 +90,14 @@ export default function TrendingPage() {
       />
 
       <div className="w-full max-w-[1280px] mt-20 sm:mt-20 md:mt-24 mb-12 sm:mb-16 md:mb-[70px] px-4 sm:px-6 lg:px-8">
-        {trendingPosts.length === 0 ? (
+        {visiblePosts.length === 0 ? (
           <p
             className={`w-full text-center mt-8 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}
           >
             No trending posts yet.
           </p>
         ) : (
-          trendingPosts.map((post) => (
+          visiblePosts.map((post) => (
             <div
               key={post._id}
               className="w-full mt-6 sm:mt-8 cursor-pointer group"
@@ -101,12 +107,15 @@ export default function TrendingPage() {
                 className={`flex flex-col md:flex-row gap-4 md:gap-6 p-4 md:p-6 rounded-xl transition-all duration-300 hover:shadow-xl hover:scale-[1.01] ${isDarkMode ? "bg-[#2D2D2D] text-white hover:bg-[#353535]" : "bg-[#E8EAEC] text-black hover:bg-[#dfe1e4]"}`}
               >
                 {post.coverImage && (
-                  <img
-                    className="w-full md:w-52 h-48 md:h-40 object-cover rounded-lg group-hover:shadow-md transition-shadow flex-shrink-0"
-                    src={post.coverImage}
-                    alt={post.title}
-                    onError={(e) => (e.target.style.display = "none")}
-                  />
+                  <div className="relative w-full md:w-52 h-48 md:h-40 flex-shrink-0 rounded-lg overflow-hidden group-hover:shadow-md transition-shadow">
+                    <Image
+                      src={post.coverImage}
+                      alt={post.title}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 208px"
+                      className="object-cover"
+                    />
+                  </div>
                 )}
                 <div className="flex flex-col gap-3 sm:gap-4 flex-1 min-w-0">
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-4">
@@ -116,12 +125,15 @@ export default function TrendingPage() {
                       {post.title}
                     </h1>
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <img
-                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-[#f75555]"
-                        src={post.authorImage}
-                        alt={post.authorName}
-                        onError={(e) => (e.target.src = "/imageProfile1.png")}
-                      />
+                      <div className="relative w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0">
+                        <Image
+                          src={post.authorImage}
+                          alt={post.authorName}
+                          fill
+                          sizes="32px"
+                          className="rounded-full border-2 border-[#f75555] object-cover"
+                        />
+                      </div>
                       <p
                         className={`text-sm font-medium truncate ${isDarkMode ? "text-white" : "text-black"}`}
                       >
@@ -177,7 +189,18 @@ export default function TrendingPage() {
           ))
         )}
 
-        {trendingPosts.length > 0 && (
+        {hasMore && (
+          <div className="flex justify-center mt-10 sm:mt-12">
+            <button
+              onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
+              className={`px-8 py-3 rounded-full font-medium text-sm transition-all ${isDarkMode ? "border border-white text-white hover:bg-white hover:text-black" : "border border-black text-black hover:bg-black hover:text-white"}`}
+            >
+              Load more
+            </button>
+          </div>
+        )}
+
+        {!hasMore && visiblePosts.length > 0 && (
           <p
             className={`text-center mt-10 sm:mt-12 text-xs sm:text-sm ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}
           >

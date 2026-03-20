@@ -132,6 +132,15 @@ const EditPage = () => {
         .filter(Boolean),
       coverImage,
       content,
+      estimatedRead: Math.max(
+        1,
+        Math.ceil(
+          content
+            .replace(/<[^>]*>/g, "")
+            .trim()
+            .split(/\s+/).length / 200,
+        ),
+      ),
     };
 
     try {

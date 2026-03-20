@@ -12,6 +12,7 @@ import { apiClient } from "@/lib/api";
 import { getRandomProfileImage } from "@/lib/profileImage";
 import { useRouter } from "next/navigation";
 import StarRating from "@/components/StarRating";
+import Image from "next/image";
 
 const GRADIENTS = [
   "bg-gradient-to-r from-purple-500 to-pink-500",
@@ -36,44 +37,51 @@ const getGradientForPost = (postId) => {
 };
 
 const PostCard = memo(({ post, isDarkMode, onClick }) => {
+  const [coverError, setCoverError] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
+
   return (
     <div className="w-full mt-8 cursor-pointer group" onClick={onClick}>
       <div
         className={`w-full ${isDarkMode ? "text-white bg-[#2D2D2D] hover:bg-[#353535]" : "text-black bg-[#E8EAEC] hover:bg-[#dfe1e4]"} flex flex-col md:flex-row gap-4 md:gap-6 p-4 md:p-6 rounded-xl transition-all duration-300 hover:shadow-xl hover:scale-[1.01]`}
       >
-        {post.coverImage ? (
-          <img
-            className="w-full md:w-52 h-40 object-cover rounded-lg group-hover:shadow-md transition-shadow flex-shrink-0"
-            src={post.coverImage}
-            alt={post.title}
-            loading="lazy"
-            onError={(e) => {
-              e.target.style.display = "none";
-            }}
-          />
+        {post.coverImage && !coverError ? (
+          <div className="relative w-full md:w-52 h-40 flex-shrink-0 rounded-lg overflow-hidden group-hover:shadow-md transition-shadow">
+            <Image
+              src={post.coverImage}
+              alt={post.title}
+              fill
+              sizes="(max-width: 768px) 100vw, 208px"
+              className="object-cover"
+              onError={() => setCoverError(true)}
+            />
+          </div>
         ) : (
           <div
             className={`w-full md:w-52 h-40 rounded-lg group-hover:shadow-md transition-shadow flex-shrink-0 ${post.gradientColor}`}
           />
         )}
+
         <div className="flex flex-col gap-3 md:gap-4 flex-1">
           <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2 md:gap-4">
             <h1 className="font-bold text-xl md:text-2xl leading-tight">
               {post.title}
             </h1>
             <div className="flex items-center gap-2 flex-shrink-0">
-              <img
-                className="w-8 h-8 rounded-full border-2 border-[#f75555]"
-                src={post.authorImage}
-                alt={post.authorName}
-                loading="lazy"
-                onError={(e) => {
-                  e.target.src = "/imageProfile1.png";
-                }}
-              />
+              <div className="relative w-8 h-8 flex-shrink-0">
+                <Image
+                  src={avatarError ? "/imageProfile1.png" : post.authorImage}
+                  alt={post.authorName}
+                  fill
+                  sizes="32px"
+                  className="rounded-full border-2 border-[#f75555] object-cover"
+                  onError={() => setAvatarError(true)}
+                />
+              </div>
               <p className="text-sm font-medium">{post.authorName}</p>
             </div>
           </div>
+
           {post.description && (
             <p
               className={`${isDarkMode ? "text-gray-300" : "text-gray-700"} line-clamp-2 text-sm md:text-base`}
@@ -81,6 +89,7 @@ const PostCard = memo(({ post, isDarkMode, onClick }) => {
               {post.description}
             </p>
           )}
+
           <div className="flex items-center gap-2 flex-wrap">
             {post.tags?.slice(0, 3).map((tag, idx) => (
               <div
@@ -91,6 +100,7 @@ const PostCard = memo(({ post, isDarkMode, onClick }) => {
               </div>
             ))}
           </div>
+
           <div
             className={`${isDarkMode ? "text-gray-400" : "text-gray-600"} flex items-center gap-4 md:gap-6 text-xs md:text-sm font-medium flex-wrap`}
           >
@@ -138,20 +148,27 @@ const UserCard = memo(
     followLoading,
     onClick,
   }) => {
+    const [avatarError, setAvatarError] = useState(false);
+
     return (
       <div
         onClick={onClick}
         className={`flex flex-col items-center justify-around gap-4 px-4 py-6 rounded-2xl ${isDarkMode ? "bg-[#2D2D2D] hover:bg-[#353535]" : "bg-white hover:bg-gray-50"} text-center shadow-lg hover:shadow-2xl cursor-pointer transition-all duration-300 hover:scale-105 border ${isDarkMode ? "border-[#454545]" : "border-gray-200"}`}
       >
-        <img
-          className="rounded-full object-cover w-20 h-20 border-4 border-[#f75555] hover:border-[#ff6666] transition-colors"
-          src={getRandomProfileImage(user.image, user.name)}
-          alt={user.name}
-          loading="lazy"
-          onError={(e) => {
-            e.target.src = "/imageProfile1.png";
-          }}
-        />
+        <div className="relative w-20 h-20 flex-shrink-0">
+          <Image
+            src={
+              avatarError
+                ? "/imageProfile1.png"
+                : getRandomProfileImage(user.image, user.name)
+            }
+            alt={user.name}
+            fill
+            sizes="80px"
+            className="rounded-full border-4 border-[#f75555] object-cover"
+            onError={() => setAvatarError(true)}
+          />
+        </div>
         <div className="min-w-0 w-full">
           <h1
             className={`font-bold text-lg ${isDarkMode ? "text-white" : "text-black"} truncate`}
@@ -182,6 +199,64 @@ const UserCard = memo(
 );
 
 UserCard.displayName = "UserCard";
+
+const SuggestedUserCard = ({
+  user,
+  isDarkMode,
+  followStates,
+  followLoading,
+  onUserClick,
+  onFollowClick,
+}) => {
+  const [avatarError, setAvatarError] = useState(false);
+
+  return (
+    <div className="flex-shrink-0">
+      <div
+        onClick={() => onUserClick(user.username)}
+        className={`flex flex-col items-center justify-around gap-4 px-4 py-6 w-[200px] md:w-[240px] h-[280px] md:h-[300px] rounded-2xl ${isDarkMode ? "bg-[#353535] hover:bg-[#3f3f3f]" : "bg-white hover:bg-gray-50"} text-center shadow-lg hover:shadow-2xl cursor-pointer transition-colors duration-300 hover:scale-105 border ${isDarkMode ? "border-[#454545]" : "border-gray-200"}`}
+      >
+        <div className="relative w-20 h-20 md:w-24 md:h-24 flex-shrink-0">
+          <Image
+            src={
+              avatarError
+                ? "/imageProfile1.png"
+                : getRandomProfileImage(user.image, user.name)
+            }
+            alt={user.name}
+            fill
+            sizes="96px"
+            className="rounded-full border-4 border-[#f75555] object-cover"
+            onError={() => setAvatarError(true)}
+          />
+        </div>
+        <div className="min-w-0">
+          <h1
+            className={`font-bold text-base md:text-lg ${isDarkMode ? "text-white" : "text-black"} truncate`}
+          >
+            {user.name}
+          </h1>
+          <p
+            className={`text-xs md:text-sm ${isDarkMode ? "text-gray-400" : "text-gray-600"} line-clamp-2 mt-1`}
+          >
+            {user.bio}
+          </p>
+        </div>
+        <button
+          onClick={(e) => onFollowClick(e, user._id)}
+          disabled={followLoading}
+          className={`rounded-full w-full text-center text-white px-4 py-2 md:py-2.5 text-sm font-semibold transition-all duration-300 ${followStates[user._id] ? (isDarkMode ? "bg-gray-600 hover:bg-gray-700" : "bg-gray-400 hover:bg-gray-500") : "bg-[#f75555] hover:bg-[#ff6666] hover:shadow-lg"} ${followLoading ? "opacity-50 cursor-not-allowed" : ""} active:scale-95`}
+        >
+          {followLoading
+            ? "..."
+            : followStates[user._id]
+              ? "Following"
+              : "Follow"}
+        </button>
+      </div>
+    </div>
+  );
+};
 
 export default function HomePost({ isDarkMode, searchResults }) {
   const { posts, setPosts } = usePosts();
@@ -224,16 +299,14 @@ export default function HomePost({ isDarkMode, searchResults }) {
           setSuggestedUsers(data);
           const followingIds = userData.following || [];
           const states = {};
-          data.forEach((suggestedUser) => {
-            states[suggestedUser._id] = followingIds.some(
-              (id) => id.toString() === suggestedUser._id,
+          data.forEach((su) => {
+            states[su._id] = followingIds.some(
+              (id) => id.toString() === su._id,
             );
           });
           setFollowStates(states);
         }
-      } catch (error) {
-        console.error("Failed to load suggested users", error);
-      }
+      } catch (error) {}
     }
     fetchSuggestedUsers();
   }, [isAuthenticated, user]);
@@ -285,7 +358,6 @@ export default function HomePost({ isDarkMode, searchResults }) {
     },
     [router],
   );
-
   const handleFollowClick = useCallback(
     async (e, userId) => {
       e.stopPropagation();
@@ -446,46 +518,16 @@ export default function HomePost({ isDarkMode, searchResults }) {
               ref={scrollContainerRef}
               className={`flex gap-4 md:gap-6 overflow-x-auto scroll-smooth pb-6 px-2 transition-colors duration-500 ${isDarkMode ? "bg-gradient-to-r from-[#1c1d1d] via-[#2D2D2D] to-[#1c1d1d]" : "bg-gradient-to-r from-[#f6f6f7] via-[#f5f5f5] to-[#f6f6f7]"} rounded-2xl [&::-webkit-scrollbar]:hidden`}
             >
-              {suggestedUsers.map((user) => (
-                <div key={user._id} className="flex-shrink-0">
-                  <div
-                    onClick={() => handleUserClick(user.username)}
-                    className={`flex flex-col items-center justify-around gap-4 px-4 py-6 w-[200px] md:w-[240px] h-[280px] md:h-[300px] rounded-2xl ${isDarkMode ? "bg-[#353535] hover:bg-[#3f3f3f]" : "bg-white hover:bg-gray-50"} text-center shadow-lg hover:shadow-2xl cursor-pointer transition-colors duration-300 hover:scale-105 border ${isDarkMode ? "border-[#454545]" : "border-gray-200"}`}
-                  >
-                    <img
-                      className="rounded-full object-cover w-20 h-20 md:w-24 md:h-24 border-4 border-[#f75555] hover:border-[#ff6666] transition-colors"
-                      src={getRandomProfileImage(user.image, user.name)}
-                      alt={user.name}
-                      loading="lazy"
-                      onError={(e) => {
-                        e.target.src = "/imageProfile1.png";
-                      }}
-                    />
-                    <div className="min-w-0">
-                      <h1
-                        className={`font-bold text-base md:text-lg ${isDarkMode ? "text-white" : "text-black"} truncate`}
-                      >
-                        {user.name}
-                      </h1>
-                      <p
-                        className={`text-xs md:text-sm ${isDarkMode ? "text-gray-400" : "text-gray-600"} line-clamp-2 mt-1`}
-                      >
-                        {user.bio}
-                      </p>
-                    </div>
-                    <button
-                      onClick={(e) => handleFollowClick(e, user._id)}
-                      disabled={followLoading}
-                      className={`rounded-full w-full text-center text-white px-4 py-2 md:py-2.5 text-sm font-semibold transition-all duration-300 ${followStates[user._id] ? (isDarkMode ? "bg-gray-600 hover:bg-gray-700" : "bg-gray-400 hover:bg-gray-500") : "bg-[#f75555] hover:bg-[#ff6666] hover:shadow-lg"} ${followLoading ? "opacity-50 cursor-not-allowed" : ""} active:scale-95`}
-                    >
-                      {followLoading
-                        ? "..."
-                        : followStates[user._id]
-                          ? "Following"
-                          : "Follow"}
-                    </button>
-                  </div>
-                </div>
+              {suggestedUsers.map((u) => (
+                <SuggestedUserCard
+                  key={u._id}
+                  user={u}
+                  isDarkMode={isDarkMode}
+                  followStates={followStates}
+                  followLoading={followLoading}
+                  onUserClick={handleUserClick}
+                  onFollowClick={handleFollowClick}
+                />
               ))}
             </div>
             <button

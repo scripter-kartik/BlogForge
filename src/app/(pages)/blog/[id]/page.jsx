@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
@@ -15,6 +15,8 @@ import { IoEyeOutline } from "react-icons/io5";
 import { BiComment } from "react-icons/bi";
 import { getRandomProfileImage } from "@/lib/profileImage";
 import { toast } from "sonner";
+import DOMPurify from "dompurify";
+import BlogSkeleton from "../../../../components/Blogskeleton";
 
 export default function BlogPage() {
   const params = useParams();
@@ -42,6 +44,39 @@ export default function BlogPage() {
 
   const isAuthor =
     blog?.author?._id === user?.id || blog?.author?._id === user?._id;
+
+  const sanitizedContent = useMemo(() => {
+    if (!blog?.content) return "";
+    return DOMPurify.sanitize(blog.content, {
+      ALLOWED_TAGS: [
+        "p",
+        "br",
+        "strong",
+        "em",
+        "u",
+        "s",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "ul",
+        "ol",
+        "li",
+        "blockquote",
+        "pre",
+        "code",
+        "a",
+        "img",
+        "div",
+        "span",
+        "hr",
+      ],
+      ALLOWED_ATTR: ["href", "src", "alt", "class", "style", "target", "rel"],
+      ALLOW_DATA_ATTR: false,
+    });
+  }, [blog?.content]);
 
   useEffect(() => {
     const saved = localStorage.getItem("darkMode");
@@ -265,13 +300,7 @@ export default function BlogPage() {
   if (!isInitialized) return null;
 
   if (loading) {
-    return (
-      <div
-        className={`min-h-screen flex justify-center items-center transition-colors duration-500 ${isDarkMode ? "bg-[#1c1d1d] text-white" : "bg-[#f6f6f7] text-black"}`}
-      >
-        Loading blog...
-      </div>
-    );
+    return <BlogSkeleton isDarkMode={isDarkMode} />;
   }
 
   if (error) {
@@ -412,11 +441,11 @@ export default function BlogPage() {
           </div>
         </div>
 
-        {blog.content && (
+        {sanitizedContent && (
           <div
-            className={`max-w-none mb-8 sm:mb-12 leading-relaxed whitespace-pre-wrap text-sm sm:text-base ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}
+            className={`max-w-none mb-8 sm:mb-12 leading-relaxed text-sm sm:text-base ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}
           >
-            <div dangerouslySetInnerHTML={{ __html: blog.content }} />
+            <div dangerouslySetInnerHTML={{ __html: sanitizedContent }} />
           </div>
         )}
 
