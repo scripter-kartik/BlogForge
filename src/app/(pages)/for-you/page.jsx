@@ -11,6 +11,7 @@ import { usePosts } from "@/context/PostsContext";
 import { apiClient } from "@/lib/api";
 import { getRandomProfileImage } from "@/lib/profileImage";
 import Image from "next/image";
+import PostFeedSkeleton from "@/components/PostFeedSkeleton";
 
 const PAGE_SIZE = 10;
 
@@ -23,6 +24,7 @@ export default function ForYouPage() {
   const [isLoginActive, setIsLoginActive] = useState(false);
   const [isSignupActive, setIsSignupActive] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(cachedPosts.length === 0);
   const router = useRouter();
 
   useEffect(() => {
@@ -36,9 +38,13 @@ export default function ForYouPage() {
   }, [isDarkMode, isInitialized]);
 
   useEffect(() => {
+    let isActive = true;
+
     async function fetchForYou() {
+      setIsLoadingPosts(cachedPosts.length === 0);
       try {
         const data = await apiClient.getForYouBlogs();
+        if (!isActive) return;
         const normalized = (Array.isArray(data) ? data : []).map((post) => ({
           ...post,
           starRating: post.averageRating ?? post.starRating ?? 4,
@@ -54,11 +60,18 @@ export default function ForYouPage() {
         }));
         setForYouPosts(normalized);
       } catch (err) {
-        setError("Failed to load posts.");
+        if (isActive) setError("Failed to load posts.");
+      } finally {
+        if (isActive) setIsLoadingPosts(false);
       }
     }
+
     fetchForYou();
-  }, []);
+
+    return () => {
+      isActive = false;
+    };
+  }, [cachedPosts.length]);
 
   const allPosts =
     forYouPosts.length > 0
@@ -104,7 +117,9 @@ export default function ForYouPage() {
       />
 
       <div className="w-full max-w-[1280px] mt-20 sm:mt-20 md:mt-20 mb-12 sm:mb-16 md:mb-[70px] px-4 sm:px-6 lg:px-8">
-        {visiblePosts.length === 0 ? (
+        {isLoadingPosts ? (
+          <PostFeedSkeleton isDarkMode={isDarkMode} count={6} />
+        ) : visiblePosts.length === 0 ? (
           <p
             className={`w-full text-center mt-8 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}
           >

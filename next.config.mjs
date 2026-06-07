@@ -1,10 +1,12 @@
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    turbo: false,
-  },
-
-  outputFileTracingRoot: require("path").join(__dirname),
+  outputFileTracingRoot: __dirname,
+  turbopack: {},
 
   webpack: (config, { isServer }) => {
     if (!isServer) {
@@ -38,4 +40,4 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+export default nextConfig;

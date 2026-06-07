@@ -10,6 +10,7 @@ import { usePosts } from "@/context/PostsContext";
 import { apiClient } from "@/lib/api";
 import { getRandomProfileImage } from "@/lib/profileImage";
 import Image from "next/image";
+import PostFeedSkeleton from "@/components/PostFeedSkeleton";
 
 const PAGE_SIZE = 10;
 
@@ -21,6 +22,7 @@ export default function LatestPage() {
   const [isLoginActive, setIsLoginActive] = useState(false);
   const [isSignupActive, setIsSignupActive] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(posts.length === 0);
   const router = useRouter();
 
   useEffect(() => {
@@ -34,17 +36,31 @@ export default function LatestPage() {
   }, [isDarkMode, isInitialized]);
 
   useEffect(() => {
-    if (posts.length > 0) return;
+    if (posts.length > 0) {
+      setIsLoadingPosts(false);
+      return;
+    }
+
+    let isActive = true;
+
     async function fetchPosts() {
+      setIsLoadingPosts(true);
       try {
         const data = await apiClient.getAllPosts();
-        if (Array.isArray(data)) setPosts(data);
+        if (isActive && Array.isArray(data)) setPosts(data);
       } catch (err) {
-        setError("Failed to load latest posts.");
+        if (isActive) setError("Failed to load latest posts.");
+      } finally {
+        if (isActive) setIsLoadingPosts(false);
       }
     }
+
     fetchPosts();
-  }, []);
+
+    return () => {
+      isActive = false;
+    };
+  }, [posts.length, setPosts]);
 
   const allLatestPosts = useMemo(() => {
     return [...posts]
@@ -90,7 +106,9 @@ export default function LatestPage() {
       />
 
       <div className="w-full max-w-[1280px] mt-20 sm:mt-20 md:mt-24 mb-12 sm:mb-16 md:mb-[70px] px-4 sm:px-6 lg:px-8">
-        {visiblePosts.length === 0 ? (
+        {isLoadingPosts ? (
+          <PostFeedSkeleton isDarkMode={isDarkMode} count={6} />
+        ) : visiblePosts.length === 0 ? (
           <p
             className={`w-full text-center mt-8 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}
           >

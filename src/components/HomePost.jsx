@@ -13,6 +13,7 @@ import { getRandomProfileImage } from "@/lib/profileImage";
 import { useRouter } from "next/navigation";
 import StarRating from "@/components/StarRating";
 import Image from "next/image";
+import PostFeedSkeleton from "@/components/PostFeedSkeleton";
 
 const GRADIENTS = [
   "bg-gradient-to-r from-purple-500 to-pink-500",
@@ -263,27 +264,43 @@ export default function HomePost({ isDarkMode, searchResults }) {
   const { isAuthenticated, user } = useAuth();
   const { toggleFollow, loading: followLoading } = useFollow();
   const [error, setError] = useState(null);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(posts.length === 0);
   const [suggestedUsers, setSuggestedUsers] = useState([]);
   const [followStates, setFollowStates] = useState({});
   const scrollContainerRef = useRef(null);
   const router = useRouter();
 
   useEffect(() => {
-    if (posts.length > 0) return;
+    if (posts.length > 0) {
+      setIsLoadingPosts(false);
+      return;
+    }
+
+    let isActive = true;
+
     async function fetchData() {
+      setIsLoadingPosts(true);
       try {
         const data = await apiClient.getAllPosts();
+        if (!isActive) return;
         if (!Array.isArray(data)) {
           setPosts([]);
           return;
         }
         setPosts(data);
       } catch (error) {
-        setError("Failed to load posts. Please try again.");
+        if (isActive) setError("Failed to load posts. Please try again.");
+      } finally {
+        if (isActive) setIsLoadingPosts(false);
       }
     }
+
     fetchData();
-  }, []);
+
+    return () => {
+      isActive = false;
+    };
+  }, [posts.length, setPosts]);
 
   useEffect(() => {
     async function fetchSuggestedUsers() {
@@ -495,7 +512,11 @@ export default function HomePost({ isDarkMode, searchResults }) {
         </h1>
         <div className="hidden md:block flex-1 h-1 rounded-full bg-gradient-to-r from-[#f75555] to-transparent"></div>
       </div>
-      {renderPosts(featured)}
+      {isLoadingPosts ? (
+        <PostFeedSkeleton isDarkMode={isDarkMode} count={2} />
+      ) : (
+        renderPosts(featured)
+      )}
 
       {isAuthenticated && suggestedUsers.length > 0 && (
         <div className="mt-24 md:mt-32">
@@ -548,7 +569,11 @@ export default function HomePost({ isDarkMode, searchResults }) {
         </h1>
         <div className="hidden md:block flex-1 h-1 rounded-full bg-gradient-to-r from-[#f75555] to-transparent"></div>
       </div>
-      {renderPosts(trending)}
+      {isLoadingPosts ? (
+        <PostFeedSkeleton isDarkMode={isDarkMode} count={3} />
+      ) : (
+        renderPosts(trending)
+      )}
 
       <div className="flex flex-col md:flex-row items-center sm:items-start md:items-center gap-4 justify-between mb-10 mt-24 md:mt-32">
         <h1
@@ -558,7 +583,11 @@ export default function HomePost({ isDarkMode, searchResults }) {
         </h1>
         <div className="hidden md:block flex-1 h-1 rounded-full bg-gradient-to-r from-[#f75555] to-transparent"></div>
       </div>
-      {renderPosts(latest)}
+      {isLoadingPosts ? (
+        <PostFeedSkeleton isDarkMode={isDarkMode} count={3} />
+      ) : (
+        renderPosts(latest)
+      )}
     </div>
   );
 }
